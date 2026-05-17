@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>How It Works — Forge AI</title>
-<meta name="description" content="See exactly how Forge AI's AI chatbot and automated follow-up system work to grow your local business — completely free to set up.">
+<meta name="description" content="See exactly how Forge AI's AI chatbot and automated follow-up system work to grow your local business, completely free to set up.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="/seo/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -27,113 +27,120 @@ a:hover{text-decoration:underline}
 .nav-cta:hover{background:#1d4ed8 !important;text-decoration:none !important}
 
 /* HERO */
-.hero{text-align:center;padding:72px 24px 56px;max-width:720px;margin:0 auto}
-.badge{display:inline-block;background:#eff6ff;color:#2563eb;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 16px;border-radius:20px;margin-bottom:20px}
-.hero h1{font-size:clamp(28px,4vw,44px);font-weight:800;line-height:1.15;margin-bottom:16px;color:#0f172a}
+.hero{text-align:center;padding:80px 24px 64px;background:linear-gradient(180deg,#f8faff 0%,#fff 100%);border-bottom:1px solid #f1f5f9}
+.hero-inner{max-width:680px;margin:0 auto}
+.badge{display:inline-block;background:#eff6ff;color:#2563eb;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 16px;border-radius:20px;margin-bottom:22px}
+.hero h1{font-size:clamp(30px,4.5vw,48px);font-weight:800;line-height:1.12;margin-bottom:18px;color:#0f172a}
 .hero h1 span{background:linear-gradient(135deg,#2563eb,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{font-size:17px;color:#64748b;max-width:560px;margin:0 auto 32px;line-height:1.65}
-.hero-note{display:inline-flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:6px 16px;font-size:13px;color:#16a34a;font-weight:500}
+.hero p{font-size:17px;color:#64748b;margin-bottom:28px;line-height:1.7}
+.hero-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:6px 14px;font-size:13px;color:#16a34a;font-weight:500}
+.pill svg{flex-shrink:0}
 
-/* FEATURE SECTIONS */
-.feature{max-width:1000px;margin:0 auto;padding:64px 24px;border-bottom:1px solid #f1f5f9}
-.feature:last-of-type{border-bottom:none}
-.feature-inner{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+/* STATS */
+.stats{background:#0f172a;padding:52px 24px}
+.stats-grid{max-width:960px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:#1e293b;border:1px solid #1e293b;border-radius:16px;overflow:hidden}
+.stat{background:#0f172a;padding:32px 24px;text-align:center}
+.stat-num{font-size:42px;font-weight:800;line-height:1;margin-bottom:10px;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:13px;color:#94a3b8;line-height:1.5}
+
+/* FEATURES */
+.feature{padding:80px 24px;border-bottom:1px solid #f1f5f9}
+.feature.alt{background:#fafbff}
+.feature-inner{max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start}
 .feature-inner.reverse{direction:rtl}
 .feature-inner.reverse > *{direction:ltr}
-.feature-label{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px}
-.label-blue{color:#2563eb}
-.label-purple{color:#7c3aed}
-.feature-content h2{font-size:clamp(22px,3vw,30px);font-weight:800;line-height:1.2;margin-bottom:14px;color:#0f172a}
-.feature-content .hook{font-size:16px;color:#64748b;margin-bottom:28px;line-height:1.65}
-.how-steps{display:flex;flex-direction:column;gap:16px;margin-bottom:28px}
-.step{display:flex;gap:14px;align-items:flex-start}
-.step-num{flex-shrink:0;width:28px;height:28px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#2563eb;margin-top:1px}
-.step-num.purple{background:#f5f3ff;border-color:#ddd6fe;color:#7c3aed}
-.step-text strong{display:block;font-size:14px;font-weight:700;color:#0f172a;margin-bottom:3px}
-.step-text p{font-size:13px;color:#64748b;line-height:1.55;margin:0}
-.impact-list{list-style:none;display:flex;flex-direction:column;gap:10px}
-.impact-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:#475569;line-height:1.5}
-.impact-list li::before{content:'✓';font-weight:800;flex-shrink:0;margin-top:1px}
-.check-blue li::before{color:#2563eb}
-.check-purple li::before{color:#7c3aed}
+
+.feature-tag{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:18px}
+.tag-blue{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+.tag-purple{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe}
+
+.feature-content h2{font-size:clamp(24px,3vw,34px);font-weight:800;line-height:1.18;margin-bottom:16px;color:#0f172a}
+.feature-content .hook{font-size:15px;color:#64748b;margin-bottom:32px;line-height:1.75;padding-bottom:28px;border-bottom:1px solid #f1f5f9}
+
+.how-steps{display:flex;flex-direction:column;gap:20px;margin-bottom:32px}
+.step{display:flex;gap:16px;align-items:flex-start}
+.step-num{flex-shrink:0;width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;margin-top:1px}
+.step-num.blue{background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb}
+.step-num.purple{background:#f5f3ff;border:1px solid #ddd6fe;color:#7c3aed}
+.step-text strong{display:block;font-size:14px;font-weight:700;color:#0f172a;margin-bottom:4px}
+.step-text p{font-size:13px;color:#64748b;line-height:1.6;margin:0}
+
+.impact-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+.impact-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:#475569;line-height:1.55;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;padding:12px 14px}
+.impact-list li .check{flex-shrink:0;width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-top:1px}
+.check-blue .check{background:#eff6ff;color:#2563eb}
+.check-purple .check{background:#f5f3ff;color:#7c3aed}
 .impact-list strong{color:#0f172a;font-weight:600}
 
-/* MOCKUP — CHAT */
-.mockup-wrap{position:relative}
-.mockup-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.08)}
-.chat-header{background:#eff6ff;border-bottom:1px solid #e2e8f0;padding:14px 18px;display:flex;align-items:center;gap:12px}
-.chat-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+/* MOCKUP */
+.mockup-wrap{position:relative;padding-top:20px}
+.mockup-card{background:#fff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.09),0 2px 8px rgba(0,0,0,.04)}
+.chat-header{background:linear-gradient(135deg,#eff6ff,#f5f3ff);border-bottom:1px solid #e2e8f0;padding:16px 20px;display:flex;align-items:center;gap:12px}
+.chat-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
 .chat-info-name{font-size:13px;font-weight:700;color:#0f172a}
-.chat-info-status{font-size:11px;color:#2563eb;display:flex;align-items:center;gap:4px}
-.chat-info-status::before{content:'';width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block}
-.chat-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-height:220px}
+.chat-info-status{font-size:11px;color:#16a34a;display:flex;align-items:center;gap:5px;margin-top:2px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.chat-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px;min-height:230px;background:#fff}
 .msg-row{display:flex;flex-direction:column;gap:4px}
-.msg-time{font-size:10px;color:#94a3b8}
+.msg-time{font-size:10px;color:#cbd5e1;letter-spacing:.02em}
 .msg-time.right{align-self:flex-end}
-.bubble{font-size:13px;line-height:1.5;padding:10px 14px;border-radius:12px;max-width:82%}
-.bubble-user{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;align-self:flex-end;border-radius:12px 12px 2px 12px}
+.bubble{font-size:13px;line-height:1.55;padding:10px 14px;border-radius:12px;max-width:84%}
+.bubble-user{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;align-self:flex-end;border-radius:12px 12px 2px 12px}
 .bubble-bot{background:#f8fafc;border:1px solid #e2e8f0;color:#374151;align-self:flex-start;border-radius:12px 12px 12px 2px}
-.chat-input-row{padding:12px 18px;border-top:1px solid #f1f5f9;display:flex;gap:8px}
-.chat-input{flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:12px;color:#94a3b8;font-family:inherit}
-.chat-send{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.chat-input-row{padding:14px 20px;border-top:1px solid #f1f5f9;display:flex;gap:8px;background:#fff}
+.chat-input{flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:12px;color:#94a3b8;font-family:inherit}
+.chat-send{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
 
-/* NOTIFICATION BADGE */
-.notif-badge{position:absolute;top:-12px;right:-12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:600;color:#0f172a;display:flex;align-items:center;gap:6px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.notif-badge{position:absolute;top:0;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:600;color:#0f172a;display:flex;align-items:center;gap:7px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
 .notif-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
 
-/* MOCKUP — SMS */
-.sms-header{background:#f5f3ff;border-bottom:1px solid #e2e8f0;padding:14px 18px;display:flex;align-items:center;gap:12px}
-.sms-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+/* SMS MOCKUP */
+.sms-header{background:linear-gradient(135deg,#f5f3ff,#fdf4ff);border-bottom:1px solid #e2e8f0;padding:16px 20px;display:flex;align-items:center;gap:12px}
+.sms-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .sms-info-name{font-size:13px;font-weight:700;color:#0f172a}
-.sms-info-sub{font-size:11px;color:#7c3aed}
-.sms-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px;min-height:260px}
-.sms-row{display:flex;flex-direction:column;gap:3px}
-.sms-time{font-size:10px;color:#94a3b8;align-self:flex-end}
-.sms-bubble{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px 12px 2px 12px;padding:10px 14px;font-size:13px;color:#374151;max-width:86%;align-self:flex-end;line-height:1.5}
-.sms-bubble.reply{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px;align-self:flex-start}
-.sms-footer{padding:12px 18px;border-top:1px solid #f1f5f9;display:flex;align-items:center;gap:6px}
-.auto-badge{display:inline-flex;align-items:center;gap:5px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:20px;padding:5px 12px;font-size:11px;color:#7c3aed;font-weight:600}
-.auto-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#7c3aed;flex-shrink:0}
+.sms-info-sub{font-size:11px;color:#7c3aed;margin-top:2px}
+.sms-body{padding:18px 20px;display:flex;flex-direction:column;gap:16px;min-height:280px;background:#fff}
+.sms-row{display:flex;flex-direction:column;gap:4px}
+.sms-time{font-size:10px;color:#cbd5e1;align-self:flex-end;letter-spacing:.02em}
+.sms-bubble{background:linear-gradient(135deg,#7c3aed,#8b5cf6);color:#fff;border-radius:14px 14px 2px 14px;padding:11px 14px;font-size:13px;max-width:88%;align-self:flex-end;line-height:1.55}
+.sms-bubble.reply{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px 14px 14px 2px;align-self:flex-start;color:#374151}
+.sms-footer{padding:12px 20px;border-top:1px solid #f1f5f9;background:#fafafa}
+.auto-badge{display:inline-flex;align-items:center;gap:6px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:20px;padding:6px 14px;font-size:11px;color:#7c3aed;font-weight:600}
+.auto-dot{width:6px;height:6px;border-radius:50%;background:#7c3aed;flex-shrink:0}
 
-/* STAT STRIP */
-.stat-strip{background:#f8fafc;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;padding:40px 24px}
-.stat-grid{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;text-align:center}
-.stat-num{font-size:36px;font-weight:800;color:#0f172a;line-height:1}
-.stat-num span{background:linear-gradient(135deg,#2563eb,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.stat-label{font-size:13px;color:#64748b;margin-top:6px;line-height:1.4}
-
-/* SETUP STEPS */
-.setup{max-width:860px;margin:0 auto;padding:72px 24px}
-.setup h2{font-size:28px;font-weight:800;text-align:center;margin-bottom:8px;color:#0f172a}
-.setup .sub{text-align:center;color:#64748b;font-size:15px;margin-bottom:48px}
-.setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
-.setup-step{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:28px;text-align:center}
-.setup-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px}
-.setup-icon.blue{background:#eff6ff;border:1px solid #bfdbfe}
-.setup-icon.purple{background:#f5f3ff;border:1px solid #ddd6fe}
-.setup-icon.green{background:#f0fdf4;border:1px solid #bbf7d0}
-.setup-step h3{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:8px}
-.setup-step p{font-size:13px;color:#64748b;line-height:1.6}
-.step-tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:8px}
+/* SETUP */
+.setup{background:linear-gradient(180deg,#fafbff 0%,#fff 100%);padding:80px 24px;border-top:1px solid #f1f5f9}
+.setup-inner{max-width:900px;margin:0 auto}
+.section-label{text-align:center;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8;margin-bottom:14px}
+.setup h2{font-size:clamp(24px,3vw,34px);font-weight:800;text-align:center;margin-bottom:10px;color:#0f172a}
+.setup .sub{text-align:center;color:#64748b;font-size:15px;margin-bottom:52px;line-height:1.65}
+.setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:2px;background:#e2e8f0;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden}
+.setup-step{background:#fff;padding:32px 28px}
+.setup-num{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin-bottom:16px}
+.setup-icon{font-size:28px;margin-bottom:14px}
+.setup-step h3{font-size:16px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.setup-step p{font-size:13px;color:#64748b;line-height:1.65}
 
 /* CTA */
-.cta-section{padding:72px 24px;text-align:center;background:#fff}
-.cta-box{max-width:600px;margin:0 auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:52px 40px;position:relative;overflow:hidden}
-.cta-box::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(37,99,235,.04) 0%,transparent 60%);pointer-events:none}
-.cta-box h2{font-size:26px;font-weight:800;margin-bottom:10px;color:#0f172a;position:relative}
-.cta-box p{color:#64748b;font-size:15px;margin-bottom:28px;position:relative;line-height:1.65}
-.btn-primary{display:inline-block;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:14px 36px;border-radius:10px;font-weight:700;font-size:15px;transition:all .2s;box-shadow:0 4px 16px rgba(37,99,235,.25);position:relative}
-.btn-primary:hover{box-shadow:0 6px 24px rgba(37,99,235,.35);text-decoration:none;transform:translateY(-2px)}
-.cta-note{font-size:12px;color:#94a3b8;margin-top:14px;position:relative}
+.cta-section{padding:80px 24px;text-align:center}
+.cta-box{max-width:580px;margin:0 auto;background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:22px;padding:56px 44px;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;top:-60px;left:50%;width:400px;height:400px;transform:translateX(-50%);background:radial-gradient(circle,rgba(99,102,241,.2) 0%,transparent 70%);pointer-events:none}
+.cta-box h2{font-size:26px;font-weight:800;margin-bottom:12px;color:#fff;position:relative}
+.cta-box p{color:#94a3b8;font-size:15px;margin-bottom:30px;position:relative;line-height:1.7}
+.btn-primary{display:inline-block;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;padding:15px 40px;border-radius:12px;font-weight:700;font-size:15px;transition:all .2s;box-shadow:0 4px 20px rgba(79,70,229,.35);position:relative}
+.btn-primary:hover{box-shadow:0 8px 28px rgba(79,70,229,.5);text-decoration:none;transform:translateY(-2px)}
+.cta-note{font-size:12px;color:#475569;margin-top:14px;position:relative}
 
 .footer{text-align:center;padding:32px 24px;color:#94a3b8;font-size:13px;border-top:1px solid #f1f5f9}
 .footer a{color:#64748b}
 
-@media(max-width:700px){
-  .feature-inner{grid-template-columns:1fr;gap:36px}
-  .feature-inner.reverse{direction:ltr}
+@media(max-width:720px){
+  .feature-inner,.feature-inner.reverse{grid-template-columns:1fr;gap:40px;direction:ltr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
   .nav{padding:0 20px}
-  .nav-links .nav-cta{display:none}
+  .nav-links a:not(.nav-cta){display:none}
+  .cta-box{padding:40px 24px}
 }
 </style>
 </head>
@@ -150,33 +157,45 @@ a:hover{text-decoration:underline}
 
 <!-- HERO -->
 <section class="hero">
-  <div class="badge">For Businesses With a Website</div>
-  <h1>Two Tools That Put Your Business <span>On Autopilot</span></h1>
-  <p>An AI chatbot that answers customer questions 24/7 on your existing site, and an automated follow-up system that wins back customers without you lifting a finger — both set up free.</p>
-  <div class="hero-note">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 12 5 5L20 7"/></svg>
-    Works on any existing website &nbsp;·&nbsp; No rebuild needed &nbsp;·&nbsp; Free to set up
+  <div class="hero-inner">
+    <div class="badge">For Businesses With a Website</div>
+    <h1>Two Tools That Put Your Business <span>On Autopilot</span></h1>
+    <p>An AI chatbot that answers customer questions 24/7 on your existing site, and an automated follow-up system that wins back customers without you lifting a finger. Both set up completely free.</p>
+    <div class="hero-pills">
+      <div class="pill">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 12 5 5L20 7"/></svg>
+        Works on any existing website
+      </div>
+      <div class="pill">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 12 5 5L20 7"/></svg>
+        No rebuild needed
+      </div>
+      <div class="pill">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 12 5 5L20 7"/></svg>
+        Free to set up
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- STAT STRIP -->
-<div class="stat-strip">
-  <div class="stat-grid">
-    <div>
-      <div class="stat-num"><span>67%</span></div>
+<!-- STATS -->
+<div class="stats">
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="stat-num">67%</div>
       <div class="stat-label">of customers leave a website if they can't get an answer fast</div>
     </div>
-    <div>
-      <div class="stat-num"><span>60%</span></div>
+    <div class="stat">
+      <div class="stat-num">60%</div>
       <div class="stat-label">of customers never return simply because nobody followed up</div>
     </div>
-    <div>
-      <div class="stat-num"><span>5×</span></div>
+    <div class="stat">
+      <div class="stat-num">5x</div>
       <div class="stat-label">easier to win back an existing customer than find a new one</div>
     </div>
-    <div>
-      <div class="stat-num"><span>2am</span></div>
-      <div class="stat-label">when most after-hours questions arrive — and go unanswered</div>
+    <div class="stat">
+      <div class="stat-num">2am</div>
+      <div class="stat-label">when most after-hours questions arrive and go unanswered</div>
     </div>
   </div>
 </div>
@@ -185,42 +204,42 @@ a:hover{text-decoration:underline}
 <section class="feature">
   <div class="feature-inner">
     <div class="feature-content">
-      <div class="feature-label label-blue">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        Feature 1 — AI Chatbot
+      <div class="feature-tag tag-blue">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Feature 1: AI Chatbot
       </div>
-      <h2>Answer Every Customer Question — Even at 2am</h2>
+      <h2>Answer Every Customer Question, Even at 2am</h2>
       <p class="hook">A smart chat widget added to your existing website. It knows everything about your business because <strong>you train it yourself</strong> — your hours, services, prices, and FAQs. When a customer asks, it answers instantly. You get notified every time.</p>
 
       <div class="how-steps">
         <div class="step">
-          <div class="step-num">1</div>
+          <div class="step-num blue">1</div>
           <div class="step-text">
             <strong>You tell it about your business</strong>
             <p>We set up a simple form where you enter your hours, services, prices, and any questions customers typically ask. You decide exactly how it responds.</p>
           </div>
         </div>
         <div class="step">
-          <div class="step-num">2</div>
+          <div class="step-num blue">2</div>
           <div class="step-text">
             <strong>We add it to your existing website</strong>
-            <p>One small code snippet — that's it. No redesign, no rebuild, no tech skills needed on your end. Works on any website platform.</p>
+            <p>One small code snippet. No redesign, no rebuild, no tech skills needed on your end. Works on any website platform.</p>
           </div>
         </div>
         <div class="step">
-          <div class="step-num">3</div>
+          <div class="step-num blue">3</div>
           <div class="step-text">
-            <strong>It works around the clock — you stay in control</strong>
+            <strong>It works around the clock and you stay in control</strong>
             <p>Customers get instant answers day or night. Every time someone asks a question, you get a notification so you always know what's on customers' minds.</p>
           </div>
         </div>
       </div>
 
       <ul class="impact-list check-blue">
-        <li><strong>Never lose a lead after hours</strong> — most customers browse at night and leave if they can't get answers</li>
-        <li><strong>Handles the repetitive stuff</strong> — hours, pricing, parking, directions, service questions answered instantly</li>
-        <li><strong>Captures contact info automatically</strong> — the chatbot collects names and numbers so you can follow up</li>
-        <li><strong>You stay in control</strong> — update the answers anytime, and get notified whenever someone asks something new</li>
+        <li><span class="check">✓</span><div><strong>Never lose a lead after hours.</strong> Most customers browse at night and leave if they can't get answers.</div></li>
+        <li><span class="check">✓</span><div><strong>Handles all the repetitive questions.</strong> Hours, pricing, parking, directions answered instantly, every time.</div></li>
+        <li><span class="check">✓</span><div><strong>Captures contact info automatically.</strong> The chatbot collects names and numbers so you can follow up.</div></li>
+        <li><span class="check">✓</span><div><strong>You stay in control.</strong> Update the answers anytime and get notified whenever someone asks something new.</div></li>
       </ul>
     </div>
 
@@ -230,13 +249,13 @@ a:hover{text-decoration:underline}
           <div class="chat-avatar">AI</div>
           <div>
             <div class="chat-info-name">Your Business Assistant</div>
-            <div class="chat-info-status">Online now &mdash; replies instantly</div>
+            <div class="chat-info-status"><span class="status-dot"></span>Online now, replies instantly</div>
           </div>
         </div>
         <div class="chat-body">
           <div class="msg-row">
-            <div class="msg-time right">Customer &mdash; 11:42 PM</div>
-            <div class="bubble bubble-user">Do you have availability this Saturday? And how much is a full detail?</div>
+            <div class="msg-time right">Customer, 11:42 PM</div>
+            <div class="bubble bubble-user">Do you have availability this Saturday? How much is a full detail?</div>
           </div>
           <div class="msg-row">
             <div class="msg-time">AI trained on your business</div>
@@ -247,7 +266,7 @@ a:hover{text-decoration:underline}
             <div class="bubble bubble-user">Yes please, the 11am slot for an SUV.</div>
           </div>
           <div class="msg-row">
-            <div class="msg-time">AI captures lead for you</div>
+            <div class="msg-time">AI captures the lead for you</div>
             <div class="bubble bubble-bot">Got it! What's your name and best number? I'll have the team confirm your 11am Saturday appointment.</div>
           </div>
         </div>
@@ -258,22 +277,22 @@ a:hover{text-decoration:underline}
       </div>
       <div class="notif-badge">
         <div class="notif-dot"></div>
-        New lead captured — Saturday 11am
+        New lead captured: Saturday 11am
       </div>
     </div>
   </div>
 </section>
 
 <!-- FEATURE 2: FOLLOW-UP -->
-<section class="feature">
+<section class="feature alt">
   <div class="feature-inner reverse">
     <div class="feature-content">
-      <div class="feature-label label-purple">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Feature 2 — Automated Follow-Up
+      <div class="feature-tag tag-purple">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Feature 2: Automated Follow-Up
       </div>
-      <h2>Win Back Customers Who Never Returned</h2>
-      <p class="hook">After every visit, your system automatically reaches out to customers at exactly the right moment. No scheduling. No writing. No manual work on your end — <strong>the system does everything by itself.</strong></p>
+      <h2>Win Back Customers Who Never Came Back</h2>
+      <p class="hook">After every visit, your system automatically reaches out to customers at exactly the right moment. No scheduling. No writing. No manual work on your end. <strong>The system does everything by itself.</strong></p>
 
       <div class="how-steps">
         <div class="step">
@@ -287,23 +306,23 @@ a:hover{text-decoration:underline}
           <div class="step-num purple">2</div>
           <div class="step-text">
             <strong>The system decides when to reach out</strong>
-            <p>Based on your business type, it knows the right timing — 2 days after a haircut, 3 months after a car service, before a customer's birthday. You don't set any of this.</p>
+            <p>Based on your business type, it knows the right timing. 2 days after a haircut, 3 months after a car service, before a customer's birthday. You don't set any of this.</p>
           </div>
         </div>
         <div class="step">
           <div class="step-num purple">3</div>
           <div class="step-text">
             <strong>Messages go out automatically</strong>
-            <p>Personalized texts or emails are sent without you touching anything. Rebooking reminders, seasonal offers, check-ins — all handled. You just see the rebookings roll in.</p>
+            <p>Personalized texts or emails are sent without you touching anything. Rebooking reminders, seasonal offers, check-ins. All handled. You just see the rebookings come in.</p>
           </div>
         </div>
       </div>
 
       <ul class="impact-list check-purple">
-        <li><strong>Zero manual work</strong> — you never write a message, pick a send date, or decide who to contact</li>
-        <li><strong>Wins back lost revenue</strong> — 60% of customers don't return simply because nobody reached out</li>
-        <li><strong>Tailored to your industry</strong> — different timing and messages for salons, dental, auto, restaurants, and more</li>
-        <li><strong>Runs in the background forever</strong> — set it up once and it keeps working while you focus on your business</li>
+        <li><span class="check">✓</span><div><strong>Zero manual work.</strong> You never write a message, pick a send date, or decide who to contact.</div></li>
+        <li><span class="check">✓</span><div><strong>Wins back lost revenue.</strong> 60% of customers don't return simply because nobody reached out.</div></li>
+        <li><span class="check">✓</span><div><strong>Tailored to your industry.</strong> Different timing and messages for salons, dental, auto, restaurants, and more.</div></li>
+        <li><span class="check">✓</span><div><strong>Runs in the background forever.</strong> Set it up once and it keeps working while you focus on your business.</div></li>
       </ul>
     </div>
 
@@ -313,57 +332,60 @@ a:hover{text-decoration:underline}
           <div class="sms-avatar">💬</div>
           <div>
             <div class="sms-info-name">Automated Follow-Up System</div>
-            <div class="sms-info-sub">Sends automatically — you do nothing</div>
+            <div class="sms-info-sub">Sends automatically, no action needed from you</div>
           </div>
         </div>
         <div class="sms-body">
           <div class="sms-row">
-            <div class="sms-time">2 days after visit — sent automatically</div>
-            <div class="sms-bubble">Hey Sarah! Thanks for coming in on Wednesday. Hope you're loving your new look! When you're ready to rebook, we've got open slots next week. Just reply here or tap below. 😊</div>
+            <div class="sms-time">2 days after visit, sent automatically</div>
+            <div class="sms-bubble">Hey Sarah! Thanks for coming in on Wednesday. Hope you're loving your new look! When you're ready to rebook, we've got open slots next week. Just reply here. 😊</div>
           </div>
           <div class="sms-row">
             <div class="sms-time" style="align-self:flex-start">Sarah replies</div>
             <div class="sms-bubble reply">I actually want to book for next Saturday! Do you have 10am?</div>
           </div>
           <div class="sms-row">
-            <div class="sms-time">6 weeks later — sent automatically</div>
-            <div class="sms-bubble">Hi Sarah, it's been about 6 weeks since your last visit — your color is probably due for a refresh! We have a few openings this week if you'd like to get in before the weekend. 🎨</div>
+            <div class="sms-time">6 weeks later, sent automatically</div>
+            <div class="sms-bubble">Hi Sarah, it's been about 6 weeks since your last visit. Your color is probably due for a refresh! We have a few openings this week if you'd like to get in. 🎨</div>
           </div>
           <div class="sms-row">
-            <div class="sms-time">On her birthday — sent automatically</div>
-            <div class="sms-bubble">Happy Birthday Sarah! 🎂 As a little gift from us — 15% off your next service this week. You deserve it!</div>
+            <div class="sms-time">On her birthday, sent automatically</div>
+            <div class="sms-bubble">Happy Birthday Sarah! 🎂 A little gift from us: 15% off your next service this week. You deserve it!</div>
           </div>
         </div>
         <div class="sms-footer">
-          <div class="auto-badge">Fully automatic — no action needed from you</div>
+          <div class="auto-badge"><span class="auto-dot"></span>Fully automatic, no action needed from you</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- HOW SETUP WORKS -->
+<!-- SETUP -->
 <section class="setup">
-  <h2>How We Set It Up — For Free</h2>
-  <p class="sub">Three steps. We do the heavy lifting. You get the results.</p>
-  <div class="setup-grid">
-    <div class="setup-step">
-      <div class="step-tag">Step 1</div>
-      <div class="setup-icon blue">📋</div>
-      <h3>We Learn Your Business</h3>
-      <p>Quick 5-minute call where you walk us through your services, hours, and how you like to talk to customers. That's all we need.</p>
-    </div>
-    <div class="setup-step">
-      <div class="step-tag">Step 2</div>
-      <div class="setup-icon purple">⚙️</div>
-      <h3>We Build and Train Both Tools</h3>
-      <p>We configure the chatbot with your specific information and set up the follow-up sequences tailored to your business type. Usually done within 48 hours.</p>
-    </div>
-    <div class="setup-step">
-      <div class="step-tag">Step 3</div>
-      <div class="setup-icon green">🚀</div>
-      <h3>You Review and We Go Live</h3>
-      <p>We walk you through everything on a short call. You approve it, we add it to your site, and both tools start working immediately.</p>
+  <div class="setup-inner">
+    <div class="section-label">Getting Started</div>
+    <h2>How We Set It Up, For Free</h2>
+    <p class="sub">Three steps. We do the heavy lifting. You get the results.</p>
+    <div class="setup-grid">
+      <div class="setup-step">
+        <div class="setup-num">Step 01</div>
+        <div class="setup-icon">📋</div>
+        <h3>We Learn Your Business</h3>
+        <p>Quick 5-minute call where you walk us through your services, hours, and how you like to talk to customers. That's all we need.</p>
+      </div>
+      <div class="setup-step">
+        <div class="setup-num">Step 02</div>
+        <div class="setup-icon">⚙️</div>
+        <h3>We Build and Train Both Tools</h3>
+        <p>We configure the chatbot with your specific information and set up follow-up sequences tailored to your business type. Usually done within 48 hours.</p>
+      </div>
+      <div class="setup-step">
+        <div class="setup-num">Step 03</div>
+        <div class="setup-icon">🚀</div>
+        <h3>You Review and We Go Live</h3>
+        <p>We walk you through everything on a short call. You approve it, we add it to your site, and both tools start working immediately.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -371,8 +393,8 @@ a:hover{text-decoration:underline}
 <!-- CTA -->
 <section class="cta-section">
   <div class="cta-box">
-    <h2>Ready to See It On Your Business?</h2>
-    <p>Reply to the email you received and we'll set up a free 5-minute call — no pitch, no pressure. We'll show you exactly what both tools would look like on your website.</p>
+    <h2>Ready to See It on Your Business?</h2>
+    <p>Reply to the email you received and we'll set up a free 5-minute call. No pitch, no pressure. We'll show you exactly what both tools would look like on your site.</p>
     <a href="mailto:leif@forgeaiagent.com" class="btn-primary">Reply to Leif</a>
     <p class="cta-note">leif@forgeaiagent.com &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free setup &nbsp;·&nbsp; No commitment</p>
   </div>
