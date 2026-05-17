@@ -1,19 +1,62 @@
 const path = require('path');
 const fs = require('fs');
 const { randomUUID } = require('crypto');
-// Persistent data directory — set DATA_DIR env var on Railway to your volume mount path (e.g. /data)
+// Persistent data directory, set DATA_DIR env var on Railway to your volume mount path (e.g. /data)
 const DATA_ROOT = process.env.DATA_DIR || __dirname;
 const leadsEnv = path.join(DATA_ROOT, 'leads', '.env');
 const localEnv = path.join(__dirname, '.env');
 require('dotenv').config({ path: fs.existsSync(leadsEnv) ? leadsEnv : localEnv });
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const session = require('express-session');
 
 const { runScout }              = require('./agents/scout');
 const { buildDemoSite }         = require('./agents/builder');
 const { deployDemoSite: cfDeploy, isConfigured: cfConfigured } = require('./agents/cloudflare');
-const { sendOutreach, generateEmailPreview, generateFollowUpEmail, getSendStats } = require('./agents/outreach');
+const { sendOutreach, generateEmailPreview, generateFollowUpEmail, hasValidDemoUrl } = require('./agents/outreach');
+
+// Daily send counter (resets every 24h). Lives here because it used to be
+// in agents/outreach.js and was accidentally dropped; restoring it as a
+// local helper so /api/settings and /api/send-stats never throw.
+const RESEND_DAILY_LIMIT = 100;
+const BREVO_DAILY_LIMIT = 300;
+const RESET_INTERVAL_MS = 24 * 60 * 60 * 1000;
+function _counterFile() {
+  return path.join(DATA_ROOT, 'leads', '.send-counter.json');
+}
+function loadCounter() {
+  try {
+    const d = JSON.parse(fs.readFileSync(_counterFile(), 'utf8'));
+    const now = Date.now();
+    if (d.startedAt && (now - d.startedAt) < RESET_INTERVAL_MS) {
+      return { startedAt: d.startedAt, resend: d.resend||0, brevo: d.brevo||0, smtp: d.smtp||0 };
+    }
+  } catch {}
+  return { startedAt: Date.now(), resend: 0, brevo: 0, smtp: 0 };
+}
+function saveCounter(c) {
+  try { fs.writeFileSync(_counterFile(), JSON.stringify(c)); } catch {}
+}
+function getSendStats() {
+  const c = loadCounter();
+  const remainingMs = Math.max(0, RESET_INTERVAL_MS - (Date.now() - c.startedAt));
+  const h = Math.floor(remainingMs / 3600000);
+  const m = Math.floor((remainingMs % 3600000) / 60000);
+  return {
+    resend: c.resend,
+    resendLimit: RESEND_DAILY_LIMIT,
+    resendRemaining: Math.max(0, RESEND_DAILY_LIMIT - c.resend),
+    brevo: c.brevo,
+    brevoLimit: BREVO_DAILY_LIMIT,
+    brevoRemaining: Math.max(0, BREVO_DAILY_LIMIT - c.brevo),
+    smtp: c.smtp,
+    total: c.resend + c.brevo + c.smtp,
+    usingBrevo: c.resend >= RESEND_DAILY_LIMIT,
+    resetsIn: `${h}h ${m}m`,
+    resetsAtMs: c.startedAt + RESET_INTERVAL_MS
+  };
+}
 const { handleReply }           = require('./agents/closer');
 const { findEmail, hunterSearch, checkCredits } = require('./agents/emailfinder');
 const { findSocialMedia }       = require('./agents/socialfinder');
@@ -23,6 +66,13 @@ const PORT = process.env.PORT || 3000;
 const getBase = () => process.env.PUBLIC_URL || `http://localhost:${PORT}`;
 
 app.use(cors());
+// Gzip responses. Skip SSE stream so progress events flush immediately.
+app.use(compression({
+  filter: (req, res) => {
+    if (req.path.startsWith('/api/stream/')) return false;
+    return compression.filter(req, res);
+  }
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
@@ -44,7 +94,7 @@ app.get('/login', (req, res) => {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>AgentForge — Login</title>
+<title>AgentForge, Login</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23060810'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial Black,sans-serif' font-weight='900' font-size='13' fill='%2300e5ff'>AF</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -130,7 +180,7 @@ fs.mkdirSync(DATA,{recursive:true});
     console.log(`[migrate] Moving ${oldPath} → ${newPath}`);
     fs.renameSync(oldPath, newPath);
   } else if (fs.existsSync(oldPath) && fs.existsSync(newPath)) {
-    // Both exist — keep the larger file (more data)
+    // Both exist, keep the larger file (more data)
     const oldSize = fs.statSync(oldPath).size;
     const newSize = fs.statSync(newPath).size;
     if (oldSize > newSize) {
@@ -152,6 +202,28 @@ const save = (f,d) => {
   fs.writeFileSync(tmp, JSON.stringify(d,null,2));
   fs.renameSync(tmp, f);
 };
+// Coalesce frequent writes (tracking pixel, click redirects), one disk write per ~2s per file.
+const _saveTimers = new Map();
+const saveDebounced = (f, d, ms = 2000) => {
+  const existing = _saveTimers.get(f);
+  if (existing) clearTimeout(existing);
+  _saveTimers.set(f, setTimeout(() => {
+    _saveTimers.delete(f);
+    try { save(f, d); } catch (e) { console.error('[saveDebounced]', f, e.message); }
+  }, ms));
+};
+// Flush pending writes on shutdown so nothing is lost.
+const _flushPending = () => {
+  for (const [f, t] of _saveTimers) {
+    clearTimeout(t);
+    _saveTimers.delete(f);
+    try {
+      if (f === TF) save(f, tracking);
+    } catch (e) { console.error('[flush]', e.message); }
+  }
+};
+process.on('SIGINT', () => { _flushPending(); process.exit(0); });
+process.on('SIGTERM', () => { _flushPending(); process.exit(0); });
 let leads = load(LF), outreach = load(OF), replies = load(RF);
 let sequences = load(SEQ_F), scheduled = load(SCH_F), tracking = load(TF);
 
@@ -212,12 +284,12 @@ function isValidEmail(email) {
   return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email);
 }
 
-// ── TRACKING ROUTES (before auth — email clients need access) ────────────
+// ── TRACKING ROUTES (before auth, email clients need access) ────────────
 const PIXEL_BUF = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
 
 app.get('/t/:trackingId.png', (req, res) => {
   const rec = tracking.find(t => t.trackingId === req.params.trackingId);
-  if (rec) { rec.opens.push({ at: new Date().toISOString() }); save(TF, tracking); }
+  if (rec) { rec.opens.push({ at: new Date().toISOString() }); saveDebounced(TF, tracking); }
   res.set('Content-Type', 'image/png');
   res.set('Cache-Control', 'no-store, no-cache');
   res.send(PIXEL_BUF);
@@ -225,7 +297,7 @@ app.get('/t/:trackingId.png', (req, res) => {
 
 app.get('/c/:trackingId', (req, res) => {
   const rec = tracking.find(t => t.trackingId === req.params.trackingId);
-  if (rec) { rec.clicks.push({ at: new Date().toISOString() }); save(TF, tracking); }
+  if (rec) { rec.clicks.push({ at: new Date().toISOString() }); saveDebounced(TF, tracking); }
   res.redirect(rec?.targetUrl || '/');
 });
 
@@ -247,6 +319,92 @@ app.get('/blog/:slug', (req, res) => {
   res.status(404).send('Not found');
 });
 
+// Landing-page contact form (public, no auth).
+const CF = path.join(DATA,'contacts.json');
+let contacts = load(CF);
+
+// In-memory rate limiter: max 5 submissions per IP per minute.
+const _contactHits = new Map();
+function contactRateLimited(ip) {
+  const now = Date.now();
+  const windowMs = 60_000;
+  const max = 5;
+  const hits = (_contactHits.get(ip) || []).filter(t => now - t < windowMs);
+  hits.push(now);
+  _contactHits.set(ip, hits);
+  // Opportunistic cleanup so the map doesn't grow forever.
+  if (_contactHits.size > 1000) {
+    for (const [k, v] of _contactHits) {
+      if (!v.length || now - v[v.length - 1] > windowMs) _contactHits.delete(k);
+    }
+  }
+  return hits.length > max;
+}
+
+async function sendContactNotification(record) {
+  const { RESEND_API_KEY, RESEND_FROM } = process.env;
+  const notifyTo = process.env.CONTACT_NOTIFY_EMAIL || 'leif@forgeaiagent.com';
+  if (!RESEND_API_KEY || !RESEND_FROM) return;
+  try {
+    const { Resend } = require('resend');
+    const resend = new Resend(RESEND_API_KEY);
+    const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    await resend.emails.send({
+      from: `Forge AI Leads <${RESEND_FROM}>`,
+      to: notifyTo,
+      replyTo: record.email,
+      subject: `New lead: ${record.business || record.name}`,
+      text: `Name: ${record.name}\nBusiness: ${record.business}\nType: ${record.type}\nEmail: ${record.email}\nSubmitted: ${record.submittedAt}\nIP: ${record.ip}`,
+      html: `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;max-width:560px;margin:0 auto">
+          <div style="background:#0f172a;padding:20px 24px;border-radius:10px 10px 0 0">
+            <span style="font-size:16px;font-weight:700;color:#fff;letter-spacing:.04em">FORGE <span style="color:#60a5fa">AI</span></span>
+            <span style="margin-left:10px;font-size:11px;color:#94a3b8">NEW LEAD</span>
+          </div>
+          <div style="background:#fff;padding:28px 24px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px">
+            <h2 style="margin:0 0 18px;font-size:18px;color:#0f172a">${esc(record.business || record.name)}</h2>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;color:#334155">
+              <tr><td style="padding:6px 0;color:#64748b;width:120px">Contact</td><td style="padding:6px 0"><strong>${esc(record.name)}</strong></td></tr>
+              <tr><td style="padding:6px 0;color:#64748b">Business</td><td style="padding:6px 0">${esc(record.business) || '<em>not provided</em>'}</td></tr>
+              <tr><td style="padding:6px 0;color:#64748b">Type</td><td style="padding:6px 0">${esc(record.type) || '<em>not provided</em>'}</td></tr>
+              <tr><td style="padding:6px 0;color:#64748b">Email</td><td style="padding:6px 0"><a href="mailto:${esc(record.email)}" style="color:#2563eb;text-decoration:none">${esc(record.email)}</a></td></tr>
+              <tr><td style="padding:6px 0;color:#64748b">Submitted</td><td style="padding:6px 0">${esc(record.submittedAt)}</td></tr>
+            </table>
+            <p style="margin:22px 0 0;font-size:12px;color:#94a3b8">Reply directly to this email to get in touch with the lead.</p>
+          </div>
+        </div>`
+    });
+  } catch (e) {
+    console.error('[contact-notify]', e.message);
+  }
+}
+
+app.post('/api/contact', async (req, res) => {
+  const ip = (req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '').trim();
+  if (contactRateLimited(ip)) return res.status(429).json({ error: 'Too many submissions. Try again in a minute.' });
+  const body = req.body || {};
+  // Honeypot: bots fill every field. If 'website' is non-empty, silently accept and drop.
+  if (body.website) return res.json({ ok: true });
+  const { name, business, type, email } = body;
+  if (!name || !email) return res.status(400).json({ error: 'Name and email required' });
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email format' });
+  const record = {
+    id: randomUUID(),
+    name: String(name).slice(0,200),
+    business: String(business||'').slice(0,200),
+    type: String(type||'').slice(0,200),
+    email: String(email).slice(0,200),
+    submittedAt: new Date().toISOString(),
+    ip
+  };
+  contacts.push(record);
+  save(CF, contacts);
+  console.log(`[contact] ${record.name} | ${record.business} | ${record.type} | ${record.email}`);
+  res.json({ ok: true });
+  // Fire-and-forget notification so the response isn't blocked on SMTP.
+  sendContactNotification(record);
+});
+
 // ── LANDING PAGE (public, SEO-crawlable homepage for non-authed visitors) ─
 app.get('/', (req, res, next) => {
   if (req.session.auth) return next();
@@ -260,16 +418,26 @@ app.use((req, res, next) => {
   res.redirect('/login');
 });
 app.use(express.static(path.join(__dirname,'public'), {
+  etag: true,
+  lastModified: true,
   setHeaders: (res, p) => {
     if (p.endsWith('.html')) {
       res.setHeader('Cache-Control','no-cache, no-store, must-revalidate');
       res.setHeader('Pragma','no-cache');
+    } else if (/\.(?:js|css|woff2?|ttf|otf|svg|png|jpg|jpeg|gif|webp|ico)$/i.test(p)) {
+      // Static assets, allow the browser to revalidate cheaply via ETag.
+      res.setHeader('Cache-Control','public, max-age=86400, stale-while-revalidate=604800');
     }
   }
 }));
 const SITES_DIR = path.join(DATA_ROOT,'sites');
 fs.mkdirSync(SITES_DIR,{recursive:true});
-app.use('/sites', express.static(SITES_DIR));
+app.use('/sites', express.static(SITES_DIR, {
+  etag: true,
+  setHeaders: (res, p) => {
+    if (p.endsWith('.html')) res.setHeader('Cache-Control','public, max-age=300');
+  }
+}));
 
 // ── SSE ───────────────────────────────────────────────────────────────────
 const sessions = {};
@@ -359,7 +527,7 @@ app.post('/api/emailfinder/find-batch', async (req,res) => {
     await new Promise(r=>setTimeout(r,600));
   }
   emit(sessionId, { type:'emailfinder_batch_done', found, total:ids.length });
-  emit(sessionId, { type:'emailfinder', status:'complete', message:`🏁 Done — ${found}/${ids.length} emails found` });
+  emit(sessionId, { type:'emailfinder', status:'complete', message:`🏁 Done, ${found}/${ids.length} emails found` });
 });
 
 app.post('/api/emailfinder/hunter', async (req,res) => {
@@ -411,12 +579,12 @@ app.post('/api/builder/build', async (req,res) => {
       try {
         previewUrl = await cfDeploy(lead.name, html, p => emit(sessionId,{ type:'builder',...p }));
       } catch(cfErr) {
-        emit(sessionId, { type:'builder', status:'warn', message:`⚠️  Cloudflare deploy failed: ${cfErr.message} — using local URL` });
+        emit(sessionId, { type:'builder', status:'warn', message:`⚠️  Cloudflare deploy failed: ${cfErr.message}, using local URL` });
       }
     }
     leads[index] = { ...leads[index], siteFile:filename, previewUrl, status:'Site Built' };
     save(LF,leads);
-    emit(sessionId, { type:'builder', status:'done', message:`✅ ${lead.name} — site live! ${previewUrl}` });
+    emit(sessionId, { type:'builder', status:'done', message:`✅ ${lead.name}, site live! ${previewUrl}` });
     emit(sessionId, { type:'builder_done', leadId:id, filename, previewUrl });
   } catch(e) {
     emit(sessionId, { type:'builder', status:'error', message:`❌ Failed: ${e.message}` });
@@ -442,7 +610,7 @@ app.post('/api/builder/build-batch', async (req,res) => {
         try {
           previewUrl = await cfDeploy(lead.name, html, p => emit(sessionId,{ type:'builder',...p }));
         } catch(cfErr) {
-          emit(sessionId, { type:'builder', status:'warn', message:`⚠️  Cloudflare deploy failed: ${cfErr.message} — using local URL` });
+          emit(sessionId, { type:'builder', status:'warn', message:`⚠️  Cloudflare deploy failed: ${cfErr.message}, using local URL` });
         }
       }
       leads[index] = { ...leads[index], siteFile:filename, previewUrl, status:'Site Built' };
@@ -456,7 +624,7 @@ app.post('/api/builder/build-batch', async (req,res) => {
     await new Promise(r=>setTimeout(r,800));
   }
   emit(sessionId, { type:'builder_batch_done', built, total:ids.length });
-  emit(sessionId, { type:'builder', status:'complete', message:`🏁 Done — ${built}/${ids.length} sites built` });
+  emit(sessionId, { type:'builder', status:'complete', message:`🏁 Done, ${built}/${ids.length} sites built` });
 });
 
 // ── OUTREACH ──────────────────────────────────────────────────────────────
@@ -479,6 +647,11 @@ app.post('/api/outreach/send', async (req,res) => {
   if (!isValidEmail(emailAddress)) return res.status(400).json({ error:'Invalid email format' });
   if (!force && outreach.find(o=>o.leadId===id&&o.sentTo===emailAddress))
     return res.status(400).json({ error:'Already sent to this address for this lead.' });
+  // Only no-website leads need a demo URL. Has-website leads pitch a
+  // redesign of the existing site, no CTA button, no demo to build first.
+  const needsDemo = !((outreachType === 'has_website') || (!outreachType && lead.website));
+  if (needsDemo && !hasValidDemoUrl(lead.previewUrl))
+    return res.status(400).json({ error:`No demo site built for ${lead.name}. Build the site first so the email has something to link to.` });
   // Prevent duplicate concurrent sends
   const lockKey = `${id}:${emailAddress}`;
   if (sendingInProgress.has(lockKey))
@@ -487,11 +660,17 @@ app.post('/api/outreach/send', async (req,res) => {
   res.json({ status:'started' });
   emit(sessionId, { type:'outreach', status:'start', message:`📧 Preparing email for ${lead.name}...` });
   try {
-    // No tracking pixel or click redirect on initial outreach — direct URLs only
-    const previewUrl = lead.previewUrl||getBase();
-    const trackingOpts = {};
+    const previewUrl = lead.previewUrl;
+    const trackingId = randomUUID();
+    const trackingOpts = {
+      pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
+      clickUrl: `${getBase()}/c/${trackingId}`
+    };
 
     const result = await sendOutreach(lead, previewUrl, emailAddress, p => emit(sessionId,{ type:'outreach',...p }), subject, body, trackingOpts, outreachType);
+    // Only create tracking record AFTER successful send
+    tracking.push({ trackingId, leadId:id, type:'outreach', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
+    save(TF, tracking);
     outreach.push({ leadId:id, lead:lead.name, ...result });
     save(OF,outreach);
     leads[index].status='Outreach Sent';
@@ -513,10 +692,19 @@ let batchOutreachRunning = false;
 app.post('/api/outreach/batch', async (req,res) => {
   if (batchOutreachRunning) return res.status(409).json({ error:'Batch outreach already in progress' });
   const { ids, sessionId } = req.body;
+  // Has-website leads skip the demo requirement (the pitch is a redesign,
+  // no CTA). No-website leads still need a real .pages.dev demo built.
   const targets = (ids && ids.length ? ids : leads.map(l=>l.id))
     .map(id => findLead(id))
-    .filter(f => f && f.lead.foundEmail && !outreach.find(o=>o.leadId===f.lead.id&&o.sentTo===f.lead.foundEmail));
-  if (!targets.length) return res.status(400).json({ error:'No eligible leads (need email, not already sent)' });
+    .filter(f => {
+      if (!f || !f.lead.foundEmail) return false;
+      const alreadySent = outreach.find(o => o.leadId === f.lead.id && o.sentTo === f.lead.foundEmail);
+      if (alreadySent) return false;
+      const hasWebsite = !!f.lead.website;
+      if (!hasWebsite && !hasValidDemoUrl(f.lead.previewUrl)) return false;
+      return true;
+    });
+  if (!targets.length) return res.status(400).json({ error:'No eligible leads (need email, built demo for no-website leads, not already sent)' });
   batchOutreachRunning = true;
   res.json({ status:'started', count:targets.length });
   emit(sessionId, { type:'outreach_batch', status:'start', message:`🚀 Batch sending to ${targets.length} leads...` });
@@ -538,11 +726,17 @@ app.post('/api/outreach/batch', async (req,res) => {
         failed++;
         continue;
       }
-      // No tracking pixel or click redirect on initial outreach — direct URLs only
-      const previewUrl = lead.previewUrl||getBase();
-      const trackingOpts = {};
+      const previewUrl = lead.previewUrl;
+      const trackingId = randomUUID();
+      const trackingOpts = {
+        pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
+        clickUrl: `${getBase()}/c/${trackingId}`
+      };
       const autoType = lead.website ? 'has_website' : 'no_website';
       const result = await sendOutreach(lead, previewUrl, email, () => {}, null, null, trackingOpts, autoType);
+      // Only create tracking record AFTER successful send
+      tracking.push({ trackingId, leadId:lead.id, type:'outreach', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
+      save(TF, tracking);
       outreach.push({ leadId:lead.id, lead:lead.name, ...result });
       save(OF, outreach);
       leads[index].status='Outreach Sent';
@@ -569,7 +763,7 @@ app.post('/api/outreach/batch', async (req,res) => {
   }
   batchOutreachRunning = false;
   emit(sessionId, { type:'outreach_batch_done', sent, failed, total:targets.length });
-  emit(sessionId, { type:'outreach_batch', status:'complete', message:`🏁 Batch done — ${sent} sent, ${failed} failed` });
+  emit(sessionId, { type:'outreach_batch', status:'complete', message:`🏁 Batch done, ${sent} sent, ${failed} failed` });
 });
 
 // ── BATCH FOLLOW-UP ──────────────────────────────────────────────────────
@@ -595,7 +789,7 @@ app.post('/api/outreach/followup-batch', async (req,res) => {
       const step = Math.min(prevFollowUps + 1, 3);
       const followUp = await generateFollowUpEmail(lead, step, prevOutreach?.subject || 'Your demo website');
       const trackingId = randomUUID();
-      const previewUrl = lead.previewUrl||getBase();
+      const previewUrl = lead.previewUrl;
       const trackingOpts = {
         pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
         clickUrl: `${getBase()}/c/${trackingId}`
@@ -607,6 +801,8 @@ app.post('/api/outreach/followup-batch', async (req,res) => {
       save(TF, tracking);
       outreach.push({ leadId:lead.id, lead:lead.name, type:'followup', ...result });
       save(OF, outreach);
+      leads[index].followupCount = (leads[index].followupCount || 0) + 1;
+      save(LF, leads);
       sent++;
       emit(sessionId, { type:'followup_batch', status:'sent', message:`✅ [${sent}/${targets.length}] Follow-up sent to ${lead.name}` });
     } catch(e) {
@@ -622,7 +818,7 @@ app.post('/api/outreach/followup-batch', async (req,res) => {
     await new Promise(r=>setTimeout(r,delay));
   }
   emit(sessionId, { type:'followup_batch_done', sent, failed, total:targets.length });
-  emit(sessionId, { type:'followup_batch', status:'complete', message:`🏁 Follow-ups done — ${sent} sent, ${failed} failed` });
+  emit(sessionId, { type:'followup_batch', status:'complete', message:`🏁 Follow-ups done, ${sent} sent, ${failed} failed` });
 });
 
 // ── SEND SCHEDULING ───────────────────────────────────────────────────────
@@ -655,11 +851,16 @@ app.post('/api/scheduled/process', async (req,res) => {
     const f = findLead(s.leadId);
     if (!f) { s.status='cancelled'; continue; }
     try {
-      // No tracking on scheduled initial sends — direct URLs only
-      const previewUrl = f.lead.previewUrl||getBase();
-      const trackingOpts = {};
+      const previewUrl = f.lead.previewUrl;
+      const trackingId = randomUUID();
+      const trackingOpts = {
+        pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
+        clickUrl: `${getBase()}/c/${trackingId}`
+      };
       const autoType = f.lead.website ? 'has_website' : 'no_website';
       const result = await sendOutreach(f.lead, previewUrl, s.emailAddress, ()=>{}, s.subject||null, s.body||null, trackingOpts, autoType);
+      // Only create tracking record AFTER successful send
+      tracking.push({ trackingId, leadId:s.leadId, type:'outreach', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
       outreach.push({ leadId:s.leadId, lead:f.lead.name, ...result });
       save(OF, outreach);
       leads[f.index].status='Outreach Sent';
@@ -675,6 +876,7 @@ app.post('/api/scheduled/process', async (req,res) => {
     }
   }
   save(SCH_F, scheduled);
+  save(TF, tracking);
   res.json({ processed:sent });
 });
 
@@ -718,7 +920,7 @@ app.post('/api/sequences/process', async (req,res) => {
   let sent = 0;
   for (const seq of sequences) {
     if (seq.status !== 'active') continue;
-    // Check if lead has replied — auto-cancel
+    // Check if lead has replied, auto-cancel
     const hasReply = replies.find(r => r.leadId === seq.leadId);
     if (hasReply) { seq.status = 'cancelled'; continue; }
     const f = findLead(seq.leadId);
@@ -731,7 +933,7 @@ app.post('/api/sequences/process', async (req,res) => {
         const prevOutreach = outreach.find(o => o.leadId === seq.leadId);
         const followUp = await generateFollowUpEmail(f.lead, step.step, prevOutreach?.subject || 'Your demo website');
         const trackingId = randomUUID();
-        const previewUrl = f.lead.previewUrl||getBase();
+        const previewUrl = f.lead.previewUrl;
         const trackingOpts = {
           pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
           clickUrl: `${getBase()}/c/${trackingId}`
@@ -741,6 +943,8 @@ app.post('/api/sequences/process', async (req,res) => {
         // Only create tracking record AFTER successful send
         tracking.push({ trackingId, leadId:seq.leadId, type:'followup', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:now });
         step.status='sent'; step.sentAt=new Date().toISOString();
+        leads[f.index].followupCount = (leads[f.index].followupCount || 0) + 1;
+        save(LF, leads);
         sent++;
         emit(sessionId, { type:'sequence_sent', leadId:seq.leadId, step:step.step, message:`✅ Follow-up ${step.step}/3 sent to ${f.lead.name}` });
       } catch(e) {
@@ -774,7 +978,7 @@ app.post('/api/closer/handle', async (req,res) => {
     // Auto-cancel any active sequence for this lead
     sequences.forEach(s => { if (s.leadId===id && s.status==='active') s.status='cancelled'; });
     save(SEQ_F, sequences);
-    emit(sessionId, { type:'closer', status:'done', message:`✅ Response ready — ${response.objectionType} (${response.sentiment})` });
+    emit(sessionId, { type:'closer', status:'done', message:`✅ Response ready, ${response.objectionType} (${response.sentiment})` });
     emit(sessionId, { type:'closer_done', leadId:id, response });
   } catch(e) {
     emit(sessionId, { type:'closer', status:'error', message:`❌ Failed: ${e.message}` });
@@ -955,22 +1159,128 @@ app.post('/api/social/find-batch', async (req, res) => {
     await new Promise(r => setTimeout(r, 500));
   }
   emit(sessionId, { type: 'social_batch_done', found, total: ids.length });
-  emit(sessionId, { type: 'social', status: 'complete', message: `🏁 Done — ${found}/${ids.length} leads have social profiles` });
+  emit(sessionId, { type: 'social', status: 'complete', message: `🏁 Done, ${found}/${ids.length} leads have social profiles` });
 });
 
 // ── SETTINGS ─────────────────────────────────────────────────────────────
-app.get('/api/settings', (req,res) => res.json({
-  hasAnthropicKey: !!(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY!=='your_anthropic_key_here'),
-  hasGoogleKey: !!process.env.GOOGLE_PLACES_API_KEY,
-  hasSmtp: !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM),
-  hasBrevo: !!process.env.BREVO_API_KEY,
-  hasSmtpFallback: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
-  sendStats: getSendStats(),
-  hasHunter: !!process.env.HUNTER_API_KEY,
-  hasCloudflare: !!(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN),
-  hasFacebook: !!(process.env.FB_EMAIL && process.env.FB_PASSWORD),
-  resendFrom: process.env.RESEND_FROM||'',
-}));
+// Live connectivity probes. We actually call each service with its env-var
+// key and treat a 2xx as "Connected". Cached for 10 min so repeated Settings
+// page loads don't pile on API calls. Also flips to "Connected" the moment
+// any agent successfully uses the service, so a working agent never shows
+// as "Not Set" in the UI.
+const axios = require('axios');
+const _probe = {
+  ts: 0,
+  data: {},
+  verified: new Set(),
+  TTL: 10 * 60 * 1000
+};
+function markVerified(name) { _probe.verified.add(name); }
+async function probeAnthropic() {
+  const k = process.env.ANTHROPIC_API_KEY;
+  if (!k || k === 'your_anthropic_key_here') return false;
+  try {
+    // Use a tiny prompt-cache-friendly ping; 1 output token, negligible cost.
+    await axios.post('https://api.anthropic.com/v1/messages', {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1,
+      messages: [{ role: 'user', content: 'ping' }]
+    }, {
+      headers: { 'x-api-key': k, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      timeout: 10000, validateStatus: () => true
+    }).then(r => { if (r.status >= 200 && r.status < 300) markVerified('anthropic'); });
+  } catch {}
+  return _probe.verified.has('anthropic');
+}
+async function probeHunter() {
+  const k = process.env.HUNTER_API_KEY;
+  if (!k) return false;
+  try {
+    const r = await axios.get('https://api.hunter.io/v2/account', { params: { api_key: k }, timeout: 8000, validateStatus: () => true });
+    if (r.status === 200) markVerified('hunter');
+  } catch {}
+  return _probe.verified.has('hunter');
+}
+async function probeCloudflare() {
+  const id = process.env.CLOUDFLARE_ACCOUNT_ID, t = process.env.CLOUDFLARE_API_TOKEN;
+  if (!id || !t) return false;
+  try {
+    const r = await axios.get(`https://api.cloudflare.com/client/v4/accounts/${id}`, {
+      headers: { Authorization: `Bearer ${t}` }, timeout: 8000, validateStatus: () => true
+    });
+    if (r.status === 200) markVerified('cloudflare');
+  } catch {}
+  return _probe.verified.has('cloudflare');
+}
+async function probeResend() {
+  const k = process.env.RESEND_API_KEY, from = process.env.RESEND_FROM;
+  if (!k || !from) return false;
+  try {
+    const r = await axios.get('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${k}` }, timeout: 8000, validateStatus: () => true
+    });
+    if (r.status >= 200 && r.status < 300) markVerified('resend');
+  } catch {}
+  return _probe.verified.has('resend');
+}
+async function probeBrevo() {
+  const k = process.env.BREVO_API_KEY;
+  if (!k) return false;
+  try {
+    const r = await axios.get('https://api.brevo.com/v3/account', {
+      headers: { 'api-key': k }, timeout: 8000, validateStatus: () => true
+    });
+    if (r.status === 200) markVerified('brevo');
+  } catch {}
+  return _probe.verified.has('brevo');
+}
+async function probeGoogle() {
+  const k = process.env.GOOGLE_PLACES_API_KEY;
+  if (!k) return false;
+  // Env presence is enough. The Scout agent will surface any quota/auth
+  // errors at run time, and we don't want to burn Places calls just to ping.
+  markVerified('google');
+  return true;
+}
+async function runProbes() {
+  const now = Date.now();
+  if (now - _probe.ts < _probe.TTL && _probe.data && Object.keys(_probe.data).length) return _probe.data;
+  const [anthropic, hunter, cloudflare, resend, brevo, google] = await Promise.all([
+    probeAnthropic(), probeHunter(), probeCloudflare(), probeResend(), probeBrevo(), probeGoogle()
+  ]);
+  // env presence fallback: if no probe could be made (no key at all), keep false.
+  // OR if an agent previously used the service successfully, keep that true.
+  const merge = (probed, name) => probed || _probe.verified.has(name);
+  _probe.data = {
+    anthropic: merge(anthropic, 'anthropic'),
+    hunter: merge(hunter, 'hunter'),
+    cloudflare: merge(cloudflare, 'cloudflare'),
+    resend: merge(resend, 'resend'),
+    brevo: merge(brevo, 'brevo'),
+    google: merge(google, 'google'),
+  };
+  _probe.ts = now;
+  return _probe.data;
+}
+
+app.get('/api/settings', async (req, res) => {
+  let probes = {};
+  try { probes = await runProbes(); } catch {}
+  const or = (name, envOk) => probes[name] || envOk;
+  res.json({
+    hasAnthropicKey: or('anthropic', !!(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'your_anthropic_key_here')),
+    hasGoogleKey:    or('google',    !!process.env.GOOGLE_PLACES_API_KEY),
+    hasSmtp:         or('resend',    !!(process.env.RESEND_API_KEY && process.env.RESEND_FROM)),
+    hasBrevo:        or('brevo',     !!process.env.BREVO_API_KEY),
+    hasSmtpFallback: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+    sendStats: getSendStats(),
+    hasHunter:       or('hunter',    !!process.env.HUNTER_API_KEY),
+    hasCloudflare:   or('cloudflare',!!(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN)),
+    hasFacebook:     !!(process.env.FB_EMAIL && process.env.FB_PASSWORD),
+    resendFrom:      process.env.RESEND_FROM || '',
+    probes
+  });
+});
 
 app.post('/api/settings', (req,res) => {
   const { anthropicKey, resendApiKey, resendFrom, hunterKey, cloudflareAccountId, cloudflareApiToken, fbEmail, fbPassword, brevoApiKey } = req.body;
@@ -1040,12 +1350,12 @@ app.listen(PORT, () => {
   console.log(`  Google Places : ${process.env.GOOGLE_PLACES_API_KEY?'✓ Ready':'✗ Missing'}`);
   console.log(`  Anthropic     : ${process.env.ANTHROPIC_API_KEY&&process.env.ANTHROPIC_API_KEY!=='your_anthropic_key_here'?'✓ Ready':'✗ Add in Settings'}`);
   console.log(`  Hunter.io     : ${process.env.HUNTER_API_KEY?'✓ Ready':'✗ Add in Settings'}`);
-  console.log(`  Resend Email  : ${process.env.RESEND_API_KEY&&process.env.RESEND_FROM?'✓ Ready ('+process.env.RESEND_FROM+') — 100/day':'✗ Add in Settings'}`);
-  console.log(`  Brevo Fallback: ${process.env.BREVO_API_KEY?'✓ Ready — 300/day, kicks in after Resend limit':'✗ Not configured — add via Settings page'}`);
-  console.log(`  SMTP Fallback : ${process.env.SMTP_HOST&&process.env.SMTP_USER?'✓ Ready ('+process.env.SMTP_USER+') — last resort':'✗ Not configured'}`);
-  console.log(`  Cloudflare    : ${process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN?'✓ Ready — sites deploy to pages.dev':'✗ Add in Settings (required for permanent URLs)'}\n`);
+  console.log(`  Resend Email  : ${process.env.RESEND_API_KEY&&process.env.RESEND_FROM?'✓ Ready ('+process.env.RESEND_FROM+'), 100/day':'✗ Add in Settings'}`);
+  console.log(`  Brevo Fallback: ${process.env.BREVO_API_KEY?'✓ Ready, 300/day, kicks in after Resend limit':'✗ Not configured, add via Settings page'}`);
+  console.log(`  SMTP Fallback : ${process.env.SMTP_HOST&&process.env.SMTP_USER?'✓ Ready ('+process.env.SMTP_USER+'), last resort':'✗ Not configured'}`);
+  console.log(`  Cloudflare    : ${process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN?'✓ Ready, sites deploy to pages.dev':'✗ Add in Settings (required for permanent URLs)'}\n`);
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM) {
-    console.log(`  ⚠️  WARNING: Resend not configured — outreach emails will fail!`);
+    console.log(`  ⚠️  WARNING: Resend not configured, outreach emails will fail!`);
     console.log(`     Set RESEND_API_KEY and RESEND_FROM in .env or via Settings.\n`);
   }
 });

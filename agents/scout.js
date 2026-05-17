@@ -42,7 +42,7 @@ async function scoutType({ location, businessType, maxLeads, seenIds, filter }, 
   catch(e) { onProgress({ status:'error', message:`[${businessType}] ${e.message}` }); return []; }
 
   const fresh = raw.filter(p => { if(seenIds.has(p.place_id)) return false; seenIds.add(p.place_id); return true; });
-  onProgress({ status:'found', message:`[${businessType}] ${fresh.length} places — filtering no-website...` });
+  onProgress({ status:'found', message:`[${businessType}] ${fresh.length} places, filtering no-website...` });
 
   const leads = [];
   for (const place of fresh) {
@@ -67,10 +67,10 @@ async function scoutType({ location, businessType, maxLeads, seenIds, filter }, 
       found_at: new Date().toISOString(),
     };
     leads.push(lead);
-    onProgress({ status:'lead_found', message:`✓ ${lead.name} — ${lead.rating}★ (${lead.reviews} reviews)`, lead, leadsFound: leads.length });
+    onProgress({ status:'lead_found', message:`✓ ${lead.name}, ${lead.rating}★ (${lead.reviews} reviews)`, lead, leadsFound: leads.length });
     await new Promise(r=>setTimeout(r,250));
   }
-  onProgress({ status:'type_done', message:`[${businessType}] Complete — ${leads.length} leads` });
+  onProgress({ status:'type_done', message:`[${businessType}] Complete, ${leads.length} leads` });
   return leads;
 }
 
@@ -84,7 +84,7 @@ async function runScout({ location, businessTypes, businessType, maxLeads=20, fi
   const all = results.flat();
   const seen = new Set();
   const unique = all.filter(l => { const k=`${l.name}|${l.address}`.toLowerCase(); if(seen.has(k)) return false; seen.add(k); return true; });
-  onProgress({ status:'complete', message:`✅ Done — ${unique.length} quality leads found`, leads:unique, leadsFound:unique.length });
+  onProgress({ status:'complete', message:`✅ Done, ${unique.length} quality leads found`, leads:unique, leadsFound:unique.length });
   return unique;
 }
 

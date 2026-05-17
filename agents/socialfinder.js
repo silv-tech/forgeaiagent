@@ -126,7 +126,7 @@ async function findSocialMedia(lead, onProgress) {
           if (v && !socials[k]) socials[k] = v;
         });
       } catch(e) {
-        // Silently skip — Google Maps pages often block bots
+        // Silently skip, Google Maps pages often block bots
       }
     }
   }
@@ -141,7 +141,7 @@ async function findSocialMedia(lead, onProgress) {
 
   onProgress({
     status: 'done',
-    message: `🏁 Done — found ${found} social profile${found !== 1 ? 's' : ''} for ${lead.name}`
+    message: `🏁 Done, found ${found} social profile${found !== 1 ? 's' : ''} for ${lead.name}`
   });
 
   return result;

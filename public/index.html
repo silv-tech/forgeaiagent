@@ -8,6 +8,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AgentForge</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23060810'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial Black,sans-serif' font-weight='900' font-size='13' fill='%2300e5ff'>AF</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -371,26 +374,33 @@ tr:hover td{background:rgba(0,229,255,.03)}
 .sframe{width:100%;height:400px;border:1px solid var(--b2);border-radius:7px;background:#fff}
 
 /* ── SETTINGS ── */
-.set-grid{flex:1;overflow-y:auto;padding:20px 20px 40px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-content:start}
-.scard{
-  background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:18px;
-  position:relative;overflow:hidden;
+.set-grid{
+  flex:1;overflow-y:auto;padding:24px 24px 48px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+  gap:18px;align-content:start;
 }
-.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--cyan),var(--violet));opacity:.4}
-.scard-t{font-size:12.5px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--t1)}
-.ss-badge{font-size:9px;padding:2px 8px;border-radius:20px;margin-left:auto;border:1px solid;font-family:var(--mono)}
+.scard{
+  background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:20px 20px 18px;
+  position:relative;
+  display:flex;flex-direction:column;
+  min-height:0;
+}
+.scard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--cyan),var(--violet));opacity:.4;border-radius:10px 10px 0 0}
+.scard-t{font-size:12.5px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--t1);flex-wrap:wrap}
+.ss-badge{font-size:9px;padding:2px 8px;border-radius:20px;margin-left:auto;border:1px solid;font-family:var(--mono);white-space:nowrap}
 .ss-badge.on{border-color:rgba(0,255,136,.4);color:var(--green);background:rgba(0,255,136,.08)}
 .ss-badge.off{border-color:var(--b2);color:var(--t4)}
 .sbtn{
   background:linear-gradient(135deg,var(--cyan),var(--cyan2));
-  color:#060810;border:none;border-radius:7px;padding:8px 18px;
-  font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;
+  color:#060810;border:none;border-radius:7px;padding:10px 20px;
+  font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;
+  margin-top:auto;align-self:flex-start;
   transition:all .2s;box-shadow:0 0 15px rgba(0,229,255,.2);
 }
 .sbtn:hover{box-shadow:0 0 25px rgba(0,229,255,.4);transform:translateY(-1px)}
 .ibox{
   background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:6px;
-  padding:10px 12px;margin:10px 0;font-size:10px;color:var(--t3);line-height:1.75;
+  padding:12px 14px;margin:10px 0 14px;font-size:10.5px;color:var(--t3);line-height:1.75;
 }
 .ibox a{color:var(--cyan);text-decoration:none}
 .ibox a:hover{text-decoration:underline}
@@ -475,7 +485,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
   border-bottom:1px solid rgba(255,77,109,.5);backdrop-filter:blur(8px)">
   <span style="font-size:16px">⚠️</span>
   <span style="font-size:12px;font-weight:700;color:#fff">
-    ANTHROPIC API KEY NOT SET — Builder, Outreach & Closer won't work.
+    ANTHROPIC API KEY NOT SET, Builder, Outreach & Closer won't work.
     Go to <span style="text-decoration:underline;cursor:pointer" onclick="go('settings')">Settings</span> and add your key from
     <a href="https://console.anthropic.com" target="_blank" style="color:#fff;font-weight:800">console.anthropic.com</a>
   </span>
@@ -491,7 +501,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
   border-bottom:1px solid rgba(255,179,0,.5);backdrop-filter:blur(8px)">
   <span style="font-size:16px">📧</span>
   <span style="font-size:12px;font-weight:700;color:#060810">
-    RESEND NOT CONFIGURED — Outreach emails will NOT send.
+    RESEND NOT CONFIGURED, Outreach emails will NOT send.
     Go to <span style="text-decoration:underline;cursor:pointer" onclick="go('settings')">Settings</span> and add your Resend API key + From email.
   </span>
   <button onclick="document.getElementById('resend-warn').style.display='none'"
@@ -604,7 +614,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <div style="padding:8px 18px 14px;display:flex;align-items:center;gap:8px">
       <div style="position:relative;flex:1;display:flex;align-items:center">
         <svg style="position:absolute;left:10px;pointer-events:none;opacity:.35" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="s-search" placeholder="Search leads..." oninput="drawScout()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
+        <input type="text" id="s-search" placeholder="Search leads..." oninput="onSearchScout()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
       </div>
       <button class="ab" onclick="document.getElementById('s-search').value='';drawScout()" style="font-size:10px;white-space:nowrap;opacity:.6">Clear</button>
     </div>
@@ -644,7 +654,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     </div>
     <div class="ss">
       <div class="lbl">Hunter.io Credits <span style="font-weight:400;font-size:8px;color:var(--t3)">(fallback only)</span></div>
-      <div style="font-family:var(--mono);font-size:12px;color:var(--t3);margin-bottom:9px" id="ef-cred">—</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--t3);margin-bottom:9px" id="ef-cred">-</div>
     </div>
     <div class="gap"></div>
   </div>
@@ -704,7 +714,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <div style="padding:8px 18px 14px;display:flex;align-items:center;gap:8px">
       <div style="position:relative;flex:1;display:flex;align-items:center">
         <svg style="position:absolute;left:10px;pointer-events:none;opacity:.35" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="b-search" placeholder="Search businesses..." oninput="drawB()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
+        <input type="text" id="b-search" placeholder="Search businesses..." oninput="onSearchB()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
       </div>
       <button class="ab" onclick="document.getElementById('b-search').value='';drawB()" style="font-size:10px;white-space:nowrap;opacity:.6">Clear</button>
     </div>
@@ -731,7 +741,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="lbl">Send Outreach</div>
       <div class="f"><span>Select Lead</span>
         <div style="position:relative" id="o-lead-wrap">
-          <input type="text" id="o-lead-search" placeholder="Search leads..." autocomplete="off" oninput="filterLeadDrop()" onfocus="openLeadDrop()" style="width:100%;padding:7px 10px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s" onfocusin="this.style.borderColor='var(--cyan)'" onfocusout="setTimeout(()=>{closeLeadDrop()},180)">
+          <input type="text" id="o-lead-search" placeholder="Search leads..." autocomplete="off" oninput="onSearchLeadDrop()" onfocus="openLeadDrop()" style="width:100%;padding:7px 10px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s" onfocusin="this.style.borderColor='var(--cyan)'" onfocusout="setTimeout(()=>{closeLeadDrop()},180)">
           <div id="o-lead-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:var(--s1);border:1px solid rgba(255,255,255,.12);border-top:none;border-radius:0 0 8px 8px;z-index:50"></div>
           <input type="hidden" id="o-lead" value="">
         </div>
@@ -741,13 +751,13 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="f"><span>Recipient Email</span><input type="email" id="o-email" placeholder="owner@business.com"></div>
       <div class="hint" id="o-hint" onclick="useEmail()">💡 Use found email: <span id="o-hint-v"></span></div>
       <div id="o-local-warn" style="display:none;font-size:10px;color:var(--amber);padding:7px 9px;border:1px solid rgba(255,179,0,.25);border-radius:5px;background:rgba(255,179,0,.05);margin-bottom:8px;line-height:1.6">
-        ⚠ This lead's preview URL is on localhost. Go to <strong>Settings → Cloudflare Pages</strong> and add your credentials — then rebuild this site to get a permanent public link.
+        ⚠ This lead's preview URL is on localhost. Go to <strong>Settings → Cloudflare Pages</strong> and add your credentials, then rebuild this site to get a permanent public link.
       </div>
       <div id="o-dup-warn" style="display:none;font-size:10px;color:var(--amber);padding:7px 9px;border:1px solid rgba(255,179,0,.25);border-radius:5px;background:rgba(255,179,0,.05);margin-bottom:8px;line-height:1.6">
         ⚠ Previously contacted <span id="o-dup-email" style="font-weight:700"></span> on <span id="o-dup-date"></span>. You can still send to a different email, or force resend below.
       </div>
       <div id="o-prev-box" style="display:none">
-        <div style="font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:5px">Email Preview — <span style="color:var(--cyan);font-weight:400;text-transform:none">editable before sending</span></div>
+        <div style="font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:5px">Email Preview, <span style="color:var(--cyan);font-weight:400;text-transform:none">editable before sending</span></div>
         <div class="ebox">
           <div class="f" style="margin-bottom:6px"><span>Subject</span><input type="text" id="o-subj" placeholder="Subject line..."></div>
           <div class="f"><span>Body</span><textarea id="o-email-body" style="min-height:420px;resize:vertical;font-size:12px;line-height:1.8" placeholder="Email body..."></textarea></div>
@@ -788,7 +798,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <div style="padding:8px 18px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div style="position:relative;flex:1;min-width:140px;display:flex;align-items:center">
         <svg style="position:absolute;left:10px;pointer-events:none;opacity:.35" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="o-search" placeholder="Search outreach log..." oninput="drawOut()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
+        <input type="text" id="o-search" placeholder="Search outreach log..." oninput="onSearchO()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
       </div>
       <select id="o-date-filter" onchange="drawOut()" style="padding:7px 10px;font-size:11px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;cursor:pointer">
         <option value="">All dates</option>
@@ -812,7 +822,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <div class="ss">
       <div class="lbl">Objection Handler</div>
       <div class="f"><span>Select Lead</span>
-        <select id="c-lead"><option value="">— Select a lead —</option></select>
+        <select id="c-lead"><option value="">Select a lead</option></select>
       </div>
       <div class="f"><span>Their Reply</span><textarea id="c-reply" placeholder="Paste their email reply here..."></textarea></div>
       <button class="btn btn-main" id="c-btn" onclick="doClose()">▶ Generate Response</button>
@@ -907,7 +917,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       </div>
       <div class="f"><span>API Key</span><input type="password" id="set-ant" placeholder="sk-ant-api03-..."></div>
       <div class="ibox">
-        <strong>Cost:</strong> Uses Claude Haiku — cheapest model. ~$0.01/site. 5 full tests ≈ under $0.25 total.
+        <strong>Cost:</strong> Uses Claude Haiku, cheapest model. ~$0.01/site. 5 full tests ≈ under $0.25 total.
       </div>
       <button class="sbtn" onclick="saveSet('anthropic')" style="width:100%">Save API Key →</button>
     </div>
@@ -915,7 +925,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="scard-t">◈ Hunter.io Email Finder <span class="ss-badge off" id="ss-hu">Not Set</span></div>
       <div class="f"><span>API Key</span><input type="password" id="set-hunter" placeholder="xxxxxxxxxxxxxxxx"></div>
       <div class="ibox">
-        Free tier: 25 email searches/month — no credit card needed.<br>
+        Free tier: 25 email searches/month, no credit card needed.<br>
         Get yours → <a href="https://hunter.io" target="_blank">hunter.io</a> → API Keys section
       </div>
       <button class="sbtn" onclick="saveSet('hunter')">Save Key</button>
@@ -926,7 +936,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="f"><span>Password</span><input type="password" id="set-fb-pass" placeholder="••••••••"></div>
       <div class="ibox">
         Used to log into Facebook via headless browser and scrape business email from their pages.<br>
-        <strong>Tip:</strong> Use a secondary/burner FB account — automated login may trigger security checks.
+        <strong>Tip:</strong> Use a secondary/burner FB account, automated login may trigger security checks.
       </div>
       <button class="sbtn" onclick="saveSet('facebook')">Save Credentials</button>
     </div>
@@ -939,7 +949,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="f"><span>Account ID</span><input type="text" id="set-cf-id" placeholder="abc123def456..."></div>
       <div class="f"><span>API Token</span><input type="password" id="set-cf-token" placeholder="your-cloudflare-api-token"></div>
       <div class="ibox">
-        Demo sites deploy to <strong style="color:var(--cyan)">yoursite.pages.dev</strong> — permanent links that work even when AgentForge is off.<br><br>
+        Demo sites deploy to <strong style="color:var(--cyan)">yoursite.pages.dev</strong>, permanent links that work even when AgentForge is off.<br><br>
         <strong>Setup (free):</strong><br>
         1. <a href="https://dash.cloudflare.com" target="_blank" style="color:var(--cyan)">dash.cloudflare.com</a> → copy your <strong>Account ID</strong> from the right sidebar<br>
         2. My Profile → API Tokens → Create Token → use <strong>"Edit Cloudflare Workers"</strong> template → add <strong>Cloudflare Pages</strong> permission → Create
@@ -1005,7 +1015,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 <!-- NOTES MODAL -->
 <div class="ov" id="notes-ov">
   <div class="modal" style="width:500px">
-    <div class="modal-t">Notes — <span id="notes-name"></span></div>
+    <div class="modal-t">Notes, <span id="notes-name"></span></div>
     <button class="modal-x" onclick="saveNotes()">✕</button>
     <textarea id="notes-text" style="width:100%;min-height:200px;resize:vertical" placeholder="Add notes about this lead..."></textarea>
     <button class="btn btn-main" style="margin-top:10px" onclick="saveNotes()">Save Notes</button>
@@ -1019,6 +1029,22 @@ let sSel=new Set(), efSel=new Set(), bSel=new Set();
 let collapsedCities=new Set();
 let sid='af_'+Math.random().toString(36).substr(2,9);
 let sse=null;
+
+// ── PERF UTILS ────────────────────────────────────────────────────────────
+// Coalesce rapid-fire calls to heavy render functions into one per frame.
+function rafBatch(fn){
+  let pending=false;
+  return function(){
+    if(pending)return;
+    pending=true;
+    requestAnimationFrame(()=>{ pending=false; try{fn.apply(this,arguments);}catch(e){console.error(e);} });
+  };
+}
+function debounce(fn,ms){
+  let t=null;
+  return function(){ const args=arguments,ctx=this; if(t)clearTimeout(t); t=setTimeout(()=>{t=null;fn.apply(ctx,args);},ms); };
+}
+const idle=(cb)=> (window.requestIdleCallback||((f)=>setTimeout(f,120)))(cb,{timeout:1500});
 
 const TYPES=[
   {v:'restaurant',l:'Restaurant',c:'Food & Drink'},{v:'cafe',l:'Cafe',c:'Food & Drink'},{v:'bakery',l:'Bakery',c:'Food & Drink'},
@@ -1035,6 +1061,7 @@ const TYPES=[
   {v:'wedding_officiant',l:'Wedding Officiant',c:'Other Services'},{v:'florist',l:'Florist',c:'Other Services'},
   {v:'pet_store',l:'Pet Store',c:'Other Services'},{v:'laundry',l:'Laundry',c:'Other Services'},
   {v:'clothing_store',l:'Clothing',c:'Other Services'},{v:'hardware_store',l:'Hardware',c:'Other Services'},
+  {v:'computer_store',l:'Computer Parts',c:'Other Services'},
 ];
 let selTypes=['restaurant'];
 
@@ -1078,19 +1105,28 @@ function toggleCitySel(city,checked){
 
 async function boot(){
   initTypes();
+  // Critical path: leads + config. Everything else is pushed off the first paint.
   await loadLeads();
-  await loadTracking();
-  await checkCfg();
-  updateSendBadge();
   connect();
-  loadCreds();
+  idle(()=>{ checkCfg(); });
+  idle(()=>{ loadTracking(); });
+  idle(()=>{ updateSendBadge(); });
+  idle(()=>{ loadCreds(); });
 }
 
+// SSE reconnect with exponential backoff (1s → 2s → 4s → … capped at 30s).
+let _sseRetry=0, _sseTimer=null;
 function connect(){
+  if(_sseTimer){clearTimeout(_sseTimer);_sseTimer=null;}
   if(sse)sse.close();
   sse=new EventSource(`/api/stream/${sid}`);
-  sse.onmessage=e=>onSSE(JSON.parse(e.data));
-  sse.onerror=()=>setTimeout(connect,3000);
+  sse.onopen=()=>{ _sseRetry=0; };
+  sse.onmessage=e=>{ _sseRetry=0; onSSE(JSON.parse(e.data)); };
+  sse.onerror=()=>{
+    if(_sseTimer)return;
+    const delay=Math.min(30000, 1000*Math.pow(2,_sseRetry++)) + Math.floor(Math.random()*400);
+    _sseTimer=setTimeout(()=>{ _sseTimer=null; connect(); }, delay);
+  };
 }
 
 async function checkCfg(){
@@ -1114,7 +1150,7 @@ async function checkCfg(){
     setSS('ss-cf',s.hasCloudflare);
     setSS('ss-fb',s.hasFacebook);
     setSS('ss-brevo',s.hasBrevo);
-    const saved='✓ Already saved — leave blank to keep';
+    const saved='✓ Already saved, leave blank to keep';
     setSavedPlaceholder('set-ant', s.hasAnthropicKey, saved);
     setSavedPlaceholder('set-hunter', s.hasHunter, saved);
     setSavedPlaceholder('set-fb-email', s.hasFacebook, saved);
@@ -1204,7 +1240,7 @@ function onSSE(d){
   if(d.type==='scout_done'){bar('s-pb',100);setTimeout(()=>bar('s-pb',0),2500);btn('scout-btn','▶ Run Scout Agent',false);document.getElementById('scan-anim').style.display='none';log('s-feed','✓ Scout complete.','gr');loadLeads().then(()=>{drawB();drawEF();});}
   if(d.type==='emailfinder')log('ef-feed',d.message,d.status==='found'?'gr':d.status==='error'?'er':'');
   if(d.type==='emailfinder_done'){if(d.email&&d.leadId){const l=findLeadLocal(d.leadId);if(l){l.foundEmail=d.email;l.emailConfidence=d.confidence;}drawEF();drawScout();updStats();}}
-  if(d.type==='emailfinder_batch_done'){log('ef-feed',`✓ Done — ${d.found}/${d.total} emails found`,'gr');btn('ef-btn','▶ Find Emails',false);bar('ef-pb',0);loadCreds();}
+  if(d.type==='emailfinder_batch_done'){log('ef-feed',`✓ Done, ${d.found}/${d.total} emails found`,'gr');btn('ef-btn','▶ Find Emails',false);bar('ef-pb',0);loadCreds();}
   if(d.type==='builder')log('b-feed',d.message,d.status==='done'?'gr':d.status==='retry'?'wn':d.status==='error'?'er':'');
   if(d.type==='builder_done'){if(d.leadId){const l=findLeadLocal(d.leadId);if(l){l.siteFile=d.filename;l.previewUrl=d.previewUrl;l.status='Site Built';}drawB();updStats();}}
   if(d.type==='builder_batch_done'){btn('b-btn','▶ Build Selected',false);bar('b-pb',100);setTimeout(()=>bar('b-pb',0),2000);log('b-feed','✓ All builds complete','gr');}
@@ -1277,9 +1313,9 @@ function drawScout(){
     <td style="color:var(--t4);font-family:var(--mono);font-size:9.5px">${i+1}</td>
     <td><div class="ln">${x(l.name)}</div><div class="la">${x(l.address)}</div></td>
     <td class="ph ${!l.phone||l.phone==='N/A'?'na':''}">${x(l.phone||'N/A')}</td>
-    <td style="font-size:11px;color:var(--amber)">${l.rating!=='N/A'?'★ '+l.rating+' <span style="color:var(--t3);font-size:9px">('+l.reviews+')</span>':'—'}</td>
+    <td style="font-size:11px;color:var(--amber)">${l.rating!=='N/A'?'★ '+l.rating+' <span style="color:var(--t3);font-size:9px">('+l.reviews+')</span>':'-'}</td>
     <td>${l.website?'<span class="badge" style="background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:#ff6b85;font-size:8.5px;padding:2px 7px;border-radius:10px">Has Site</span>':'<span class="badge" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--green);font-size:8.5px;padding:2px 7px;border-radius:10px">No Site</span>'}</td>
-    <td>${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span>`:'<span style="color:var(--t4);font-size:10px">—</span>'}</td>
+    <td>${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span>`:'<span style="color:var(--t4);font-size:10px">-</span>'}</td>
     <td><span class="badge b-type">${x(l.type||'').replace(/_/g,' ')}</span></td>
     <td>${scoreBadge(l.score)}</td>
     <td>${sb(l.status||'New')}</td>
@@ -1356,7 +1392,7 @@ function drawEF(){
     <td><div class="ln">${x(l.name)}</div></td>
     <td><div class="la">${x(l.address)}</div></td>
     <td>${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span>`:'<span style="color:var(--t4);font-size:10px">Not found</span>'}</td>
-    <td style="font-family:var(--mono);font-size:10px;color:var(--t3)">${l.emailConfidence?l.emailConfidence+'%':'—'}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--t3)">${l.emailConfidence?l.emailConfidence+'%':'-'}</td>
     <td><button class="ab" onclick="efOne('${l.id}')">Search</button> <button class="ab" onclick="efHunter('${l.id}')" style="font-size:8px;opacity:.7">Hunter</button></td>
   </tr>`).join('');
   }
@@ -1397,7 +1433,7 @@ function drawB(){
     <td><div class="ln">${x(l.name)}</div><div class="la">${x(l.address)}</div></td>
     <td><span class="badge b-type">${x(l.type||'').replace(/_/g,' ')}</span></td>
     <td>${sb(l.status||'New')}</td>
-    <td>${l.previewUrl?`<button class="ab" onclick="prevSite('${l.id}')">Preview ↗</button>`:'<span style="color:var(--t4);font-size:10px">—</span>'}</td>
+    <td>${l.previewUrl?`<button class="ab" onclick="prevSite('${l.id}')">Preview ↗</button>`:'<span style="color:var(--t4);font-size:10px">-</span>'}</td>
     <td><button class="ab" onclick="buildOne('${l.id}')">Build</button></td>
   </tr>`).join('');
   }
@@ -1421,7 +1457,7 @@ function prevSite(id){
   const localUrl=l.siteFile?`/sites/${l.siteFile}`:'';
   const publicUrl=l.previewUrl&&!l.previewUrl.includes('ngrok')&&!l.previewUrl.includes('localhost')?l.previewUrl:'';
   const iframeSrc=publicUrl||localUrl;
-  document.getElementById('site-name').textContent=l.name+' — '+(publicUrl.includes('pages.dev')?`☁️ ${publicUrl}`:l.address);
+  document.getElementById('site-name').textContent=l.name+', '+(publicUrl.includes('pages.dev')?`☁️ ${publicUrl}`:l.address);
   document.getElementById('sframe').src=iframeSrc;
   document.getElementById('site-link').href=publicUrl||localUrl;
   document.getElementById('site-ov').classList.add('on');
@@ -1434,7 +1470,7 @@ function goOutreach(){closeOv('site-ov');go('outreach');if(siteLead!=null){pickL
 function fillSels(){
   const o=document.getElementById('o-lead'),c=document.getElementById('c-lead'),cc=c.value;
   const opts=leads.map(l=>`<option value="${l.id}">${l.name}${l.siteFile?' ✓':''}</option>`).join('');
-  c.innerHTML='<option value="">— Select a lead —</option>'+opts;
+  c.innerHTML='<option value="">Select a lead</option>'+opts;
   if(cc)c.value=cc;
   renderLeadDrop();
 }
@@ -1572,16 +1608,16 @@ function drawOut(){
   e.style.display='none';t.style.display='table';
   document.getElementById('o-tbl-body').innerHTML=sent.map((l,i)=>{
     const tr=getLeadTracking(l.id);
-    const trackHtml=(tr.opens||tr.clicks)?`${tr.opens?`<span class="ti ti-open">👁 ${tr.opens}</span> `:''}${tr.clicks?`<span class="ti ti-click">🔗 ${tr.clicks}</span>`:''}`:'<span style="color:var(--t4);font-size:9px">—</span>';
+    const trackHtml=(tr.opens||tr.clicks)?`${tr.opens?`<span class="ti ti-open">👁 ${tr.opens}</span> `:''}${tr.clicks?`<span class="ti ti-click">🔗 ${tr.clicks}</span>`:''}`:'<span style="color:var(--t4);font-size:9px">-</span>';
     return `<tr>
     <td><input type="checkbox" class="o-cb" value="${l.id}"${oSel.has(l.id)?' checked':''} onchange="oSelUpd()"></td>
     <td style="color:var(--t4);font-family:var(--mono);font-size:9.5px">${i+1}</td>
     <td><div class="ln">${x(l.name)}</div><div class="la">${x(l.address)}</div></td>
     <td style="font-family:var(--mono);font-size:10.5px;color:var(--t2)">${x(l.outreachEmail||'')}</td>
-    <td>${l.previewUrl?`<a href="${l.previewUrl}" target="_blank" class="ab" style="text-decoration:none;display:inline-block">View ↗</a>`:'—'}</td>
+    <td>${l.previewUrl?`<a href="${l.previewUrl}" target="_blank" class="ab" style="text-decoration:none;display:inline-block">View ↗</a>`:'-'}</td>
     <td style="font-family:var(--mono);font-size:9.5px;color:var(--t3)">${l.outreachSentAt?new Date(l.outreachSentAt).toLocaleString():''}</td>
     <td>${trackHtml}</td>
-    <td>${tr.followUps?`<span style="background:rgba(251,191,36,.15);color:#fbbf24;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600">${tr.followUps}x sent</span>`:'<span style="color:var(--t4);font-size:9px">—</span>'}</td>
+    <td>${tr.followUps?`<span style="background:rgba(251,191,36,.15);color:#fbbf24;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600">${tr.followUps}x sent</span>`:'<span style="color:var(--t4);font-size:9px">-</span>'}</td>
     <td>${sb(l.status||'Sent')}</td>
   </tr>`;}).join('');
 }
@@ -1754,6 +1790,39 @@ async function post(url,body){
   if(!r.ok){const e=await r.json().catch(()=>({error:'Request failed'}));const feed=url.includes('scout')?'s-feed':url.includes('email')||url.includes('finder')?'ef-feed':url.includes('builder')?'b-feed':url.includes('outreach')?'o-feed':url.includes('closer')?'c-feed':null;if(feed)log(feed,'✗ '+( e.error||'Request failed'),'er');const btns={'scout':'scout-btn','emailfinder':'ef-btn','builder':'b-btn','outreach':'o-send-btn','closer':'c-btn'};for(const[k,v]of Object.entries(btns)){if(url.includes(k))btn(v,null,false);}}
   return r;
 }
+
+// ── RENDER BATCHING & MEMOIZATION ────────────────────────────────────────
+// Coalesce same-frame redraws (huge win during SSE bursts / batch runs).
+const _drawScoutImpl=drawScout, _drawBImpl=drawB, _drawEFImpl=drawEF,
+      _drawOutImpl=drawOut, _drawPipelineImpl=drawPipeline,
+      _updStatsImpl=updStats, _renderLeadDropImpl=renderLeadDrop;
+drawScout   = rafBatch(_drawScoutImpl);
+drawB       = rafBatch(_drawBImpl);
+drawEF      = rafBatch(_drawEFImpl);
+drawOut     = rafBatch(_drawOutImpl);
+drawPipeline= rafBatch(_drawPipelineImpl);
+renderLeadDrop = rafBatch(_renderLeadDropImpl);
+
+// Memoized stats, avoid recomputing counts on unchanged leads.
+let _statsKey='';
+function _memoStats(){
+  const key=leads.length+'|'+leads.reduce((a,l)=>a+(l.foundEmail?1:0)*2+(l.siteFile?1:0)*4+(l.website?1:0)*8+(l.phone&&l.phone!=='N/A'?1:0),0);
+  if(key===_statsKey)return;
+  _statsKey=key;
+  _updStatsImpl();
+}
+updStats = rafBatch(_memoStats);
+
+// Debounced search handlers (fire after 120ms of inactivity instead of every keystroke).
+const onSearchScout   = debounce(()=>drawScout(), 120);
+const onSearchB       = debounce(()=>drawB(),     120);
+const onSearchO       = debounce(()=>drawOut(),   120);
+const onSearchLeadDrop= debounce(()=>{
+  const q=document.getElementById('o-lead-search').value;
+  const list=document.getElementById('o-lead-list');
+  if(list) list.style.display='block';
+  renderLeadDrop(q);
+}, 120);
 
 if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", boot); } else { boot(); }
 </script>

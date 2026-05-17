@@ -2,7 +2,7 @@ const axios = require('axios');
 const https = require('https');
 const http = require('http');
 const puppeteer = require('puppeteer');
-// Social finder no longer needed — we use slug guessing + Puppeteer directly
+// Social finder no longer needed, we use slug guessing + Puppeteer directly
 const HUNTER = 'https://api.hunter.io/v2';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -52,7 +52,7 @@ function extractEmails(text) {
   });
 }
 
-// Fetch a URL and return raw HTML (for websites — no JS needed)
+// Fetch a URL and return raw HTML (for websites, no JS needed)
 function fetchPage(url, maxRedirects = 5) {
   return new Promise((resolve, reject) => {
     if (maxRedirects <= 0) return reject(new Error('Too many redirects'));
@@ -264,7 +264,7 @@ async function ensureIgLogin(browser, onProgress) {
 
     const url = page.url();
     if (url.includes('login') || url.includes('challenge') || url.includes('checkpoint')) {
-      onProgress && onProgress({ status:'error', message:`⚠ Instagram login blocked — check account for security prompts` });
+      onProgress && onProgress({ status:'error', message:`⚠ Instagram login blocked, check account for security prompts` });
       await page.close();
       return false;
     }
@@ -394,7 +394,7 @@ async function findEmailFromInstagram(lead, onProgress) {
   return null;
 }
 
-// Step 3: Scrape business website (plain HTTP — no browser needed)
+// Step 3: Scrape business website (plain HTTP, no browser needed)
 async function findEmailFromWebsite(lead, onProgress) {
   const website = lead.socials?.website || lead.website || null;
   if (!website) return null;
@@ -425,7 +425,7 @@ async function findEmailFromWebsite(lead, onProgress) {
   return null;
 }
 
-// Hunter.io lookup (separate — only called on demand)
+// Hunter.io lookup (separate, only called on demand)
 async function hunterSearch(lead, onProgress) {
   const key = process.env.HUNTER_API_KEY;
   if (!key) {
@@ -448,7 +448,7 @@ async function hunterSearch(lead, onProgress) {
       break;
     } catch(e) {
       if (e.response?.status === 429 && attempt === 0) {
-        onProgress && onProgress({ status:'limit', message:`⚠ Hunter rate limit — waiting 5s...` });
+        onProgress && onProgress({ status:'limit', message:`⚠ Hunter rate limit, waiting 5s...` });
         await new Promise(r => setTimeout(r, 5000));
         continue;
       }

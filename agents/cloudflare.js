@@ -5,7 +5,7 @@ const execAsync = promisify(exec);
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-// dotenv already loaded by index.js — no need to reload here
+// dotenv already loaded by index.js, no need to reload here
 
 function isConfigured() {
   return !!(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN);

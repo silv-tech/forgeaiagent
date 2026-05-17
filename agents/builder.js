@@ -34,7 +34,7 @@ async function buildDemoSite(lead, onProgress) {
   const type = (lead.type||'business').replace(/_/g,' ');
 
   const imgSeed = lead.name.replace(/[^a-z0-9]/gi,'-').toLowerCase().substring(0,20);
-  const prompt = `Build a complete single-page demo website for a local business. Use Tailwind CSS CDN for all styling — no custom <style> block needed.
+  const prompt = `Build a complete single-page demo website for a local business. Use Tailwind CSS CDN for all styling, no custom <style> block needed.
 
 Business: "${lead.name}"
 Type: ${type}
@@ -57,7 +57,7 @@ Build these sections IN ORDER, completing each fully before moving on:
 
 3. HERO: Full-height section. Background image (Hero bg URL above) with absolute dark overlay (bg-black bg-opacity-50). Centered white text: big bold headline relevant to the business, 1-line subtext, two buttons (primary CTA + secondary outline).
 
-4. SERVICES: Section with gray-50 bg. Title "Our Services". 3-column grid of 6 cards — each card has an emoji icon, service name specific to this business type, one-line description, and a realistic price. Cards have white bg, rounded-xl, shadow-md, hover:shadow-lg.
+4. SERVICES: Section with gray-50 bg. Title "Our Services". 3-column grid of 6 cards, each card has an emoji icon, service name specific to this business type, one-line description, and a realistic price. Cards have white bg, rounded-xl, shadow-md, hover:shadow-lg.
 
 5. ABOUT: Two-column layout. Left: the About photo img tag (800x500). Right: heading "About Us" + 2 paragraphs of real copy about this specific business + a "Learn More" button.
 
@@ -82,7 +82,7 @@ Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>. No m
         max_tokens: 16000,
         messages: [{ role:'user', content: prompt }]
       });
-      onProgress({ status:'building', message:`📥 Response received — validating HTML...` });
+      onProgress({ status:'building', message:`📥 Response received, validating HTML...` });
       html = msg.content[0].text.trim().replace(/^```html?\n?/i,'').replace(/\n?```$/,'').trim();
       // Auto-fix missing closing tags
       if (html.includes('<!DOCTYPE') && !html.includes('</html>') && html.length > 10000) {
@@ -91,17 +91,17 @@ Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>. No m
         html += '\n</html>';
       }
       const size = Math.round(html.length/1024);
-      onProgress({ status:'building', message:`📏 Got ${size}KB of HTML — checking completeness...` });
+      onProgress({ status:'building', message:`📏 Got ${size}KB of HTML, checking completeness...` });
       if (isComplete(html)) {
         onProgress({ status:'building', message:`✅ HTML looks complete! Saving file...` });
         break;
       }
-      onProgress({ status:'retry', message:`⚠️  HTML incomplete (${size}KB) — retrying...` });
+      onProgress({ status:'retry', message:`⚠️  HTML incomplete (${size}KB), retrying...` });
     } catch(e) {
       onProgress({ status:'error', message:`❌ API error (attempt ${attempt}): ${e.message}` });
       if (attempt === 2) throw e;
       const wait = e.message.includes('429') ? 60000 : 3000;
-      onProgress({ status:'building', message:`⏳ ${wait >= 60000 ? 'Rate limited — waiting 60s before retry...' : 'Waiting 3s before retry...'}`});
+      onProgress({ status:'building', message:`⏳ ${wait >= 60000 ? 'Rate limited, waiting 60s before retry...' : 'Waiting 3s before retry...'}`});
       await new Promise(r=>setTimeout(r,wait));
     }
   }
@@ -119,7 +119,7 @@ Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>. No m
   fs.writeFileSync(path.join(sitesDir, filename), html);
 
   const size = Math.round(html.length/1024);
-  onProgress({ status:'done', message:`🎉 Site saved! ${size}KB — ${filename}`, filename });
+  onProgress({ status:'done', message:`🎉 Site saved! ${size}KB, ${filename}`, filename });
   return { html, filename };
 }
 

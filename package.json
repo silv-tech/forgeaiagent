@@ -4,11 +4,14 @@
   "description": "AI-powered lead generation, site builder & outreach system",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node scripts/verify-outreach-format.js",
+    "verify:outreach": "node scripts/verify-outreach-format.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.24.0",
     "axios": "^1.6.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
@@ -16,5 +19,8 @@
     "nodemailer": "^6.9.0",
     "puppeteer": "^24.38.0",
     "resend": "^6.9.3"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
   }
 }

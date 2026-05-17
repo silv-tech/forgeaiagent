@@ -3,12 +3,11 @@ const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
 
-// ── DAILY SEND COUNTER (resets every 24 hours) ──────────────────────────
+// ── DAILY SEND COUNTER ────────────────────────────────────────────────────
 const DATA_ROOT = process.env.DATA_DIR || path.join(__dirname, '..');
 const COUNTER_FILE = path.join(DATA_ROOT, 'leads', '.send-counter.json');
 const RESEND_DAILY_LIMIT = 100;
-const RESET_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
-
+const RESET_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 function loadCounter() {
   try {
@@ -36,12 +35,8 @@ function getSendStats() {
   const brevoCount = counter.brevo || 0;
   const totalSent = resendCount + brevoCount + (counter.smtp || 0);
   return {
-    resend: resendCount,
-    brevo: brevoCount,
-    smtp: counter.smtp || 0,
-    total: totalSent,
-    resendLimit: RESEND_DAILY_LIMIT,
-    brevoLimit: BREVO_DAILY_LIMIT,
+    resend: resendCount, brevo: brevoCount, smtp: counter.smtp || 0, total: totalSent,
+    resendLimit: RESEND_DAILY_LIMIT, brevoLimit: BREVO_DAILY_LIMIT,
     resendRemaining: Math.max(0, RESEND_DAILY_LIMIT - resendCount),
     brevoRemaining: Math.max(0, BREVO_DAILY_LIMIT - brevoCount),
     usingBrevo: resendCount >= RESEND_DAILY_LIMIT,
@@ -86,116 +81,61 @@ function cleanCopy(obj) {
   return obj;
 }
 
+// ── VALID DEMO URL GUARD ──────────────────────────────────────────────────
+function hasValidDemoUrl(url) {
+  const s = url && String(url).trim();
+  if (!s) return false;
+  if (/localhost|127\.0\.0\.1|ngrok/i.test(s)) return false;
+  if (s.includes('.pages.dev')) return true;
+  if (/\/sites\/[^/?#]+/.test(s)) return true;
+  try {
+    const u = new URL(s);
+    if (!u.hostname) return false;
+    if (!u.pathname || u.pathname === '/') return false;
+    return u.protocol === 'https:' || u.protocol === 'http:';
+  } catch { return false; }
+}
+
+class NoDemoError extends Error {
+  constructor(msg) { super(msg); this.code = 'NO_DEMO'; }
+}
+
+// ── INDUSTRY FOLLOW-UP EXAMPLES ───────────────────────────────────────────
 function getFollowUpExamples(type) {
   const t = type.toLowerCase();
   const examples = {
-    cafe: {
-      short: 'a thank-you text 2 hours after their visit with a "come back this week for 10% off" nudge',
-      scenarios: 'After a morning visit: "Thanks for stopping by today. Your usual cortado will be waiting." After a first visit: "Hope you loved it. Mention this text for a free pastry next time."'
-    },
-    coffee: {
-      short: 'a thank-you text 2 hours after their visit with a "come back this week for 10% off" nudge',
-      scenarios: 'After a morning visit: "Thanks for stopping by today. Your usual cortado will be waiting." After a first visit: "Hope you loved it. Mention this text for a free pastry next time."'
-    },
-    restaurant: {
-      short: 'a follow-up the next day thanking them for dining in, plus a "book your next table" link',
-      scenarios: 'After dinner: "Hope you enjoyed the meal last night. Your table is always here." Before holidays: "Valentine\'s reservations are filling up. Want us to save your usual spot?"'
-    },
-    'nail': {
-      short: 'a rebooking nudge 2-3 weeks after their appointment, plus seasonal design drops',
-      scenarios: 'At 2 weeks: "Your nails are probably ready for a refresh. Want to book your usual?" New season: "Fall colors just dropped. Book early for the new designs." Birthday: "Birthday nails on us, 20% off this month."'
-    },
-    'hair salon': {
-      short: 'a rebooking reminder 4 weeks after their cut, plus birthday month specials',
-      scenarios: 'After a cut: "Your hair looked amazing walking out. Book your next one before the rush?" At 6 weeks: "It\'s been a minute. Ready for a refresh?" Birthday month: automatic 15% off message.'
-    },
-    salon: {
-      short: 'a rebooking reminder 4 weeks after their appointment, plus birthday month specials',
-      scenarios: 'After an appointment: "You looked amazing walking out. Book your next one before the rush?" At 6 weeks: "It\'s been a minute. Ready for a refresh?" Birthday month: automatic 15% off message.'
-    },
-    hair: {
-      short: 'a rebooking reminder 4 weeks after their cut, plus birthday month specials',
-      scenarios: 'After a cut: "Your hair looked amazing walking out. Book your next one before the rush?" At 6 weeks: "It\'s been a minute. Ready for a refresh?" Birthday month: automatic 15% off message.'
-    },
-    auto: {
-      short: 'an oil change reminder every 3 months, plus seasonal maintenance nudges',
-      scenarios: 'At 3 months: "Your next oil change is coming up. Want to schedule before the weekend rush?" Before winter: "Cold weather is coming. Free tire pressure check if you swing by this week."'
-    },
-    yoga: {
-      short: 'a check-in after their first class, plus weekly class schedule drops',
-      scenarios: 'After first class: "How are you feeling after yesterday? Here\'s this week\'s schedule." If they miss a week: "We saved your spot in Thursday\'s flow class."'
-    },
-    fitness: {
-      short: 'a check-in after their first session, plus milestone congratulations',
-      scenarios: 'After signup: "How was your first workout? Need help with the equipment?" At 30 days: "One month in. You\'re building something real." If inactive: "Your gym misses you. Come back for a free smoothie."'
-    },
-    gym: {
-      short: 'a check-in after their first workout, plus monthly progress nudges',
-      scenarios: 'After first visit: "How was the workout? Any questions about the equipment?" At 2 weeks: "You\'re on a streak. Keep it going." If inactive 10 days: "Your routine is waiting. Free guest pass if you bring a friend."'
-    },
-    barbershop: {
-      short: 'a "time for a fresh cut" reminder every 3-4 weeks',
-      scenarios: 'At 3 weeks: "Looking a little shaggy? Your barber has Thursday open." After a cut: "Looking sharp. See you in a few weeks." Holiday: "Book your pre-holiday cut before slots fill up."'
-    },
-    barber: {
-      short: 'a "time for a fresh cut" reminder every 3-4 weeks',
-      scenarios: 'At 3 weeks: "Looking a little shaggy? Your barber has Thursday open." After a cut: "Looking sharp. See you in a few weeks." Holiday: "Book your pre-holiday cut before slots fill up."'
-    },
-    dental: {
-      short: '6-month cleaning reminders, post-procedure check-ins, and braces adjustment recalls',
-      scenarios: 'After a cleaning: "Great seeing you today. Your next cleaning is in 6 months, we\'ll remind you." After a filling: "How\'s the tooth feeling? Any sensitivity, just call us." Braces: "Your next adjustment is in 4 weeks. We\'ll text you a reminder."'
-    },
-    dentist: {
-      short: '6-month cleaning reminders, post-procedure check-ins, and braces adjustment recalls',
-      scenarios: 'After a cleaning: "Great seeing you today. Your next cleaning is in 6 months, we\'ll remind you." After a filling: "How\'s the tooth feeling? Any sensitivity, just call us." Braces: "Your next adjustment is in 4 weeks. We\'ll text you a reminder."'
-    },
-    vet: {
-      short: 'vaccination reminders, annual checkup recalls, and post-visit check-ins',
-      scenarios: 'After a visit: "How is [pet name] doing today? Any concerns, we\'re here." At 11 months: "Annual checkup time. [Pet name]\'s vaccines are due next month." Seasonal: "Flea and tick season is here. Need a refill on prevention?"'
-    },
-    bakery: {
-      short: 'birthday cake reminders, holiday pre-order nudges, and "fresh batch" alerts',
-      scenarios: 'Before their birthday: "Your birthday is coming up. Want us to save you a cake?" Before holidays: "Thanksgiving pie pre-orders are open. Last year we sold out." Weekly: "Fresh sourdough just came out of the oven."'
-    },
-    florist: {
-      short: 'anniversary and holiday reminders so they never forget flowers again',
-      scenarios: 'Before Valentine\'s: "Valentine\'s is next week. Want the same arrangement as last time?" Anniversary reminder: "Your anniversary is in 3 days. We have your usual ready." Mother\'s Day: "Don\'t forget Mom. Order by Friday for guaranteed delivery."'
-    },
-    flower: {
-      short: 'anniversary and holiday reminders so they never forget flowers again',
-      scenarios: 'Before Valentine\'s: "Valentine\'s is next week. Want the same arrangement as last time?" Anniversary reminder: "Your anniversary is in 3 days. We have your usual ready." Mother\'s Day: "Don\'t forget Mom. Order by Friday for guaranteed delivery."'
-    },
-    massage: {
-      short: 'a rebooking reminder 3-4 weeks after their session, plus stress-relief tips',
-      scenarios: 'After a session: "Hope you\'re feeling loose today. Drink plenty of water." At 4 weeks: "Your body is probably telling you it\'s time again. Same time next week?" Seasonal: "Holiday stress building up? We just opened extra evening slots."'
-    },
-    spa: {
-      short: 'a rebooking reminder 3-4 weeks after their visit, plus seasonal treatment drops',
-      scenarios: 'After a visit: "Hope you\'re still floating on that relaxation. Drink plenty of water today." At 4 weeks: "Time for another reset? We have openings this week." Birthday month: "Treat yourself, 20% off any treatment this month."'
-    },
-    roofer: {
-      short: 'seasonal roof inspection reminders and post-storm check-in messages',
-      scenarios: 'After a job: "How\'s everything looking up there? Any issues, we\'re a call away." Before storm season: "Big storms forecast this month. Want a free quick inspection?" Annual: "It\'s been a year since your last roof check. Time for a look?"'
-    },
-    contractor: {
-      short: 'project follow-ups, seasonal maintenance reminders, and referral thank-yous',
-      scenarios: 'After a project: "How\'s everything holding up? Let us know if anything needs adjusting." Seasonal: "Spring is the best time for that deck project we talked about." Referral: "Thanks for sending the Johnsons our way. Your next project gets priority scheduling."'
-    },
-    cleaning: {
-      short: 'recurring service reminders, seasonal deep-clean nudges, and satisfaction check-ins',
-      scenarios: 'After a clean: "Hope everything is sparkling. Anything we missed, just let us know." Monthly: "Your next cleaning is coming up. Same day and time work?" Seasonal: "Spring deep clean slots are filling up. Want us to book yours?"'
-    },
-    default: {
-      short: 'a thank-you message after their visit, plus periodic check-ins to keep them coming back',
-      scenarios: 'After a visit: "Thanks for coming in. How was everything?" At 30 days: "It\'s been a month. We\'d love to see you again." Birthday: automatic birthday greeting with a special offer.'
-    }
+    cafe: { short: 'a thank-you text 2 hours after their visit with a "come back this week for 10% off" nudge', scenarios: 'After a morning visit: "Thanks for stopping by today. Your usual cortado will be waiting." After a first visit: "Hope you loved it. Mention this text for a free pastry next time."' },
+    coffee: { short: 'a thank-you text 2 hours after their visit with a "come back this week for 10% off" nudge', scenarios: 'After a morning visit: "Thanks for stopping by today. Your usual cortado will be waiting." After a first visit: "Hope you loved it. Mention this text for a free pastry next time."' },
+    restaurant: { short: 'a follow-up the next day thanking them for dining in, plus a "book your next table" link', scenarios: 'After dinner: "Hope you enjoyed the meal last night. Your table is always here." Before holidays: "Valentine\'s reservations are filling up. Want us to save your usual spot?"' },
+    'nail': { short: 'a rebooking nudge 2-3 weeks after their appointment, plus seasonal design drops', scenarios: 'At 2 weeks: "Your nails are probably ready for a refresh. Want to book your usual?" New season: "Fall colors just dropped. Book early for the new designs." Birthday: "Birthday nails on us, 20% off this month."' },
+    'hair salon': { short: 'a rebooking reminder 4 weeks after their cut, plus birthday month specials', scenarios: 'After a cut: "Your hair looked amazing walking out. Book your next one before the rush?" At 6 weeks: "It\'s been a minute. Ready for a refresh?" Birthday month: automatic 15% off message.' },
+    salon: { short: 'a rebooking reminder 4 weeks after their appointment, plus birthday month specials', scenarios: 'After an appointment: "You looked amazing walking out. Book your next one before the rush?" At 6 weeks: "It\'s been a minute. Ready for a refresh?" Birthday month: automatic 15% off message.' },
+    hair: { short: 'a rebooking reminder 4 weeks after their cut, plus birthday month specials', scenarios: 'After a cut: "Your hair looked amazing walking out. Book your next one before the rush?" At 6 weeks: "It\'s been a minute. Ready for a refresh?" Birthday month: automatic 15% off message.' },
+    auto: { short: 'an oil change reminder every 3 months, plus seasonal maintenance nudges', scenarios: 'At 3 months: "Your next oil change is coming up. Want to schedule before the weekend rush?" Before winter: "Cold weather is coming. Free tire pressure check if you swing by this week."' },
+    yoga: { short: 'a check-in after their first class, plus weekly class schedule drops', scenarios: 'After first class: "How are you feeling after yesterday? Here\'s this week\'s schedule." If they miss a week: "We saved your spot in Thursday\'s flow class."' },
+    fitness: { short: 'a check-in after their first session, plus milestone congratulations', scenarios: 'After signup: "How was your first workout? Need help with the equipment?" At 30 days: "One month in. You\'re building something real." If inactive: "Your gym misses you. Come back for a free smoothie."' },
+    gym: { short: 'a check-in after their first workout, plus monthly progress nudges', scenarios: 'After first visit: "How was the workout? Any questions about the equipment?" At 2 weeks: "You\'re on a streak. Keep it going." If inactive 10 days: "Your routine is waiting. Free guest pass if you bring a friend."' },
+    barbershop: { short: 'a "time for a fresh cut" reminder every 3-4 weeks', scenarios: 'At 3 weeks: "Looking a little shaggy? Your barber has Thursday open." After a cut: "Looking sharp. See you in a few weeks." Holiday: "Book your pre-holiday cut before slots fill up."' },
+    barber: { short: 'a "time for a fresh cut" reminder every 3-4 weeks', scenarios: 'At 3 weeks: "Looking a little shaggy? Your barber has Thursday open." After a cut: "Looking sharp. See you in a few weeks." Holiday: "Book your pre-holiday cut before slots fill up."' },
+    dental: { short: '6-month cleaning reminders, post-procedure check-ins, and braces adjustment recalls', scenarios: 'After a cleaning: "Great seeing you today. Your next cleaning is in 6 months, we\'ll remind you." After a filling: "How\'s the tooth feeling? Any sensitivity, just call us." Braces: "Your next adjustment is in 4 weeks. We\'ll text you a reminder."' },
+    dentist: { short: '6-month cleaning reminders, post-procedure check-ins, and braces adjustment recalls', scenarios: 'After a cleaning: "Great seeing you today. Your next cleaning is in 6 months, we\'ll remind you." After a filling: "How\'s the tooth feeling? Any sensitivity, just call us." Braces: "Your next adjustment is in 4 weeks. We\'ll text you a reminder."' },
+    vet: { short: 'vaccination reminders, annual checkup recalls, and post-visit check-ins', scenarios: 'After a visit: "How is [pet name] doing today? Any concerns, we\'re here." At 11 months: "Annual checkup time. [Pet name]\'s vaccines are due next month." Seasonal: "Flea and tick season is here. Need a refill on prevention?"' },
+    bakery: { short: 'birthday cake reminders, holiday pre-order nudges, and "fresh batch" alerts', scenarios: 'Before their birthday: "Your birthday is coming up. Want us to save you a cake?" Before holidays: "Thanksgiving pie pre-orders are open. Last year we sold out." Weekly: "Fresh sourdough just came out of the oven."' },
+    florist: { short: 'anniversary and holiday reminders so they never forget flowers again', scenarios: 'Before Valentine\'s: "Valentine\'s is next week. Want the same arrangement as last time?" Anniversary reminder: "Your anniversary is in 3 days. We have your usual ready." Mother\'s Day: "Don\'t forget Mom. Order by Friday for guaranteed delivery."' },
+    flower: { short: 'anniversary and holiday reminders so they never forget flowers again', scenarios: 'Before Valentine\'s: "Valentine\'s is next week. Want the same arrangement as last time?" Anniversary reminder: "Your anniversary is in 3 days. We have your usual ready." Mother\'s Day: "Don\'t forget Mom. Order by Friday for guaranteed delivery."' },
+    massage: { short: 'a rebooking reminder 3-4 weeks after their session, plus stress-relief tips', scenarios: 'After a session: "Hope you\'re feeling loose today. Drink plenty of water." At 4 weeks: "Your body is probably telling you it\'s time again. Same time next week?" Seasonal: "Holiday stress building up? We just opened extra evening slots."' },
+    spa: { short: 'a rebooking reminder 3-4 weeks after their visit, plus seasonal treatment drops', scenarios: 'After a visit: "Hope you\'re still floating on that relaxation. Drink plenty of water today." At 4 weeks: "Time for another reset? We have openings this week." Birthday month: "Treat yourself, 20% off any treatment this month."' },
+    roofer: { short: 'seasonal roof inspection reminders and post-storm check-in messages', scenarios: 'After a job: "How\'s everything looking up there? Any issues, we\'re a call away." Before storm season: "Big storms forecast this month. Want a free quick inspection?" Annual: "It\'s been a year since your last roof check. Time for a look?"' },
+    contractor: { short: 'project follow-ups, seasonal maintenance reminders, and referral thank-yous', scenarios: 'After a project: "How\'s everything holding up? Let us know if anything needs adjusting." Seasonal: "Spring is the best time for that deck project we talked about." Referral: "Thanks for sending the Johnsons our way. Your next project gets priority scheduling."' },
+    cleaning: { short: 'recurring service reminders, seasonal deep-clean nudges, and satisfaction check-ins', scenarios: 'After a clean: "Hope everything is sparkling. Anything we missed, just let us know." Monthly: "Your next cleaning is coming up. Same day and time work?" Seasonal: "Spring deep clean slots are filling up. Want us to book yours?"' },
+    default: { short: 'a thank-you message after their visit, plus periodic check-ins to keep them coming back', scenarios: 'After a visit: "Thanks for coming in. How was everything?" At 30 days: "It\'s been a month. We\'d love to see you again." Birthday: automatic birthday greeting with a special offer.' }
   };
-  // Check longer keys first so "nail salon" matches "nail" not "salon", "barbershop" not "barber", etc.
   const sortedKeys = Object.keys(examples).filter(k => k !== 'default').sort((a, b) => b.length - a.length);
   const key = sortedKeys.find(k => t.includes(k)) || 'default';
   return examples[key];
 }
 
+// ── NO-WEBSITE OUTREACH PROMPT ────────────────────────────────────────────
 function buildEmailPrompt(lead, previewUrl, type) {
   const hasRating = lead.rating && lead.rating !== 'N/A';
   const reviews = parseInt(lead.reviews) || 0;
@@ -218,13 +158,14 @@ Goal: Get a reply by showing them a free website you already built for them, and
 - Paragraph 1: acknowledge their review count and rating in one sentence. Make it feel like you actually looked them up, not a template.
 - Paragraph 2: one sentence on the problem. People search their name and find nothing — no way to book, check hours, or even confirm they exist.
 - Paragraph 3: lead with the main offer — you already built them a free website. This is the hero. Keep it to 1-2 sentences max. Say it's already done and it's completely theirs to keep for free. Do NOT include the URL anywhere in the sentence. After this paragraph, on its own line with nothing else, output exactly this URL: ${previewUrl} — the system will automatically turn it into a button.
-- Paragraph 4: explain what the website comes with — two separate features, each on its own paragraph with a blank line between them. Do NOT blend or combine them. Feature one: an AI chatbot they can personally train to answer exactly the way they want, in their own voice, not a generic bot. It handles customer questions 24/7 and they get notified every time someone asks something. IMPORTANT: the sentence MUST include that they train it themselves to answer exactly how they want — do not drop this point. Feature two: a completely separate automated follow-up system that sends texts or emails to customers after their visit to bring them back. Write each as one clean direct sentence. Do NOT label them "Feature 1" or "Feature 2".
-- Paragraph 5: make it clear everything is completely free. Say you'd love a quick call — not to sell anything, just to hear what's actually giving them headaches in their business, then show them how this helps. Keep it casual and genuine. Do NOT say "customize" or "tailor".
-- Paragraph 6: end with one short soft question about the call. Examples: "Sound fair?", "Worth 5 minutes?", "Interested?". Must be under 8 words. Do NOT say "Want to see it?" or "Worth a quick look?" — the button handles that.
+- Paragraph 4: an AI chatbot they can personally train to answer exactly the way they want, in their own voice, not a generic bot. It handles customer questions 24/7 and they get notified every time someone asks something. IMPORTANT: the sentence MUST include that they train it themselves to answer exactly how they want — do not drop this point.
+- Paragraph 5: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out — the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear.
+- Paragraph 6: make it clear everything is completely free. Say you'd love a quick call — not to sell anything, just to hear what's actually giving them headaches in their business, then show them how this helps. Keep it casual and genuine. Do NOT say "customize" or "tailor".
+- Paragraph 7: end with one short soft question about the call. Examples: "Sound fair?", "Worth 5 minutes?", "Interested?". Must be under 8 words. Do NOT say "Want to see it?" or "Worth a quick look?" — the button handles that.
 - Sign off: MUST end with Leif on its own line, then ForgeAIAgent on the next line. This is required, never skip it.
 - Max length: 140 words
 
-CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. The two features in Paragraph 4 MUST each be on their own paragraph with a blank line between them — they are not the same thing. Do not combine any points. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
+CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. Paragraphs 4 and 5 are two distinct features — each on its own paragraph with a blank line between them. Do not combine any points. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
 
 RULES:
 - Plain text only, no bullet points, bold, headers, or HTML
@@ -239,6 +180,7 @@ Return ONLY valid JSON with no extra text:
 {"subject":"...","body":"..."}`;
 }
 
+// ── HAS-WEBSITE OUTREACH PROMPT ───────────────────────────────────────────
 function buildWebsiteOutreachPrompt(lead, type) {
   const hasRating = lead.rating && lead.rating !== 'N/A';
   const reviews = parseInt(lead.reviews) || 0;
@@ -262,40 +204,38 @@ INDUSTRY FOLLOW-UP CONTEXT for this ${type}:
 ${followUpExamples.scenarios}
 
 INSTRUCTIONS:
-Goal: Get a reply by naming a specific moment the owner recognizes and offering one concrete solution.
+Goal: Get a reply by naming a specific moment the owner recognizes and offering two clearly separate tools.
 
-- Subject: 2-5 words maximum. Reference something specific about their business — their review count, rating, or a pain point tied to their industry. Should feel like an observation, not a pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no follow-up system", "after the visit is the gap", "${lead.rating} stars, losing regulars", "your ${type} customers aren't coming back". Make the owner feel like you noticed something specific.
+- Subject: 2-5 words maximum. Reference something specific about their business — their review count, rating, or a pain point tied to their industry. Should feel like an observation, not a pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no follow-up system", "after the visit is the gap", "${lead.rating} stars, losing regulars", "your ${type} customers aren't coming back".
 - Paragraph 1: mention you were researching ${type} businesses in ${city} and noticed something specific and positive about their rating or review count. One natural opening sentence.
-- Paragraph 2 (timeline hook): name the exact moment the problem shows up — not a generic problem statement, but the specific moment when customers decide whether to come back. For example: "Right after a first visit is when most ${type} customers decide if they're returning — and that's exactly when most businesses go quiet." Use the INDUSTRY FOLLOW-UP CONTEXT above to make this moment specific and real for their business type. Make the owner picture the situation.
+- Paragraph 2 (timeline hook): name the exact moment the problem shows up — the specific moment when customers decide whether to come back. Use the INDUSTRY FOLLOW-UP CONTEXT above to make this moment specific and real. Make the owner picture the situation. Most businesses go silent exactly at that moment.
 - Paragraph 3: an AI chatbot added to their existing website. They personally train it to respond exactly the way they want, in their own voice. It handles customer questions 24/7 and they get notified every time someone asks something. One clean sentence. MUST include that they train it themselves to answer exactly how they want.
 - Paragraph 4: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out — the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear. Do NOT include any URLs. A "See How It Works" button will be added automatically below your text.
-- Paragraph 5: make it clear you'll set both up completely free. Then say you'd like a quick call — not to sell anything, but to hear what's actually causing friction in their business day to day. Once you know their pain points, you'll show them exactly how AI can solve those specific problems. Keep it casual and genuine. Do NOT say "customize" or "tailor".
-- Paragraph 6: end with one short interest-based question that lets the owner self-qualify. Examples: "Is keeping more customers coming back something you're working on right now?", "Open to seeing how this works for a ${type}?", "Worth a quick look?". Must be under 12 words.
+- Paragraph 5: make it clear you'll set both up completely free. Say you'd like a quick call — not to sell anything, but to hear what's actually causing friction in their business day to day. Keep it casual and genuine. Do NOT say "customize" or "tailor".
+- Paragraph 6: end with one short interest-based question. Examples: "Is keeping more customers coming back something you're working on right now?", "Open to seeing how this works for a ${type}?", "Worth a quick look?". Must be under 12 words.
 - Sign off: MUST end with Leif on its own line, then ForgeAIAgent on the next line. This is required, never skip it.
 - Max length: 130 words
 
-CRITICAL FORMATTING RULE: Each paragraph above MUST be separated by a blank line in the output. Do not combine multiple points into one paragraph. The email must have clear visual spacing between each thought. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
+CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. Paragraphs 3 and 4 are two distinct separate features — each on its own paragraph with a blank line between them. Do not combine them. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
 
 RULES:
 - Plain text only, no bullet points, bold, headers, or HTML
 - No "I hope this email finds you well" or "I came across your business"
 - No corporate words, no leverage, synergy, solutions, or optimize
 - Do not mention ForgeAIAgent in the body, only in the sign-off
-- One problem, one solution, one ask — do not list multiple services or benefits
 - Write like a real person emailing one specific business, not a mass campaign
 - Every sentence must earn its place, cut anything that doesn't add value
-- Do not start with "Hi there" or any generic greeting. Either use the owner's name if available, or skip the greeting entirely and start directly with the first observation about their business.
-- Do not use the phrases "lifting a finger", "runs while you sleep", "set it and forget it", or any other cliché. Describe the solution simply and plainly.
-- Do not use the phrase "found your company" in the opening line. Go straight to the observation about their rating and reviews. For example: "I was researching hair salons in Austin and your 4.6 rating with 94 reviews caught my attention."
-- When ending a CTA question with "for a [business type]", always use the owner-facing version: "for a pool cleaning company" not "for a pool cleaner", "for a plumbing company" not "for a plumber", "for a cleaning company" not "for a cleaner".
-- When referencing the business type in the opening line, never use the word "businesses" after the industry type. Use the natural word: "dental offices" not "dental businesses", "landscaping companies" not "landscaping businesses", "restaurants" not "restaurant businesses".
-- Do not reference the website URL anywhere in the email body. If you noticed something specific on their site, describe the observation naturally without citing the URL.
+- Do not start with "Hi there" or any generic greeting. Start directly with the observation.
+- Do not use the phrase "found your company" in the opening line.
+- When ending a CTA question with "for a [business type]", use the owner-facing version: "for a pool cleaning company" not "for a pool cleaner".
+- When referencing the business type in the opening line, never use the word "businesses" after the industry type. Use the natural word: "dental offices", "landscaping companies", "restaurants".
 - NEVER use em dashes (—) anywhere. Use commas or periods instead.
 
 Return ONLY valid JSON with no extra text:
 {"subject":"...","body":"..."}`;
 }
 
+// ── EMAIL SENDING ─────────────────────────────────────────────────────────
 async function callAnthropicWithTimeout(client, params, timeoutMs = 60000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -303,9 +243,7 @@ async function callAnthropicWithTimeout(client, params, timeoutMs = 60000) {
     const msg = await client.messages.create(params, { signal: controller.signal });
     return msg;
   } catch(e) {
-    if (e.name === 'AbortError' || e.message?.includes('abort')) {
-      throw new Error('Anthropic API timed out after ' + Math.round(timeoutMs/1000) + 's. Try again.');
-    }
+    if (e.name === 'AbortError' || e.message?.includes('abort')) throw new Error('Anthropic API timed out after ' + Math.round(timeoutMs/1000) + 's. Try again.');
     throw e;
   } finally {
     clearTimeout(timer);
@@ -316,21 +254,17 @@ async function sendWithRetry(resend, emailOpts, maxRetries = 2) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const { data, error } = await resend.emails.send(emailOpts);
     if (!error) return data;
-    // Retry on rate limit (429) with exponential backoff
     if (error.statusCode === 429 && attempt < maxRetries) {
-      const wait = (attempt + 1) * 3000;
-      await new Promise(r => setTimeout(r, wait));
+      await new Promise(r => setTimeout(r, (attempt + 1) * 3000));
       continue;
     }
     throw new Error(`Resend API error: ${error.message || JSON.stringify(error)}`);
   }
 }
 
-
 async function sendViaBrevo(emailOpts) {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) throw new Error('Brevo API key not configured.');
-  // Parse "Name <email>" format from the from field
   const fromMatch = emailOpts.from.match(/^(.+?)\s*<(.+?)>$/);
   const senderName = fromMatch ? fromMatch[1].trim() : 'Leif';
   const senderEmail = fromMatch ? fromMatch[2].trim() : emailOpts.from;
@@ -349,12 +283,31 @@ async function sendViaBrevo(emailOpts) {
   return { id: res.data?.messageId || res.data?.messageIds?.[0], method: 'brevo' };
 }
 
+async function generateEmailCopy(lead, previewUrl, outreachType) {
+  const client = getClient();
+  const type = (lead.type || 'business').replace(/_/g, ' ');
+  const prompt = outreachType === 'has_website'
+    ? buildWebsiteOutreachPrompt(lead, type)
+    : buildEmailPrompt(lead, previewUrl, type);
+  const msg = await callAnthropicWithTimeout(client, {
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1000,
+    messages: [{ role: 'user', content: prompt }]
+  });
+  const result = parseJSON(msg.content[0].text);
+  if (!result?.subject || !result?.body) throw new Error('Failed to generate email copy. Try again.');
+  return cleanCopy(result);
+}
+
+async function generateEmailPreview(lead, previewUrl, outreachType) {
+  return generateEmailCopy(lead, previewUrl, outreachType);
+}
+
 async function generateFreeSamples(lead) {
   const client = getClient();
   const type = (lead.type || 'business').replace(/_/g, ' ');
   const rating = lead.rating !== 'N/A' ? lead.rating + '/5' : '';
   const reviews = lead.reviews && lead.reviews !== 'N/A' ? lead.reviews + ' reviews' : '';
-
   const msg = await callAnthropicWithTimeout(client, {
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 1500,
@@ -374,35 +327,17 @@ Return ONLY valid JSON:
 }`
     }]
   });
-
   const result = parseJSON(msg.content[0].text);
   if (!result) throw new Error('Failed to generate samples. Claude returned invalid JSON.');
   return cleanCopy(result);
 }
 
-async function generateEmailCopy(lead, previewUrl, outreachType) {
-  const client = getClient();
-  const type = (lead.type || 'business').replace(/_/g, ' ');
-  const prompt = outreachType === 'has_website'
-    ? buildWebsiteOutreachPrompt(lead, type)
-    : buildEmailPrompt(lead, previewUrl, type);
-  const msg = await callAnthropicWithTimeout(client, {
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1000,
-    messages: [{ role: 'user', content: prompt }]
-  });
-  const result = parseJSON(msg.content[0].text);
-  if (!result?.subject || !result?.body) throw new Error('Failed to generate email copy. Claude returned invalid or incomplete JSON. Try again.');
-  return cleanCopy(result);
-}
-
-async function generateEmailPreview(lead, previewUrl, outreachType) {
-  return generateEmailCopy(lead, previewUrl, outreachType);
-}
-
 async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectOverride, bodyOverride, trackingOpts, outreachType) {
   const isHasWebsite = outreachType === 'has_website';
-  const samples = null;
+
+  if (!isHasWebsite && !hasValidDemoUrl(previewUrl)) {
+    throw new NoDemoError(`No demo site built for ${lead.name}. Run the Builder first so the email has a real demo to link to.`);
+  }
 
   const copy = (subjectOverride && bodyOverride)
     ? { subject: subjectOverride, body: bodyOverride }
@@ -414,16 +349,15 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   const fromEmail = RESEND_FROM || SMTP_USER || 'leif@forgeaiagent.com';
   onProgress({ status: 'sending', message: `Sending to ${emailAddress}...` });
 
-  // Format email — minimal HTML that looks like a real person sent it
+  // Build HTML — Forge AI branded header + clean body + footer
   let bodyText = copy.body;
   const lines = bodyText.split('\n').filter(l => l.trim());
   let bodyHtml = '';
 
   for (const l of lines) {
-    const line = l;
-    const trimmedLine = line.trim();
+    const trimmedLine = l.trim();
 
-    // URL-only line for no-website outreach — render as a button (demo site CTA)
+    // URL-only line — render as "View Your Demo Website" button (no_website only)
     if (!isHasWebsite && trimmedLine.match(/^https?:\/\/\S+$/) && previewUrl && trimmedLine.includes(previewUrl.split('/')[2])) {
       bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(previewUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">View Your Demo Website</a></p>`;
       continue;
@@ -438,22 +372,21 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
     }
 
     // Default paragraph
-    bodyHtml += `<p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(line)}</p>`;
+    bodyHtml += `<p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(l)}</p>`;
   }
 
-  // For no-website outreach, inject demo button if not already in body
+  // Inject demo button after body if Claude didn't output URL on its own line
   if (!isHasWebsite && previewUrl && !bodyHtml.includes('View Your Demo Website')) {
     bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(previewUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">View Your Demo Website</a></p>`;
   }
 
-  // For has-website outreach, inject "See How It Works" button
+  // Inject "See How It Works" button for has_website leads
   if (isHasWebsite && !bodyHtml.includes('See How It Works')) {
     const baseUrl = previewUrl.replace(/\/sites\/[^/]*$/, '').replace(/\/$/, '');
     const howItWorksUrl = `${baseUrl}/how-it-works.html`;
     bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(howItWorksUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
   }
 
-  // Tracking pixel (only present for follow-ups)
   const pixelHtml = trackingOpts?.pixelHtml || '';
 
   const emailPayload = {
@@ -476,7 +409,6 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   const resendAvailable = RESEND_API_KEY && RESEND_FROM && currentStats.resendRemaining > 0;
   const brevoAvailable = BREVO_API_KEY && currentStats.brevoRemaining > 0;
 
-  // Resend (100/day) → Brevo (300/day)
   if (resendAvailable) {
     try {
       const { Resend } = require('resend');
@@ -484,49 +416,38 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
       data = await sendWithRetry(resend, emailPayload);
       sendMethod = 'resend';
     } catch(resendErr) {
-      console.log(`[Email] Resend failed: ${resendErr.message}, trying Brevo...`);
       if (brevoAvailable) {
-        try {
-          data = await sendViaBrevo(emailPayload);
-          sendMethod = 'brevo';
-        } catch(brevoErr) {
-          console.log(`[Email] Brevo failed: ${brevoErr.response?.data?.message || brevoErr.message}`);
+        try { data = await sendViaBrevo(emailPayload); sendMethod = 'brevo'; }
+        catch(brevoErr) {
           const err = new Error(`Resend: ${resendErr.message}. Brevo: ${brevoErr.response?.data?.message || brevoErr.message}`);
-          err.dailyLimitReached = true;
-          throw err;
+          err.dailyLimitReached = true; throw err;
         }
       } else {
-        const err = new Error(`Resend failed: ${resendErr.message}. No Brevo remaining.`);
-        err.dailyLimitReached = true;
-        throw err;
+        const err = new Error(`Resend failed: ${resendErr.message}.`);
+        err.dailyLimitReached = true; throw err;
       }
     }
   } else if (brevoAvailable) {
-    try {
-      data = await sendViaBrevo(emailPayload);
-      sendMethod = 'brevo';
-    } catch(brevoErr) {
-      console.log(`[Email] Brevo failed: ${brevoErr.response?.data?.message || brevoErr.message}`);
+    try { data = await sendViaBrevo(emailPayload); sendMethod = 'brevo'; }
+    catch(brevoErr) {
       const err = new Error(`Brevo failed: ${brevoErr.response?.data?.message || brevoErr.message}`);
-      err.dailyLimitReached = true;
-      throw err;
+      err.dailyLimitReached = true; throw err;
     }
   } else {
     const reasons = [];
     if (!RESEND_API_KEY) reasons.push('Resend not configured');
     else if (currentStats.resendRemaining <= 0) reasons.push(`Resend: ${currentStats.resend}/${currentStats.resendLimit} used`);
-    if (!BREVO_API_KEY) reasons.push('Brevo not configured — add BREVO_API_KEY to env vars');
+    if (!BREVO_API_KEY) reasons.push('Brevo not configured');
     else if (currentStats.brevoRemaining <= 0) reasons.push(`Brevo: ${currentStats.brevo}/${currentStats.brevoLimit} used`);
     const err = new Error(`No email provider available. ${reasons.join('. ')}. Resets in ${currentStats.resetsIn}`);
-    err.dailyLimitReached = true;
-    throw err;
+    err.dailyLimitReached = true; throw err;
   }
-  incrementCounter(sendMethod);
 
+  incrementCounter(sendMethod);
   const stats = getSendStats();
-  const methodLabel = sendMethod === 'brevo' ? 'Brevo' : sendMethod === 'smtp' ? 'SMTP' : 'Resend';
+  const methodLabel = sendMethod === 'brevo' ? 'Brevo' : 'Resend';
   onProgress({ status: 'sent', message: `Sent to ${emailAddress} via ${methodLabel} (${stats.total} today | Resend: ${stats.resendRemaining} left, Brevo: ${stats.brevoRemaining} left)` });
-  return { subject: copy.subject, body: copy.body, samples, sentTo: emailAddress, sentAt: new Date().toISOString(), resendId: data?.id, sendMethod, outreachType: outreachType || 'no_website' };
+  return { subject: copy.subject, body: copy.body, sentTo: emailAddress, sentAt: new Date().toISOString(), resendId: data?.id, sendMethod, outreachType: outreachType || 'no_website' };
 }
 
 // ── FOLLOW-UP EMAIL GENERATION ────────────────────────────────────────────
@@ -534,12 +455,10 @@ async function generateFollowUpEmail(lead, step, previousSubject) {
   const client = getClient();
   const type = (lead.type || 'business').replace(/_/g, ' ');
   const hasWebsite = !!lead.website;
-  const scenario = hasWebsite ? 'A' : 'B';
   const scenarioDesc = hasWebsite
-    ? 'SCENARIO A: Business has a website. The problem is patient/customer retention. The first email pitched automated follow-up texts/emails and an AI chatbot trained on their business.'
-    : 'SCENARIO B: Business has no website. A demo site was already built for them with an AI chatbot included. The first email offered the demo site for free in exchange for a 5-minute call. A "View Your Demo Website" button is automatically added below the email body, so NEVER include any URLs or links in the email text.';
+    ? 'SCENARIO A: Business has a website. First email offered a free AI chatbot on their existing site (they train it themselves, get notified on questions) plus a fully automated follow-up system that contacts customers without any manual work from the owner.'
+    : 'SCENARIO B: Business has no website. A free demo site was already built for them with an AI chatbot included. The first email offered the demo site plus a separate automated follow-up system. A "View Your Demo Website" button is automatically added below the email body, so NEVER include any URLs.';
 
-  // Step-specific angle guidance
   const angles = [
     'This is follow-up #1. Acknowledge the previous email briefly, then introduce one real industry statistic that makes the core problem feel urgent. Tie it back to their specific situation.',
     'This is follow-up #2. Share a different angle or insight they haven\'t considered. A trend, a competitor behavior, or a customer pattern. Make the cost of inaction feel more concrete.',
@@ -565,16 +484,14 @@ RULES:
 - Write in plain text. No bullet points, no bold, no headers.
 - Maximum 100 words in the body. Short paragraphs, one to two sentences each.
 - Open by acknowledging the previous email briefly. Never say "I hope this finds you well" or anything corporate.
-- Introduce one real, specific statistic that makes the core problem feel urgent and undeniable. The stat must be relevant to their industry and the specific problem being addressed. Do not fabricate stats.
+- Introduce one real, specific statistic that makes the core problem feel urgent and undeniable.
 - Tie the stat back to their actual situation using the business details provided.
 - Do not repeat the full pitch from the first email. Reference it once, move forward.
-- Always mention the AI chatbot (trained on their actual business) and automated follow-up system (texts, emails, or chat) as part of the value. Keep it brief, not a full re-pitch.
-- NEVER include any URLs, links, or domain names in the email body. If the lead has no website, a demo button is added automatically below the email.
-- End with a single low-pressure question. Vary it slightly from "Worth a quick chat?" Examples: "Still worth 5 minutes?", "Want to take a look?", "Worth a call this week?"
+- NEVER include any URLs, links, or domain names in the email body.
+- End with a single low-pressure question. Examples: "Still worth 5 minutes?", "Want to take a look?", "Worth a call this week?"
 - Sign off: Leif on its own line, then ForgeAIAgent on the next line.
 - NEVER use em dashes (—) anywhere. Use commas or periods instead.
 - No exclamation points. No filler phrases. No semicolons.
-- No corporate language, no buzzwords.
 - BANNED phrases: "just checking in", "following up", "wanted to reach out", "circling back", "touching base", "bumping this"
 
 SUBJECT LINE RULES:
@@ -584,7 +501,6 @@ SUBJECT LINE RULES:
 
 Return ONLY valid JSON: {"subject":"...","body":"..."}`;
 
-  // Retry up to 3 times if Claude returns bad JSON
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const msg = await callAnthropicWithTimeout(client, {
@@ -594,7 +510,7 @@ Return ONLY valid JSON: {"subject":"...","body":"..."}`;
       });
       const result = parseJSON(msg.content[0]?.text || '');
       if (result?.subject && result?.body) return cleanCopy(result);
-      console.log(`[FollowUp] Attempt ${attempt}/3 bad JSON for ${lead.name}: ${(msg.content[0]?.text || '').substring(0, 100)}`);
+      console.log(`[FollowUp] Attempt ${attempt}/3 bad JSON for ${lead.name}`);
     } catch(e) {
       console.log(`[FollowUp] Attempt ${attempt}/3 error for ${lead.name}: ${e.message}`);
       if (attempt === 3) throw e;
@@ -603,4 +519,61 @@ Return ONLY valid JSON: {"subject":"...","body":"..."}`;
   throw new Error('Failed to generate follow-up after 3 attempts.');
 }
 
-module.exports = { sendOutreach, generateEmailPreview, generateFreeSamples, generateFollowUpEmail, getSendStats };
+// ── DM SCRIPT GENERATION ──────────────────────────────────────────────────
+async function generateDMScript(lead, platform) {
+  const client = getClient();
+  const type = (lead.type || 'business').replace(/_/g, ' ');
+  const platformName = platform === 'facebook' ? 'Facebook Messenger' : 'Instagram DM';
+  const msg = await callAnthropicWithTimeout(client, {
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 800,
+    messages: [{ role: 'user', content:
+`Generate 3 different ${platformName} scripts from Leif (Forge AI) to the owner of "${lead.name}", a ${type} at ${lead.address}.
+Rating: ${lead.rating !== 'N/A' ? lead.rating + '/5 with ' + lead.reviews + ' reviews' : 'N/A'}.
+
+Each script should be:
+- Very casual and conversational (DM style, not email style)
+- Under 60 words each
+- Reference something specific about their business
+- Mention that Leif built them a free demo website
+- End with a soft call to action (link to demo or quick call)
+- Sound like a real person, not a marketer
+- Different angle for each (compliment, value-first, curiosity)
+
+Return ONLY valid JSON:
+{"scripts": [
+  {"label": "Approach name", "text": "The DM script..."},
+  {"label": "Approach name", "text": "The DM script..."},
+  {"label": "Approach name", "text": "The DM script..."}
+]}`
+    }]
+  });
+  const result = parseJSON(msg.content[0].text);
+  if (!result?.scripts) throw new Error('Failed to generate DM scripts.');
+  return result.scripts;
+}
+
+// ── A/B SUBJECT LINE GENERATION ───────────────────────────────────────────
+async function generateABSubjects(lead, previewUrl) {
+  const client = getClient();
+  const type = (lead.type || 'business').replace(/_/g, ' ');
+  const msg = await callAnthropicWithTimeout(client, {
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 200,
+    messages: [{ role: 'user', content:
+`Generate 2 very different email subject line variations for a cold outreach email from Leif (Forge AI) to "${lead.name}", a ${type}.
+
+Variation A: More direct/specific - reference something about their business
+Variation B: More curiosity-driven - create intrigue
+
+Rules: Under 9 words each, no exclamation marks, sound like a real person, not a marketer.
+
+Return ONLY valid JSON: {"subjectA":"...","subjectB":"..."}`
+    }]
+  });
+  const result = parseJSON(msg.content[0].text);
+  if (!result?.subjectA || !result?.subjectB) throw new Error('Failed to generate A/B subjects.');
+  return result;
+}
+
+module.exports = { sendOutreach, generateEmailPreview, generateFreeSamples, generateFollowUpEmail, generateDMScript, generateABSubjects, getSendStats, hasValidDemoUrl, NoDemoError };
