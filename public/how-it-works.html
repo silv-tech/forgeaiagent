@@ -3,251 +3,383 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>See How It Works — ForgeAI</title>
-<meta name="description" content="ForgeAI adds an AI chatbot to your existing website and sets up automated follow-up messages that bring customers back.">
+<title>How It Works — Forge AI</title>
+<meta name="description" content="See exactly how Forge AI's AI chatbot and automated follow-up system work to grow your local business — completely free to set up.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="/seo/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#060810;color:#f0f4ff;font-family:'Inter',sans-serif;min-height:100vh;line-height:1.6;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
-a{color:#00e5ff;text-decoration:none}
+html{scroll-behavior:smooth}
+body{background:#fff;color:#0f172a;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
 
-/* Nav */
-.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:rgba(6,8,16,.95);border-bottom:1px solid rgba(30,42,69,.6);backdrop-filter:blur(12px)}
-.nav::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#00e5ff,#7c3aed,transparent);opacity:.4}
-.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo-icon{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#00e5ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#060810;font-family:'Syne',sans-serif;box-shadow:0 0 20px rgba(0,229,255,.25)}
-.logo-text{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:.04em;color:#f0f4ff}
-.logo-text em{font-style:normal;background:linear-gradient(90deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:64px;background:rgba(255,255,255,.96);border-bottom:1px solid #e2e8f0;backdrop-filter:blur(12px)}
+.nav-logo{font-size:20px;font-weight:800;color:#0f172a;text-decoration:none;letter-spacing:-.3px}
+.nav-logo:hover{text-decoration:none}
+.nav-logo span{color:#2563eb}
+.nav-links{display:flex;align-items:center;gap:20px;font-size:14px;font-weight:500}
+.nav-links a{color:#64748b;transition:color .15s}
+.nav-links a:hover{color:#0f172a;text-decoration:none}
+.nav-cta{background:#2563eb;color:#fff !important;padding:8px 18px;border-radius:8px;font-weight:600}
+.nav-cta:hover{background:#1d4ed8 !important;text-decoration:none !important}
 
-/* Hero */
-.hero{position:relative;z-index:1;text-align:center;padding:80px 24px 60px;max-width:760px;margin:0 auto}
-.hero::before{content:'';position:absolute;top:0;left:50%;width:600px;height:500px;transform:translate(-50%,-20%);background:radial-gradient(circle,rgba(0,229,255,.07) 0%,rgba(124,58,237,.03) 50%,transparent 70%);pointer-events:none}
-.hero-tag{display:inline-block;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:20px;margin-bottom:24px}
-.hero h1{font-family:'Syne',sans-serif;font-size:clamp(28px,5vw,46px);font-weight:800;line-height:1.15;margin-bottom:18px}
-.hero h1 span{background:linear-gradient(135deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p{font-size:17px;color:#8fa3cc;max-width:560px;margin:0 auto}
+/* HERO */
+.hero{text-align:center;padding:72px 24px 56px;max-width:720px;margin:0 auto}
+.badge{display:inline-block;background:#eff6ff;color:#2563eb;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 16px;border-radius:20px;margin-bottom:20px}
+.hero h1{font-size:clamp(28px,4vw,44px);font-weight:800;line-height:1.15;margin-bottom:16px;color:#0f172a}
+.hero h1 span{background:linear-gradient(135deg,#2563eb,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:17px;color:#64748b;max-width:560px;margin:0 auto 32px;line-height:1.65}
+.hero-note{display:inline-flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;padding:6px 16px;font-size:13px;color:#16a34a;font-weight:500}
 
-/* Two features */
-.features{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:60px 24px}
-.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
-.feature-card{background:rgba(11,15,26,.8);border:1px solid rgba(30,42,69,.6);border-radius:16px;padding:32px;transition:border-color .2s,box-shadow .2s}
-.feature-card:hover{border-color:rgba(0,229,255,.2);box-shadow:0 0 40px rgba(0,229,255,.04)}
-.feature-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(0,229,255,.15),rgba(124,58,237,.15));border:1px solid rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
-.feature-card h3{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;margin-bottom:10px}
-.feature-card p{color:#8fa3cc;font-size:14px;line-height:1.7;margin-bottom:20px}
-.feature-list{list-style:none;display:flex;flex-direction:column;gap:8px}
-.feature-list li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#8fa3cc}
-.feature-list li::before{content:'✓';color:#00e5ff;font-weight:700;flex-shrink:0;margin-top:1px}
+/* FEATURE SECTIONS */
+.feature{max-width:1000px;margin:0 auto;padding:64px 24px;border-bottom:1px solid #f1f5f9}
+.feature:last-of-type{border-bottom:none}
+.feature-inner{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
+.feature-inner.reverse{direction:rtl}
+.feature-inner.reverse > *{direction:ltr}
+.feature-label{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px}
+.label-blue{color:#2563eb}
+.label-purple{color:#7c3aed}
+.feature-content h2{font-size:clamp(22px,3vw,30px);font-weight:800;line-height:1.2;margin-bottom:14px;color:#0f172a}
+.feature-content .hook{font-size:16px;color:#64748b;margin-bottom:28px;line-height:1.65}
+.how-steps{display:flex;flex-direction:column;gap:16px;margin-bottom:28px}
+.step{display:flex;gap:14px;align-items:flex-start}
+.step-num{flex-shrink:0;width:28px;height:28px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#2563eb;margin-top:1px}
+.step-num.purple{background:#f5f3ff;border-color:#ddd6fe;color:#7c3aed}
+.step-text strong{display:block;font-size:14px;font-weight:700;color:#0f172a;margin-bottom:3px}
+.step-text p{font-size:13px;color:#64748b;line-height:1.55;margin:0}
+.impact-list{list-style:none;display:flex;flex-direction:column;gap:10px}
+.impact-list li{display:flex;align-items:flex-start;gap:10px;font-size:14px;color:#475569;line-height:1.5}
+.impact-list li::before{content:'✓';font-weight:800;flex-shrink:0;margin-top:1px}
+.check-blue li::before{color:#2563eb}
+.check-purple li::before{color:#7c3aed}
+.impact-list strong{color:#0f172a;font-weight:600}
 
-/* Mockups */
-.mockup-section{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 24px 60px}
-.mockup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+/* MOCKUP — CHAT */
+.mockup-wrap{position:relative}
+.mockup-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.08)}
+.chat-header{background:#eff6ff;border-bottom:1px solid #e2e8f0;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.chat-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+.chat-info-name{font-size:13px;font-weight:700;color:#0f172a}
+.chat-info-status{font-size:11px;color:#2563eb;display:flex;align-items:center;gap:4px}
+.chat-info-status::before{content:'';width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block}
+.chat-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-height:220px}
+.msg-row{display:flex;flex-direction:column;gap:4px}
+.msg-time{font-size:10px;color:#94a3b8}
+.msg-time.right{align-self:flex-end}
+.bubble{font-size:13px;line-height:1.5;padding:10px 14px;border-radius:12px;max-width:82%}
+.bubble-user{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;align-self:flex-end;border-radius:12px 12px 2px 12px}
+.bubble-bot{background:#f8fafc;border:1px solid #e2e8f0;color:#374151;align-self:flex-start;border-radius:12px 12px 12px 2px}
+.chat-input-row{padding:12px 18px;border-top:1px solid #f1f5f9;display:flex;gap:8px}
+.chat-input{flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:12px;color:#94a3b8;font-family:inherit}
+.chat-send{background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
 
-/* Chat widget mockup */
-.chat-mockup{background:rgba(11,15,26,.9);border:1px solid rgba(30,42,69,.8);border-radius:16px;overflow:hidden}
-.chat-header{background:rgba(0,229,255,.08);border-bottom:1px solid rgba(30,42,69,.8);padding:14px 18px;display:flex;align-items:center;gap:10px}
-.chat-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00e5ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#060810;font-family:'Syne',sans-serif;flex-shrink:0}
-.chat-info{flex:1}
-.chat-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
-.chat-status{font-size:11px;color:#00e5ff;display:flex;align-items:center;gap:4px}
-.chat-status::before{content:'';width:6px;height:6px;border-radius:50%;background:#00e5ff;display:inline-block}
-.chat-body{padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-height:220px}
-.msg{max-width:80%;font-size:13px;line-height:1.5;padding:10px 13px;border-radius:12px}
-.msg-user{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.15);align-self:flex-end;color:#f0f4ff;border-radius:12px 12px 2px 12px}
-.msg-bot{background:rgba(30,42,69,.6);border:1px solid rgba(30,42,69,.8);align-self:flex-start;color:#c8d8f0;border-radius:12px 12px 12px 2px}
-.msg-label{font-size:10px;color:#4a5d80;margin-bottom:2px;padding:0 4px}
-.chat-footer{padding:12px 18px;border-top:1px solid rgba(30,42,69,.8);display:flex;align-items:center;gap:8px}
-.chat-input{flex:1;background:rgba(30,42,69,.4);border:1px solid rgba(30,42,69,.8);border-radius:8px;padding:8px 12px;font-size:12px;color:#4a5d80;font-family:'Inter',sans-serif}
-.chat-send{background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#060810;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif}
+/* NOTIFICATION BADGE */
+.notif-badge{position:absolute;top:-12px;right:-12px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px 12px;font-size:12px;font-weight:600;color:#0f172a;display:flex;align-items:center;gap:6px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0}
 
-/* Phone/SMS mockup */
-.phone-mockup{background:rgba(11,15,26,.9);border:1px solid rgba(30,42,69,.8);border-radius:16px;overflow:hidden}
-.phone-header{background:rgba(124,58,237,.08);border-bottom:1px solid rgba(30,42,69,.8);padding:14px 18px;display:flex;align-items:center;gap:10px}
-.phone-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-.phone-info{flex:1}
-.phone-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
-.phone-sub{font-size:11px;color:#8fa3cc}
-.phone-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px;min-height:220px}
-.sms{display:flex;flex-direction:column;gap:3px}
-.sms-time{font-size:10px;color:#4a5d80;align-self:flex-end}
-.sms-bubble{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.25);border-radius:12px 12px 2px 12px;padding:10px 13px;font-size:13px;color:#c8d8f0;line-height:1.5;max-width:85%;align-self:flex-end}
-.sms-bubble.reply{background:rgba(30,42,69,.6);border:1px solid rgba(30,42,69,.8);border-radius:12px 12px 12px 2px;align-self:flex-start;color:#f0f4ff}
-.sms-time.left{align-self:flex-start}
-.phone-footer{padding:12px 18px;border-top:1px solid rgba(30,42,69,.8)}
-.delivery-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#8fa3cc}
-.delivery-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#00e5ff}
+/* MOCKUP — SMS */
+.sms-header{background:#f5f3ff;border-bottom:1px solid #e2e8f0;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.sms-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sms-info-name{font-size:13px;font-weight:700;color:#0f172a}
+.sms-info-sub{font-size:11px;color:#7c3aed}
+.sms-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px;min-height:260px}
+.sms-row{display:flex;flex-direction:column;gap:3px}
+.sms-time{font-size:10px;color:#94a3b8;align-self:flex-end}
+.sms-bubble{background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px 12px 2px 12px;padding:10px 14px;font-size:13px;color:#374151;max-width:86%;align-self:flex-end;line-height:1.5}
+.sms-bubble.reply{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px;align-self:flex-start}
+.sms-footer{padding:12px 18px;border-top:1px solid #f1f5f9;display:flex;align-items:center;gap:6px}
+.auto-badge{display:inline-flex;align-items:center;gap:5px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:20px;padding:5px 12px;font-size:11px;color:#7c3aed;font-weight:600}
+.auto-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#7c3aed;flex-shrink:0}
 
-/* How it works steps */
-.how{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 24px 60px}
-.how h2{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;text-align:center;margin-bottom:40px}
-.how h2 span{background:linear-gradient(135deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.step{display:flex;gap:18px;margin-bottom:28px;align-items:flex-start}
-.step-num{flex-shrink:0;width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,rgba(0,229,255,.12),rgba(124,58,237,.12));border:1px solid rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#00e5ff}
-.step-content h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:5px}
-.step-content p{color:#8fa3cc;font-size:14px;line-height:1.6}
+/* STAT STRIP */
+.stat-strip{background:#f8fafc;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;padding:40px 24px}
+.stat-grid{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;text-align:center}
+.stat-num{font-size:36px;font-weight:800;color:#0f172a;line-height:1}
+.stat-num span{background:linear-gradient(135deg,#2563eb,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:13px;color:#64748b;margin-top:6px;line-height:1.4}
+
+/* SETUP STEPS */
+.setup{max-width:860px;margin:0 auto;padding:72px 24px}
+.setup h2{font-size:28px;font-weight:800;text-align:center;margin-bottom:8px;color:#0f172a}
+.setup .sub{text-align:center;color:#64748b;font-size:15px;margin-bottom:48px}
+.setup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.setup-step{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:28px;text-align:center}
+.setup-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px}
+.setup-icon.blue{background:#eff6ff;border:1px solid #bfdbfe}
+.setup-icon.purple{background:#f5f3ff;border:1px solid #ddd6fe}
+.setup-icon.green{background:#f0fdf4;border:1px solid #bbf7d0}
+.setup-step h3{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.setup-step p{font-size:13px;color:#64748b;line-height:1.6}
+.step-tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:8px}
 
 /* CTA */
-.cta{position:relative;z-index:1;text-align:center;padding:60px 24px 80px;max-width:640px;margin:0 auto}
-.cta-box{background:rgba(11,15,26,.9);border:1px solid rgba(0,229,255,.15);border-radius:20px;padding:48px 40px;position:relative;overflow:hidden}
-.cta-box::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,229,255,.06) 0%,transparent 60%);pointer-events:none}
-.cta h2{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:12px;position:relative}
-.cta h2 span{background:linear-gradient(135deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.cta p{color:#8fa3cc;font-size:15px;margin-bottom:28px;position:relative;line-height:1.6}
-.cta-note{font-size:12px;color:#4a5d80;margin-top:14px;position:relative}
-.btn-primary{display:inline-block;background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#060810;padding:14px 36px;border-radius:10px;font-weight:700;font-size:15px;font-family:'Syne',sans-serif;transition:all .2s;box-shadow:0 4px 20px rgba(0,229,255,.25);position:relative}
-.btn-primary:hover{box-shadow:0 6px 30px rgba(0,229,255,.4);text-decoration:none;transform:translateY(-2px)}
+.cta-section{padding:72px 24px;text-align:center;background:#fff}
+.cta-box{max-width:600px;margin:0 auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:52px 40px;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(37,99,235,.04) 0%,transparent 60%);pointer-events:none}
+.cta-box h2{font-size:26px;font-weight:800;margin-bottom:10px;color:#0f172a;position:relative}
+.cta-box p{color:#64748b;font-size:15px;margin-bottom:28px;position:relative;line-height:1.65}
+.btn-primary{display:inline-block;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:14px 36px;border-radius:10px;font-weight:700;font-size:15px;transition:all .2s;box-shadow:0 4px 16px rgba(37,99,235,.25);position:relative}
+.btn-primary:hover{box-shadow:0 6px 24px rgba(37,99,235,.35);text-decoration:none;transform:translateY(-2px)}
+.cta-note{font-size:12px;color:#94a3b8;margin-top:14px;position:relative}
 
-.footer{text-align:center;padding:32px 24px;color:#2d3a55;font-size:12px;border-top:1px solid rgba(30,42,69,.4);position:relative;z-index:1}
+.footer{text-align:center;padding:32px 24px;color:#94a3b8;font-size:13px;border-top:1px solid #f1f5f9}
+.footer a{color:#64748b}
+
+@media(max-width:700px){
+  .feature-inner{grid-template-columns:1fr;gap:36px}
+  .feature-inner.reverse{direction:ltr}
+  .nav{padding:0 20px}
+  .nav-links .nav-cta{display:none}
+}
 </style>
 </head>
 <body>
 
 <nav class="nav">
-  <a href="/" class="logo">
-    <div class="logo-icon">AF</div>
-    <div class="logo-text">AGENT<em>FORGE</em></div>
-  </a>
+  <a href="/" class="nav-logo">Forge <span>AI</span></a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/blog">Blog</a>
+    <a href="/#contact" class="nav-cta">Get Your Free Site</a>
+  </div>
 </nav>
 
+<!-- HERO -->
 <section class="hero">
-  <div class="hero-tag">For Businesses With a Website</div>
-  <h1>Two Tools That Keep Customers <span>Coming Back</span></h1>
-  <p>An AI chatbot that lives on your existing site, and automated follow-up messages that go out after every visit — set up completely free.</p>
+  <div class="badge">For Businesses With a Website</div>
+  <h1>Two Tools That Put Your Business <span>On Autopilot</span></h1>
+  <p>An AI chatbot that answers customer questions 24/7 on your existing site, and an automated follow-up system that wins back customers without you lifting a finger — both set up free.</p>
+  <div class="hero-note">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m5 12 5 5L20 7"/></svg>
+    Works on any existing website &nbsp;·&nbsp; No rebuild needed &nbsp;·&nbsp; Free to set up
+  </div>
 </section>
 
-<section class="features">
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon">&#129302;</div>
-      <h3>AI Chatbot on Your Site</h3>
-      <p>A smart chat widget added to your existing website. Trained specifically on your business — your hours, services, prices, and FAQs — so it answers customer questions accurately, any time of day.</p>
-      <ul class="feature-list">
-        <li>Answers questions at 2am when you're closed</li>
-        <li>Trained on your actual hours, pricing, and services</li>
-        <li>Captures leads and contact info automatically</li>
-        <li>Works on any existing website, no rebuild needed</li>
+<!-- STAT STRIP -->
+<div class="stat-strip">
+  <div class="stat-grid">
+    <div>
+      <div class="stat-num"><span>67%</span></div>
+      <div class="stat-label">of customers leave a website if they can't get an answer fast</div>
+    </div>
+    <div>
+      <div class="stat-num"><span>60%</span></div>
+      <div class="stat-label">of customers never return simply because nobody followed up</div>
+    </div>
+    <div>
+      <div class="stat-num"><span>5×</span></div>
+      <div class="stat-label">easier to win back an existing customer than find a new one</div>
+    </div>
+    <div>
+      <div class="stat-num"><span>2am</span></div>
+      <div class="stat-label">when most after-hours questions arrive — and go unanswered</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURE 1: AI CHATBOT -->
+<section class="feature">
+  <div class="feature-inner">
+    <div class="feature-content">
+      <div class="feature-label label-blue">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Feature 1 — AI Chatbot
+      </div>
+      <h2>Answer Every Customer Question — Even at 2am</h2>
+      <p class="hook">A smart chat widget added to your existing website. It knows everything about your business because <strong>you train it yourself</strong> — your hours, services, prices, and FAQs. When a customer asks, it answers instantly. You get notified every time.</p>
+
+      <div class="how-steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <strong>You tell it about your business</strong>
+            <p>We set up a simple form where you enter your hours, services, prices, and any questions customers typically ask. You decide exactly how it responds.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <strong>We add it to your existing website</strong>
+            <p>One small code snippet — that's it. No redesign, no rebuild, no tech skills needed on your end. Works on any website platform.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <strong>It works around the clock — you stay in control</strong>
+            <p>Customers get instant answers day or night. Every time someone asks a question, you get a notification so you always know what's on customers' minds.</p>
+          </div>
+        </div>
+      </div>
+
+      <ul class="impact-list check-blue">
+        <li><strong>Never lose a lead after hours</strong> — most customers browse at night and leave if they can't get answers</li>
+        <li><strong>Handles the repetitive stuff</strong> — hours, pricing, parking, directions, service questions answered instantly</li>
+        <li><strong>Captures contact info automatically</strong> — the chatbot collects names and numbers so you can follow up</li>
+        <li><strong>You stay in control</strong> — update the answers anytime, and get notified whenever someone asks something new</li>
       </ul>
     </div>
-    <div class="feature-card">
-      <div class="feature-icon">&#128172;</div>
-      <h3>Automated Follow-Up System</h3>
-      <p>Customers who visited once but never came back are your biggest untapped revenue. Our system sends the right message at the right time — automatically — so they stay connected to your business.</p>
-      <ul class="feature-list">
-        <li>Texts or emails sent after every appointment or visit</li>
-        <li>Rebooking reminders, seasonal nudges, birthday offers</li>
-        <li>Tailored to your industry — salons, dental, auto, and more</li>
-        <li>No manual work — runs in the background for you</li>
+
+    <div class="mockup-wrap">
+      <div class="mockup-card">
+        <div class="chat-header">
+          <div class="chat-avatar">AI</div>
+          <div>
+            <div class="chat-info-name">Your Business Assistant</div>
+            <div class="chat-info-status">Online now &mdash; replies instantly</div>
+          </div>
+        </div>
+        <div class="chat-body">
+          <div class="msg-row">
+            <div class="msg-time right">Customer &mdash; 11:42 PM</div>
+            <div class="bubble bubble-user">Do you have availability this Saturday? And how much is a full detail?</div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-time">AI trained on your business</div>
+            <div class="bubble bubble-bot">Hey! Yes, we have Saturday slots open at 9am, 11am, and 2pm. A full detail starts at $149 for sedans, $179 for SUVs. Want me to help you lock in a time?</div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-time right">Customer</div>
+            <div class="bubble bubble-user">Yes please, the 11am slot for an SUV.</div>
+          </div>
+          <div class="msg-row">
+            <div class="msg-time">AI captures lead for you</div>
+            <div class="bubble bubble-bot">Got it! What's your name and best number? I'll have the team confirm your 11am Saturday appointment.</div>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <div class="chat-input">Type a message...</div>
+          <button class="chat-send">Send</button>
+        </div>
+      </div>
+      <div class="notif-badge">
+        <div class="notif-dot"></div>
+        New lead captured — Saturday 11am
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURE 2: FOLLOW-UP -->
+<section class="feature">
+  <div class="feature-inner reverse">
+    <div class="feature-content">
+      <div class="feature-label label-purple">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Feature 2 — Automated Follow-Up
+      </div>
+      <h2>Win Back Customers Who Never Returned</h2>
+      <p class="hook">After every visit, your system automatically reaches out to customers at exactly the right moment. No scheduling. No writing. No manual work on your end — <strong>the system does everything by itself.</strong></p>
+
+      <div class="how-steps">
+        <div class="step">
+          <div class="step-num purple">1</div>
+          <div class="step-text">
+            <strong>Customer visits your business</strong>
+            <p>We connect to your booking system or you share a simple customer list. The system logs when each customer last visited.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num purple">2</div>
+          <div class="step-text">
+            <strong>The system decides when to reach out</strong>
+            <p>Based on your business type, it knows the right timing — 2 days after a haircut, 3 months after a car service, before a customer's birthday. You don't set any of this.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num purple">3</div>
+          <div class="step-text">
+            <strong>Messages go out automatically</strong>
+            <p>Personalized texts or emails are sent without you touching anything. Rebooking reminders, seasonal offers, check-ins — all handled. You just see the rebookings roll in.</p>
+          </div>
+        </div>
+      </div>
+
+      <ul class="impact-list check-purple">
+        <li><strong>Zero manual work</strong> — you never write a message, pick a send date, or decide who to contact</li>
+        <li><strong>Wins back lost revenue</strong> — 60% of customers don't return simply because nobody reached out</li>
+        <li><strong>Tailored to your industry</strong> — different timing and messages for salons, dental, auto, restaurants, and more</li>
+        <li><strong>Runs in the background forever</strong> — set it up once and it keeps working while you focus on your business</li>
       </ul>
     </div>
-  </div>
-</section>
 
-<section class="mockup-section">
-  <div class="mockup-grid">
-
-    <!-- Chat widget mockup -->
-    <div class="chat-mockup">
-      <div class="chat-header">
-        <div class="chat-avatar">AI</div>
-        <div class="chat-info">
-          <div class="chat-name">Your Business Assistant</div>
-          <div class="chat-status">Online now</div>
+    <div class="mockup-wrap">
+      <div class="mockup-card">
+        <div class="sms-header">
+          <div class="sms-avatar">💬</div>
+          <div>
+            <div class="sms-info-name">Automated Follow-Up System</div>
+            <div class="sms-info-sub">Sends automatically — you do nothing</div>
+          </div>
+        </div>
+        <div class="sms-body">
+          <div class="sms-row">
+            <div class="sms-time">2 days after visit — sent automatically</div>
+            <div class="sms-bubble">Hey Sarah! Thanks for coming in on Wednesday. Hope you're loving your new look! When you're ready to rebook, we've got open slots next week. Just reply here or tap below. 😊</div>
+          </div>
+          <div class="sms-row">
+            <div class="sms-time" style="align-self:flex-start">Sarah replies</div>
+            <div class="sms-bubble reply">I actually want to book for next Saturday! Do you have 10am?</div>
+          </div>
+          <div class="sms-row">
+            <div class="sms-time">6 weeks later — sent automatically</div>
+            <div class="sms-bubble">Hi Sarah, it's been about 6 weeks since your last visit — your color is probably due for a refresh! We have a few openings this week if you'd like to get in before the weekend. 🎨</div>
+          </div>
+          <div class="sms-row">
+            <div class="sms-time">On her birthday — sent automatically</div>
+            <div class="sms-bubble">Happy Birthday Sarah! 🎂 As a little gift from us — 15% off your next service this week. You deserve it!</div>
+          </div>
+        </div>
+        <div class="sms-footer">
+          <div class="auto-badge">Fully automatic — no action needed from you</div>
         </div>
       </div>
-      <div class="chat-body">
-        <div>
-          <div class="msg-label">Customer</div>
-          <div class="msg msg-user">What are your hours on Saturday?</div>
-        </div>
-        <div>
-          <div class="msg-label">AI (trained on your business)</div>
-          <div class="msg msg-bot">We're open Saturday 9am–4pm. Walk-ins welcome before 2pm, after that it's best to book ahead. Want me to help you schedule something?</div>
-        </div>
-        <div>
-          <div class="msg-label">Customer</div>
-          <div class="msg msg-user">How much is a basic service?</div>
-        </div>
-        <div>
-          <div class="msg-label">AI</div>
-          <div class="msg msg-bot">Basic starts at $45. We also have a package deal — 3 visits for $120. I can book you in right now if you'd like.</div>
-        </div>
-      </div>
-      <div class="chat-footer">
-        <div class="chat-input">Type a message...</div>
-        <button class="chat-send">Send</button>
-      </div>
-    </div>
-
-    <!-- SMS follow-up mockup -->
-    <div class="phone-mockup">
-      <div class="phone-header">
-        <div class="phone-icon">💬</div>
-        <div class="phone-info">
-          <div class="phone-name">Automated Follow-Up</div>
-          <div class="phone-sub">Sent after each visit</div>
-        </div>
-      </div>
-      <div class="phone-body">
-        <div class="sms">
-          <div class="sms-time">After visit — 2 hours later</div>
-          <div class="sms-bubble">Hey Sarah, thanks for coming in today! Hope you're happy with everything. If you want to lock in your next appointment before we fill up, reply or book at the link below. 😊</div>
-        </div>
-        <div class="sms">
-          <div class="sms-time left">3 weeks later</div>
-          <div class="sms-bubble reply">Hey! It's been a few weeks — your next visit is probably coming up. We have some open slots this Thursday. Want to grab one?</div>
-        </div>
-        <div class="sms">
-          <div class="sms-time">Customer replies</div>
-          <div class="sms-bubble">Yes! Thursday at 11 works for me</div>
-        </div>
-      </div>
-      <div class="phone-footer">
-        <div class="delivery-badge">Delivered automatically — no manual work</div>
-      </div>
-    </div>
-
-  </div>
-</section>
-
-<section class="how">
-  <h2>How We <span>Set It Up</span></h2>
-  <div class="step">
-    <div class="step-num">1</div>
-    <div class="step-content">
-      <h3>Quick call — 15 minutes</h3>
-      <p>We learn what's actually causing friction in your business day to day. What questions customers ask most, when they typically rebook, what your busiest times are.</p>
-    </div>
-  </div>
-  <div class="step">
-    <div class="step-num">2</div>
-    <div class="step-content">
-      <h3>We train the AI on your business</h3>
-      <p>Using your hours, services, pricing, and FAQs, we configure the chatbot so it responds like someone who actually knows your business — not a generic bot.</p>
-    </div>
-  </div>
-  <div class="step">
-    <div class="step-num">3</div>
-    <div class="step-content">
-      <h3>Everything goes live — free</h3>
-      <p>The chatbot is added to your existing website. Follow-up messages are configured for your industry. You don't touch a thing. We handle all of it at no cost.</p>
     </div>
   </div>
 </section>
 
-<section class="cta">
+<!-- HOW SETUP WORKS -->
+<section class="setup">
+  <h2>How We Set It Up — For Free</h2>
+  <p class="sub">Three steps. We do the heavy lifting. You get the results.</p>
+  <div class="setup-grid">
+    <div class="setup-step">
+      <div class="step-tag">Step 1</div>
+      <div class="setup-icon blue">📋</div>
+      <h3>We Learn Your Business</h3>
+      <p>Quick 5-minute call where you walk us through your services, hours, and how you like to talk to customers. That's all we need.</p>
+    </div>
+    <div class="setup-step">
+      <div class="step-tag">Step 2</div>
+      <div class="setup-icon purple">⚙️</div>
+      <h3>We Build and Train Both Tools</h3>
+      <p>We configure the chatbot with your specific information and set up the follow-up sequences tailored to your business type. Usually done within 48 hours.</p>
+    </div>
+    <div class="setup-step">
+      <div class="step-tag">Step 3</div>
+      <div class="setup-icon green">🚀</div>
+      <h3>You Review and We Go Live</h3>
+      <p>We walk you through everything on a short call. You approve it, we add it to your site, and both tools start working immediately.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
   <div class="cta-box">
-    <h2>Ready to See It on <span>Your Business?</span></h2>
-    <p>Reply to the email you received and we'll set everything up — completely free. No pitch, no contract, no obligation.</p>
-    <a href="mailto:leif@forgeaiagent.com?subject=Interested%20in%20the%20AI%20setup" class="btn-primary">Reply to Leif</a>
-    <div class="cta-note">Or just reply directly to the email you received — either works.</div>
+    <h2>Ready to See It On Your Business?</h2>
+    <p>Reply to the email you received and we'll set up a free 5-minute call — no pitch, no pressure. We'll show you exactly what both tools would look like on your website.</p>
+    <a href="mailto:leif@forgeaiagent.com" class="btn-primary">Reply to Leif</a>
+    <p class="cta-note">leif@forgeaiagent.com &nbsp;·&nbsp; No credit card &nbsp;·&nbsp; Free setup &nbsp;·&nbsp; No commitment</p>
   </div>
 </section>
 
 <footer class="footer">
-  &copy; 2026 ForgeAI &mdash; <a href="/" style="color:#4a5d80">forgeaiagent.com</a>
+  &copy; 2026 Forge AI. All rights reserved. &nbsp;·&nbsp; <a href="/">forgeaiagent.com</a>
 </footer>
 
 </body>

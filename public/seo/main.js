@@ -63,30 +63,6 @@ document.querySelectorAll('.faq-question').forEach(btn => {
   });
 });
 
-// ── HOW IT WORKS MODAL ──────────────────────────────────────────────────
-const hiwModal = document.getElementById('hiwModal');
-if (hiwModal) {
-  // Auto-open when ?hiw=1 is in the URL (from email CTA)
-  if (new URLSearchParams(window.location.search).get('hiw') === '1') {
-    hiwModal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-  }
-  // Close on backdrop click
-  hiwModal.addEventListener('click', function(e) {
-    if (e.target === this) {
-      this.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-  });
-  // Close on Escape key
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && hiwModal.style.display !== 'none') {
-      hiwModal.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-  });
-}
-
 // ── CONTACT FORM ────────────────────────────────────────────────────────
 const form = document.getElementById('contactForm');
 form.addEventListener('submit', async (e) => {
