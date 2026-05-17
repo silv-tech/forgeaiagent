@@ -382,9 +382,7 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
 
   // Inject "See How It Works" button for has_website leads
   if (isHasWebsite && !bodyHtml.includes('See How It Works')) {
-    const baseUrl = previewUrl.replace(/\/sites\/[^/]*$/, '').replace(/\/$/, '');
-    const howItWorksUrl = `${baseUrl}/how-it-works.html`;
-    bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(howItWorksUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
+    bodyHtml += `<p style="margin:16px 0 20px"><a href="https://app.forgeaiagent.com/how-it-works" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
   }
 
   const pixelHtml = trackingOpts?.pixelHtml || '';

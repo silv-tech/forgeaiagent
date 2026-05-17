@@ -312,6 +312,7 @@ app.use(express.static(path.join(__dirname,'public','seo'), {
     }
   }
 }));
+app.get('/how-it-works', (req, res) => res.sendFile(path.join(__dirname,'public','how-it-works.html')));
 app.get('/blog', (req, res) => res.sendFile(path.join(__dirname,'public','seo','blog','index.html')));
 app.get('/blog/:slug', (req, res) => {
   const file = path.join(__dirname,'public','seo','blog', req.params.slug + '.html');
