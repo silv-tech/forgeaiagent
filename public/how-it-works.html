@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>See How It Works — ForgeAI</title>
+<meta name="description" content="ForgeAI adds an AI chatbot to your existing website and sets up automated follow-up messages that bring customers back.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="/seo/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#060810;color:#f0f4ff;font-family:'Inter',sans-serif;min-height:100vh;line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+a{color:#00e5ff;text-decoration:none}
+
+/* Nav */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;background:rgba(6,8,16,.95);border-bottom:1px solid rgba(30,42,69,.6);backdrop-filter:blur(12px)}
+.nav::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#00e5ff,#7c3aed,transparent);opacity:.4}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#00e5ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#060810;font-family:'Syne',sans-serif;box-shadow:0 0 20px rgba(0,229,255,.25)}
+.logo-text{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;letter-spacing:.04em;color:#f0f4ff}
+.logo-text em{font-style:normal;background:linear-gradient(90deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* Hero */
+.hero{position:relative;z-index:1;text-align:center;padding:80px 24px 60px;max-width:760px;margin:0 auto}
+.hero::before{content:'';position:absolute;top:0;left:50%;width:600px;height:500px;transform:translate(-50%,-20%);background:radial-gradient(circle,rgba(0,229,255,.07) 0%,rgba(124,58,237,.03) 50%,transparent 70%);pointer-events:none}
+.hero-tag{display:inline-block;background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);color:#00e5ff;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:20px;margin-bottom:24px}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(28px,5vw,46px);font-weight:800;line-height:1.15;margin-bottom:18px}
+.hero h1 span{background:linear-gradient(135deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:17px;color:#8fa3cc;max-width:560px;margin:0 auto}
+
+/* Two features */
+.features{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:60px 24px}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+.feature-card{background:rgba(11,15,26,.8);border:1px solid rgba(30,42,69,.6);border-radius:16px;padding:32px;transition:border-color .2s,box-shadow .2s}
+.feature-card:hover{border-color:rgba(0,229,255,.2);box-shadow:0 0 40px rgba(0,229,255,.04)}
+.feature-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(0,229,255,.15),rgba(124,58,237,.15));border:1px solid rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px}
+.feature-card h3{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;margin-bottom:10px}
+.feature-card p{color:#8fa3cc;font-size:14px;line-height:1.7;margin-bottom:20px}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.feature-list li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:#8fa3cc}
+.feature-list li::before{content:'✓';color:#00e5ff;font-weight:700;flex-shrink:0;margin-top:1px}
+
+/* Mockups */
+.mockup-section{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 24px 60px}
+.mockup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+
+/* Chat widget mockup */
+.chat-mockup{background:rgba(11,15,26,.9);border:1px solid rgba(30,42,69,.8);border-radius:16px;overflow:hidden}
+.chat-header{background:rgba(0,229,255,.08);border-bottom:1px solid rgba(30,42,69,.8);padding:14px 18px;display:flex;align-items:center;gap:10px}
+.chat-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#00e5ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#060810;font-family:'Syne',sans-serif;flex-shrink:0}
+.chat-info{flex:1}
+.chat-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+.chat-status{font-size:11px;color:#00e5ff;display:flex;align-items:center;gap:4px}
+.chat-status::before{content:'';width:6px;height:6px;border-radius:50%;background:#00e5ff;display:inline-block}
+.chat-body{padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-height:220px}
+.msg{max-width:80%;font-size:13px;line-height:1.5;padding:10px 13px;border-radius:12px}
+.msg-user{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.15);align-self:flex-end;color:#f0f4ff;border-radius:12px 12px 2px 12px}
+.msg-bot{background:rgba(30,42,69,.6);border:1px solid rgba(30,42,69,.8);align-self:flex-start;color:#c8d8f0;border-radius:12px 12px 12px 2px}
+.msg-label{font-size:10px;color:#4a5d80;margin-bottom:2px;padding:0 4px}
+.chat-footer{padding:12px 18px;border-top:1px solid rgba(30,42,69,.8);display:flex;align-items:center;gap:8px}
+.chat-input{flex:1;background:rgba(30,42,69,.4);border:1px solid rgba(30,42,69,.8);border-radius:8px;padding:8px 12px;font-size:12px;color:#4a5d80;font-family:'Inter',sans-serif}
+.chat-send{background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#060810;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif}
+
+/* Phone/SMS mockup */
+.phone-mockup{background:rgba(11,15,26,.9);border:1px solid rgba(30,42,69,.8);border-radius:16px;overflow:hidden}
+.phone-header{background:rgba(124,58,237,.08);border-bottom:1px solid rgba(30,42,69,.8);padding:14px 18px;display:flex;align-items:center;gap:10px}
+.phone-icon{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.phone-info{flex:1}
+.phone-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700}
+.phone-sub{font-size:11px;color:#8fa3cc}
+.phone-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px;min-height:220px}
+.sms{display:flex;flex-direction:column;gap:3px}
+.sms-time{font-size:10px;color:#4a5d80;align-self:flex-end}
+.sms-bubble{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.25);border-radius:12px 12px 2px 12px;padding:10px 13px;font-size:13px;color:#c8d8f0;line-height:1.5;max-width:85%;align-self:flex-end}
+.sms-bubble.reply{background:rgba(30,42,69,.6);border:1px solid rgba(30,42,69,.8);border-radius:12px 12px 12px 2px;align-self:flex-start;color:#f0f4ff}
+.sms-time.left{align-self:flex-start}
+.phone-footer{padding:12px 18px;border-top:1px solid rgba(30,42,69,.8)}
+.delivery-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);border-radius:20px;padding:5px 12px;font-size:11px;color:#8fa3cc}
+.delivery-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#00e5ff}
+
+/* How it works steps */
+.how{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 24px 60px}
+.how h2{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;text-align:center;margin-bottom:40px}
+.how h2 span{background:linear-gradient(135deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.step{display:flex;gap:18px;margin-bottom:28px;align-items:flex-start}
+.step-num{flex-shrink:0;width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,rgba(0,229,255,.12),rgba(124,58,237,.12));border:1px solid rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#00e5ff}
+.step-content h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:5px}
+.step-content p{color:#8fa3cc;font-size:14px;line-height:1.6}
+
+/* CTA */
+.cta{position:relative;z-index:1;text-align:center;padding:60px 24px 80px;max-width:640px;margin:0 auto}
+.cta-box{background:rgba(11,15,26,.9);border:1px solid rgba(0,229,255,.15);border-radius:20px;padding:48px 40px;position:relative;overflow:hidden}
+.cta-box::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,229,255,.06) 0%,transparent 60%);pointer-events:none}
+.cta h2{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;margin-bottom:12px;position:relative}
+.cta h2 span{background:linear-gradient(135deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.cta p{color:#8fa3cc;font-size:15px;margin-bottom:28px;position:relative;line-height:1.6}
+.cta-note{font-size:12px;color:#4a5d80;margin-top:14px;position:relative}
+.btn-primary{display:inline-block;background:linear-gradient(135deg,#00e5ff,#00b8d4);color:#060810;padding:14px 36px;border-radius:10px;font-weight:700;font-size:15px;font-family:'Syne',sans-serif;transition:all .2s;box-shadow:0 4px 20px rgba(0,229,255,.25);position:relative}
+.btn-primary:hover{box-shadow:0 6px 30px rgba(0,229,255,.4);text-decoration:none;transform:translateY(-2px)}
+
+.footer{text-align:center;padding:32px 24px;color:#2d3a55;font-size:12px;border-top:1px solid rgba(30,42,69,.4);position:relative;z-index:1}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="logo">
+    <div class="logo-icon">AF</div>
+    <div class="logo-text">AGENT<em>FORGE</em></div>
+  </a>
+</nav>
+
+<section class="hero">
+  <div class="hero-tag">For Businesses With a Website</div>
+  <h1>Two Tools That Keep Customers <span>Coming Back</span></h1>
+  <p>An AI chatbot that lives on your existing site, and automated follow-up messages that go out after every visit — set up completely free.</p>
+</section>
+
+<section class="features">
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">&#129302;</div>
+      <h3>AI Chatbot on Your Site</h3>
+      <p>A smart chat widget added to your existing website. Trained specifically on your business — your hours, services, prices, and FAQs — so it answers customer questions accurately, any time of day.</p>
+      <ul class="feature-list">
+        <li>Answers questions at 2am when you're closed</li>
+        <li>Trained on your actual hours, pricing, and services</li>
+        <li>Captures leads and contact info automatically</li>
+        <li>Works on any existing website, no rebuild needed</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128172;</div>
+      <h3>Automated Follow-Up System</h3>
+      <p>Customers who visited once but never came back are your biggest untapped revenue. Our system sends the right message at the right time — automatically — so they stay connected to your business.</p>
+      <ul class="feature-list">
+        <li>Texts or emails sent after every appointment or visit</li>
+        <li>Rebooking reminders, seasonal nudges, birthday offers</li>
+        <li>Tailored to your industry — salons, dental, auto, and more</li>
+        <li>No manual work — runs in the background for you</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="mockup-section">
+  <div class="mockup-grid">
+
+    <!-- Chat widget mockup -->
+    <div class="chat-mockup">
+      <div class="chat-header">
+        <div class="chat-avatar">AI</div>
+        <div class="chat-info">
+          <div class="chat-name">Your Business Assistant</div>
+          <div class="chat-status">Online now</div>
+        </div>
+      </div>
+      <div class="chat-body">
+        <div>
+          <div class="msg-label">Customer</div>
+          <div class="msg msg-user">What are your hours on Saturday?</div>
+        </div>
+        <div>
+          <div class="msg-label">AI (trained on your business)</div>
+          <div class="msg msg-bot">We're open Saturday 9am–4pm. Walk-ins welcome before 2pm, after that it's best to book ahead. Want me to help you schedule something?</div>
+        </div>
+        <div>
+          <div class="msg-label">Customer</div>
+          <div class="msg msg-user">How much is a basic service?</div>
+        </div>
+        <div>
+          <div class="msg-label">AI</div>
+          <div class="msg msg-bot">Basic starts at $45. We also have a package deal — 3 visits for $120. I can book you in right now if you'd like.</div>
+        </div>
+      </div>
+      <div class="chat-footer">
+        <div class="chat-input">Type a message...</div>
+        <button class="chat-send">Send</button>
+      </div>
+    </div>
+
+    <!-- SMS follow-up mockup -->
+    <div class="phone-mockup">
+      <div class="phone-header">
+        <div class="phone-icon">💬</div>
+        <div class="phone-info">
+          <div class="phone-name">Automated Follow-Up</div>
+          <div class="phone-sub">Sent after each visit</div>
+        </div>
+      </div>
+      <div class="phone-body">
+        <div class="sms">
+          <div class="sms-time">After visit — 2 hours later</div>
+          <div class="sms-bubble">Hey Sarah, thanks for coming in today! Hope you're happy with everything. If you want to lock in your next appointment before we fill up, reply or book at the link below. 😊</div>
+        </div>
+        <div class="sms">
+          <div class="sms-time left">3 weeks later</div>
+          <div class="sms-bubble reply">Hey! It's been a few weeks — your next visit is probably coming up. We have some open slots this Thursday. Want to grab one?</div>
+        </div>
+        <div class="sms">
+          <div class="sms-time">Customer replies</div>
+          <div class="sms-bubble">Yes! Thursday at 11 works for me</div>
+        </div>
+      </div>
+      <div class="phone-footer">
+        <div class="delivery-badge">Delivered automatically — no manual work</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="how">
+  <h2>How We <span>Set It Up</span></h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h3>Quick call — 15 minutes</h3>
+      <p>We learn what's actually causing friction in your business day to day. What questions customers ask most, when they typically rebook, what your busiest times are.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h3>We train the AI on your business</h3>
+      <p>Using your hours, services, pricing, and FAQs, we configure the chatbot so it responds like someone who actually knows your business — not a generic bot.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h3>Everything goes live — free</h3>
+      <p>The chatbot is added to your existing website. Follow-up messages are configured for your industry. You don't touch a thing. We handle all of it at no cost.</p>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="cta-box">
+    <h2>Ready to See It on <span>Your Business?</span></h2>
+    <p>Reply to the email you received and we'll set everything up — completely free. No pitch, no contract, no obligation.</p>
+    <a href="mailto:leif@forgeaiagent.com?subject=Interested%20in%20the%20AI%20setup" class="btn-primary">Reply to Leif</a>
+    <div class="cta-note">Or just reply directly to the email you received — either works.</div>
+  </div>
+</section>
+
+<footer class="footer">
+  &copy; 2026 ForgeAI &mdash; <a href="/" style="color:#4a5d80">forgeaiagent.com</a>
+</footer>
+
+</body>
+</html>

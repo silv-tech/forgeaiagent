@@ -212,27 +212,28 @@ CONTEXT:
 - This business has NO website.
 
 INSTRUCTIONS:
-Goal: Get a reply by showing them a demo site you already built for them.
+Goal: Get a reply by showing them a free website you already built for them, and making clear what it comes with.
 
 - Subject: 2-5 words maximum. Must reference something specific and real about their business — their review count, rating, or a pain point tied to having no website. Should feel like an observation, not a sales pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no website", "your customers can't find you", "${lead.name} deserves a site", "${lead.rating} stars but invisible online". Make the owner feel like you specifically noticed something about their business.
-- Paragraph 1: acknowledge their review count and rating in one sentence, make it feel like you actually looked them up, not a template
-- Paragraph 2: one sentence on the problem, people search their name and find nothing
-- Paragraph 3: tell them you built a demo site for them with an AI chatbot already built in — the chatbot is trained on their actual business (services, hours, pricing) so it answers customer questions accurately 24/7. Do NOT include the URL in the text — just say you built it. A button will be added automatically below your text. Say it's just a starting point, a quick demo to show what's possible, and it can be fully customized to match their brand. It's theirs to keep, completely free.
-- Paragraph 4: make it clear the website is completely free. Then say you'd like to hop on a quick call — not to sell anything, but to understand what's actually slowing their business down day to day. Once you know their pain points, you'll show them exactly how AI can solve or improve those specific problems. Keep it casual and genuine. Something like "The site is yours, totally free. I'd just love a quick chat to hear what's actually giving you headaches in your business — then I'll show you how AI can take those problems off your plate." Do NOT say "customize" or "tailor". Do NOT say "I'd love to learn what's working" or "figure out if there's anything worth exploring."
-- Paragraph 5: end with one short soft question about the call, not about viewing the site (there's already a button for that). Examples: "Sound fair?", "Worth 5 minutes?", "Interested?". Must be under 8 words. Do NOT say "Want to see it?" or "Worth a quick look?" since the demo button is already there. The goal is just to get a reply about the call.
+- Paragraph 1: acknowledge their review count and rating in one sentence. Make it feel like you actually looked them up, not a template.
+- Paragraph 2: one sentence on the problem. People search their name and find nothing — no way to book, check hours, or even confirm they exist.
+- Paragraph 3: lead with the main offer — you already built them a free website. This is the hero. Keep it to 1-2 sentences max. Say it's already done and it's completely theirs to keep for free. Do NOT include the URL anywhere in the sentence. After this paragraph, on its own line with nothing else, output exactly this URL: ${previewUrl} — the system will automatically turn it into a button.
+- Paragraph 4: explain what the website comes with — two separate features, each on its own paragraph with a blank line between them. Do NOT blend or combine them. Feature one: an AI chatbot they can personally train to answer exactly the way they want, in their own voice, not a generic bot. It handles customer questions 24/7 and they get notified every time someone asks something. IMPORTANT: the sentence MUST include that they train it themselves to answer exactly how they want — do not drop this point. Feature two: a completely separate automated follow-up system that sends texts or emails to customers after their visit to bring them back. Write each as one clean direct sentence. Do NOT label them "Feature 1" or "Feature 2".
+- Paragraph 5: make it clear everything is completely free. Say you'd love a quick call — not to sell anything, just to hear what's actually giving them headaches in their business, then show them how this helps. Keep it casual and genuine. Do NOT say "customize" or "tailor".
+- Paragraph 6: end with one short soft question about the call. Examples: "Sound fair?", "Worth 5 minutes?", "Interested?". Must be under 8 words. Do NOT say "Want to see it?" or "Worth a quick look?" — the button handles that.
 - Sign off: MUST end with Leif on its own line, then ForgeAIAgent on the next line. This is required, never skip it.
-- Max length: 100 words
+- Max length: 140 words
 
-CRITICAL FORMATTING RULE: Each paragraph above MUST be separated by a blank line in the output. Do not combine multiple points into one paragraph. The email must have clear visual spacing between each thought. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
+CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. The two features in Paragraph 4 MUST each be on their own paragraph with a blank line between them — they are not the same thing. Do not combine any points. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
 
 RULES:
 - Plain text only, no bullet points, bold, headers, or HTML
 - No "I hope this email finds you well" or "I came across your business"
 - No corporate words, no leverage, synergy, solutions, or optimize
 - Do not mention ForgeAIAgent in the body, only in the sign-off
-- Do not list multiple services, one problem, one solution, one ask
 - Write like a real person emailing one specific business, not a mass campaign
 - Every sentence must earn its place, cut anything that doesn't add value
+- NEVER use em dashes (—) anywhere. Use commas or periods instead.
 
 Return ONLY valid JSON with no extra text:
 {"subject":"...","body":"..."}`;
@@ -241,6 +242,9 @@ Return ONLY valid JSON with no extra text:
 function buildWebsiteOutreachPrompt(lead, type) {
   const hasRating = lead.rating && lead.rating !== 'N/A';
   const reviews = parseInt(lead.reviews) || 0;
+  const followUpExamples = getFollowUpExamples(type);
+  const cityMatch = lead.address.match(/,\s*([^,]+),\s*[A-Z]{2}/);
+  const city = cityMatch ? cityMatch[1].trim() : lead.address;
 
   return `You generate cold outreach emails for ForgeAI, a digital growth agency. You will receive business data and must output a single plain-text email. Nothing else, no explanation, no preamble, just the subject line and email body.
 
@@ -248,23 +252,27 @@ CONTEXT:
 - Business name: ${lead.name}
 - Business type: ${type}
 - Address: ${lead.address}
+- City: ${city}
 - Rating: ${hasRating ? lead.rating : 'no rating'}
 - Number of reviews: ${reviews}
-- Industry: ${type}
-- City: ${lead.address}
+- Website: ${lead.website || 'unknown'}
 - This business ALREADY HAS a website.
 
-INSTRUCTIONS:
-Goal: Get a reply by identifying a problem they recognize and offering one concrete solution.
+INDUSTRY FOLLOW-UP CONTEXT for this ${type}:
+${followUpExamples.scenarios}
 
-- Subject: 2-5 words maximum. Must reference something specific and real about their business — their review count, rating, or a specific pain point tied to their industry. Should feel like an observation, not a sales pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no follow-up system", "your patients aren't coming back", "${type}s in the area are losing repeats", "${lead.rating} stars, losing regulars". Make the owner feel like you specifically noticed something about their business.
-- Paragraph 1: mention you found them while looking at ${type} businesses in their area and say something specific and positive about their reviews or rating. This should read as one natural opening thought.
-- Paragraph 2: state the problem in one clean direct sentence. Something like "Most ${type} customers don't come back simply because they never hear from you after that first visit, that's the biggest reason people drift to competitors." Do not use phrases like "Here's what I'm seeing happen though" or any lead-in that softens the point. Just state it directly.
-- Paragraph 3: pitch the solution — automated follow-up texts or emails after each appointment, seasonal reminders, and an AI chatbot on their website that's trained on their actual business (services, hours, pricing) so it answers customer questions accurately 24/7. Describe it simply and plainly.
-- Paragraph 4: make it clear you'll set up the automation completely free. Then say you'd like to get on a quick call — not to pitch, but to understand what's actually causing friction in their business day to day. Once you know their pain points, you'll show them how AI can solve or improve those specific problems. Keep it casual and genuine. Something like "I'll set this up for you, completely free. All I'd need is a quick chat to hear what's actually giving you headaches running your business — then I'll show you how AI can take those problems off your plate." Do NOT say "customize" or "tailor". Do NOT say "I'd love to learn what's working" or "figure out if there's anything worth exploring."
-- Paragraph 5: end with one short soft question that feels conversational and low stakes. Examples: "Worth a quick chat?", "Sound fair?", "Interested?". Must be under 8 words. The goal is just to get a reply.
+INSTRUCTIONS:
+Goal: Get a reply by naming a specific moment the owner recognizes and offering one concrete solution.
+
+- Subject: 2-5 words maximum. Reference something specific about their business — their review count, rating, or a pain point tied to their industry. Should feel like an observation, not a pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no follow-up system", "after the visit is the gap", "${lead.rating} stars, losing regulars", "your ${type} customers aren't coming back". Make the owner feel like you noticed something specific.
+- Paragraph 1: mention you were researching ${type} businesses in ${city} and noticed something specific and positive about their rating or review count. One natural opening sentence.
+- Paragraph 2 (timeline hook): name the exact moment the problem shows up — not a generic problem statement, but the specific moment when customers decide whether to come back. For example: "Right after a first visit is when most ${type} customers decide if they're returning — and that's exactly when most businesses go quiet." Use the INDUSTRY FOLLOW-UP CONTEXT above to make this moment specific and real for their business type. Make the owner picture the situation.
+- Paragraph 3: an AI chatbot added to their existing website. They personally train it to respond exactly the way they want, in their own voice. It handles customer questions 24/7 and they get notified every time someone asks something. One clean sentence. MUST include that they train it themselves to answer exactly how they want.
+- Paragraph 4: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out — the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear. Do NOT include any URLs. A "See How It Works" button will be added automatically below your text.
+- Paragraph 5: make it clear you'll set both up completely free. Then say you'd like a quick call — not to sell anything, but to hear what's actually causing friction in their business day to day. Once you know their pain points, you'll show them exactly how AI can solve those specific problems. Keep it casual and genuine. Do NOT say "customize" or "tailor".
+- Paragraph 6: end with one short interest-based question that lets the owner self-qualify. Examples: "Is keeping more customers coming back something you're working on right now?", "Open to seeing how this works for a ${type}?", "Worth a quick look?". Must be under 12 words.
 - Sign off: MUST end with Leif on its own line, then ForgeAIAgent on the next line. This is required, never skip it.
-- Max length: 110 words
+- Max length: 130 words
 
 CRITICAL FORMATTING RULE: Each paragraph above MUST be separated by a blank line in the output. Do not combine multiple points into one paragraph. The email must have clear visual spacing between each thought. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
 
@@ -273,14 +281,16 @@ RULES:
 - No "I hope this email finds you well" or "I came across your business"
 - No corporate words, no leverage, synergy, solutions, or optimize
 - Do not mention ForgeAIAgent in the body, only in the sign-off
-- Do not list multiple services, one problem, one solution, one ask
+- One problem, one solution, one ask — do not list multiple services or benefits
 - Write like a real person emailing one specific business, not a mass campaign
 - Every sentence must earn its place, cut anything that doesn't add value
 - Do not start with "Hi there" or any generic greeting. Either use the owner's name if available, or skip the greeting entirely and start directly with the first observation about their business.
 - Do not use the phrases "lifting a finger", "runs while you sleep", "set it and forget it", or any other cliché. Describe the solution simply and plainly.
-- Do not use the phrase "found your company" in the opening line. Instead go straight to the observation about their rating and reviews. For example: "I was researching pool cleaners in Birmingham and your 4.3 rating with 18 reviews caught my attention." Do not add filler phrases like "found your company" or "came across your listing" between the research line and the rating observation.
-- When ending the CTA question with "for a [business type]", always use the owner-facing version of the business type, not the worker-facing version. For example: "for a pool cleaning company" not "for a pool cleaner", "for a plumbing company" not "for a plumber", "for a painting company" not "for a painter", "for a cleaning company" not "for a cleaner", "for a landscaping company" not "for a landscaper". The email is addressed to the business owner, so the phrasing should reflect that they run a company, not that they are the laborer.
-- When referencing the business type in the opening line, never use the word "businesses" after the industry type. Instead use the natural word for that industry — for example "chiropractor practices" not "chiropractor businesses", "dental offices" not "dental businesses", "landscaping companies" not "landscaping businesses", "restaurants" not "restaurant businesses". If unsure of the natural word, just use the plural of the business type alone — "chiropractors in the area" not "chiropractor businesses in the area."
+- Do not use the phrase "found your company" in the opening line. Go straight to the observation about their rating and reviews. For example: "I was researching hair salons in Austin and your 4.6 rating with 94 reviews caught my attention."
+- When ending a CTA question with "for a [business type]", always use the owner-facing version: "for a pool cleaning company" not "for a pool cleaner", "for a plumbing company" not "for a plumber", "for a cleaning company" not "for a cleaner".
+- When referencing the business type in the opening line, never use the word "businesses" after the industry type. Use the natural word: "dental offices" not "dental businesses", "landscaping companies" not "landscaping businesses", "restaurants" not "restaurant businesses".
+- Do not reference the website URL anywhere in the email body. If you noticed something specific on their site, describe the observation naturally without citing the URL.
+- NEVER use em dashes (—) anywhere. Use commas or periods instead.
 
 Return ONLY valid JSON with no extra text:
 {"subject":"...","body":"..."}`;
@@ -419,21 +429,28 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
       continue;
     }
 
-    // Sign-off: simple text signature, no images
+    // Sign-off
     if (/^(Leif|ForgeAI|ForgeAIAgent)$/i.test(trimmedLine)) {
       if (/^Leif$/i.test(trimmedLine)) {
-        bodyHtml += `<p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#333">Leif<br><span style="color:#888">ForgeAIAgent</span></p>`;
+        bodyHtml += `<div style="margin-top:28px;padding-top:20px;border-top:1px solid #e8ecf0"><p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#111">Leif</p><p style="margin:0 0 6px;font-size:13px;color:#6b7280">Founder, Forge AI</p><p style="margin:0;font-size:13px"><a href="mailto:leif@forgeaiagent.com" style="color:#2563eb;text-decoration:none">leif@forgeaiagent.com</a><span style="color:#d1d5db;margin:0 8px">|</span><a href="https://forgeaiagent.com" style="color:#2563eb;text-decoration:none">forgeaiagent.com</a></p></div>`;
       }
       continue;
     }
 
-    // Default paragraph — plain styling
-    bodyHtml += `<p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#333">${escapeHtml(line)}</p>`;
+    // Default paragraph
+    bodyHtml += `<p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(line)}</p>`;
   }
 
   // For no-website outreach, inject demo button if not already in body
   if (!isHasWebsite && previewUrl && !bodyHtml.includes('View Your Demo Website')) {
     bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(previewUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">View Your Demo Website</a></p>`;
+  }
+
+  // For has-website outreach, inject "See How It Works" button
+  if (isHasWebsite && !bodyHtml.includes('See How It Works')) {
+    const baseUrl = previewUrl.replace(/\/sites\/[^/]*$/, '').replace(/\/$/, '');
+    const howItWorksUrl = `${baseUrl}/how-it-works.html`;
+    bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(howItWorksUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
   }
 
   // Tracking pixel (only present for follow-ups)
@@ -449,7 +466,7 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
     },
     subject: copy.subject,
     text: copy.body,
-    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px">${bodyHtml}${pixelHtml}</div>`
+    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px"><table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-bottom:1px solid #e8ecf0;margin-bottom:24px;padding-bottom:16px"><tr><td style="vertical-align:middle"><span style="font-size:17px;font-weight:800;color:#111;letter-spacing:-0.3px">Forge <span style="color:#2563eb">AI</span></span></td><td align="right" style="vertical-align:middle"><span style="font-size:10px;letter-spacing:0.1em;color:#9ca3af;text-transform:uppercase">Websites &middot; Chatbots &middot; Follow-Ups</span></td></tr></table>${bodyHtml}${pixelHtml}</div>`
   };
 
   let data;
