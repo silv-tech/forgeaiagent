@@ -7,12 +7,8 @@ hamburger.addEventListener('click', () => {
   navLinks.classList.toggle('open');
 });
 
-// ── CLEAN IN-PAGE LINKS ─────────────────────────────────────────────────
-// Intercept every in-page anchor so we smooth-scroll without leaving the
-// "#section" fragment behind in the address bar.
-function cleanUrl() {
-  history.replaceState(null, '', window.location.pathname + window.location.search);
-}
+// ── IN-PAGE NAV LINKS ───────────────────────────────────────────────────
+// Smooth-scroll to section and update the URL so it reflects where you are.
 document.querySelectorAll('a[href^="#"]').forEach(link => {
   link.addEventListener('click', (e) => {
     const href = link.getAttribute('href');
@@ -23,18 +19,17 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     const target = id ? document.getElementById(id) : null;
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', '/#' + id);
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      history.replaceState(null, '', '/');
     }
-    cleanUrl();
   });
 });
-// If someone lands with a hash in the URL (shared link), honor the scroll
-// but strip the fragment so the bar stays clean.
+// If someone lands with a hash in the URL (shared link), honor the scroll.
 if (window.location.hash) {
   const target = document.getElementById(window.location.hash.slice(1));
   if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 0);
-  cleanUrl();
 }
 
 // ── NAV SHADOW ON SCROLL ────────────────────────────────────────────────

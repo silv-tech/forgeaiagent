@@ -1,0 +1,66 @@
+/* ── BLOG — LIGHT THEME (matches forgeaiagent.com marketing site) ─────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:#fff;color:#0f172a;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:#2563eb;text-decoration:none}
+a:hover{text-decoration:underline}
+img{max-width:100%;display:block}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:64px;background:rgba(255,255,255,.96);border-bottom:1px solid #e2e8f0;backdrop-filter:blur(12px)}
+.nav-logo{font-size:20px;font-weight:800;color:#0f172a;text-decoration:none;letter-spacing:-.3px}
+.nav-logo:hover{text-decoration:none}
+.nav-logo span{color:#2563eb}
+.nav-links{display:flex;align-items:center;gap:20px;font-size:14px;font-weight:500}
+.nav-links a{color:#64748b;transition:color .15s}
+.nav-links a:hover{color:#0f172a;text-decoration:none}
+.nav-cta{background:#2563eb;color:#fff !important;padding:8px 18px;border-radius:8px;font-weight:600}
+.nav-cta:hover{background:#1d4ed8 !important;text-decoration:none !important}
+
+/* ── ARTICLE LAYOUT ── */
+article,main.blog-container{max-width:740px;margin:0 auto;padding:56px 24px 100px}
+.breadcrumb{font-size:13px;color:#94a3b8;margin-bottom:20px}
+.breadcrumb a{color:#94a3b8}
+.breadcrumb a:hover{color:#2563eb;text-decoration:none}
+h1{font-size:clamp(26px,4vw,38px);font-weight:800;line-height:1.2;margin-bottom:14px;color:#0f172a}
+.meta{color:#94a3b8;font-size:13px;margin-bottom:40px;display:flex;gap:16px;border-bottom:1px solid #f1f5f9;padding-bottom:24px}
+h2{font-size:22px;font-weight:700;color:#0f172a;margin:40px 0 14px}
+h3{font-size:18px;font-weight:600;color:#0f172a;margin:28px 0 10px}
+p{color:#475569;font-size:15px;margin-bottom:18px;line-height:1.75}
+ul,ol{color:#475569;font-size:15px;margin:0 0 18px 22px}
+li{margin-bottom:8px}
+strong{color:#0f172a;font-weight:600}
+code{background:#f1f5f9;color:#0f172a;padding:2px 6px;border-radius:4px;font-size:13px;font-family:monospace}
+blockquote{border-left:3px solid #2563eb;padding:14px 20px;margin:28px 0;background:#f8fafc;border-radius:0 8px 8px 0}
+blockquote p{color:#64748b;margin:0;font-style:italic}
+
+/* ── TABLES ── */
+table{width:100%;border-collapse:collapse;margin:28px 0;font-size:14px}
+th{background:#f8fafc;color:#0f172a;padding:12px 14px;text-align:left;font-weight:600;border-bottom:2px solid #e2e8f0}
+td{padding:10px 14px;border-bottom:1px solid #f1f5f9;color:#475569}
+tr:hover td{background:#fafafa}
+
+/* ── CALLOUTS ── */
+.cta-box{background:linear-gradient(135deg,#eff6ff,#f5f3ff);border:1px solid #bfdbfe;border-radius:14px;padding:32px;margin:40px 0;text-align:center}
+.cta-box h3{font-size:20px;font-weight:700;margin-bottom:8px;color:#0f172a}
+.cta-box p{color:#64748b;margin-bottom:20px}
+.cta-btn{display:inline-block;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;transition:all .2s;box-shadow:0 4px 14px rgba(37,99,235,.2)}
+.cta-btn:hover{box-shadow:0 6px 20px rgba(37,99,235,.3);text-decoration:none;transform:translateY(-1px)}
+
+.verdict{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px;margin:24px 0}
+.verdict strong{color:#16a34a}
+
+/* ── BLOG INDEX CARDS ── */
+.blog-header{padding:60px 24px 40px;text-align:center;border-bottom:1px solid #f1f5f9;margin-bottom:40px}
+.blog-header h1{margin-bottom:10px}
+.blog-header p{color:#64748b;font-size:16px;max-width:500px;margin:0 auto}
+.post-card{display:block;padding:28px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin-bottom:16px;transition:border-color .2s,box-shadow .2s;text-decoration:none}
+.post-card:hover{border-color:#93c5fd;box-shadow:0 4px 20px rgba(37,99,235,.08);text-decoration:none}
+.post-card h2{font-size:19px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.post-card p{color:#64748b;font-size:14px;line-height:1.6;margin:0}
+.post-meta{display:flex;gap:16px;margin-top:12px;font-size:12px;color:#94a3b8}
+
+/* ── FOOTER ── */
+.footer{text-align:center;padding:40px 24px;color:#94a3b8;font-size:13px;border-top:1px solid #f1f5f9;margin-top:0}
+.footer a{color:#64748b}
+.footer a:hover{color:#0f172a}

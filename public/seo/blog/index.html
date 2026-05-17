@@ -13,7 +13,8 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Forge AI">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/blog.css">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -28,53 +29,22 @@
   }
 }
 </script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#060810;color:#f0f4ff;font-family:'Inter',sans-serif;min-height:100vh;line-height:1.6}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.02) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
-a{color:#00e5ff;text-decoration:none}
-a:hover{text-decoration:underline}
-
-.nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:rgba(6,8,16,.95);border-bottom:1px solid rgba(30,42,69,.6);backdrop-filter:blur(12px)}
-.nav::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#00e5ff,#7c3aed,transparent);opacity:.4}
-.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-.logo:hover{text-decoration:none}
-.logo-icon{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#00e5ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#060810;font-family:'Syne',sans-serif}
-.logo-text{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:.04em;color:#f0f4ff}
-.logo-text em{font-style:normal;background:linear-gradient(90deg,#00e5ff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;gap:20px;font-size:13px;font-weight:500}
-.nav-links a{color:#8fa3cc;transition:color .2s}
-.nav-links a:hover{color:#00e5ff;text-decoration:none}
-
-.container{max-width:800px;margin:0 auto;padding:60px 24px;position:relative;z-index:1}
-h1{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;margin-bottom:12px;background:linear-gradient(135deg,#f0f4ff,#00e5ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.subtitle{color:#8fa3cc;font-size:16px;margin-bottom:48px}
-
-.post-card{display:block;padding:28px;background:rgba(11,15,26,.8);border:1px solid rgba(30,42,69,.6);border-radius:14px;margin-bottom:20px;transition:border-color .2s,box-shadow .2s}
-.post-card:hover{border-color:rgba(0,229,255,.3);box-shadow:0 0 30px rgba(0,229,255,.06);text-decoration:none}
-.post-card h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:#f0f4ff;margin-bottom:8px}
-.post-card p{color:#8fa3cc;font-size:14px;line-height:1.6}
-.post-meta{display:flex;gap:16px;margin-top:12px;font-size:12px;color:#4a5d80}
-.post-meta span{display:flex;align-items:center;gap:4px}
-
-.footer{text-align:center;padding:40px 24px;color:#2d3a55;font-size:12px;border-top:1px solid rgba(30,42,69,.4);margin-top:60px}
-</style>
 </head>
 <body>
 <nav class="nav">
-  <a href="/" class="logo">
-    <div class="logo-icon">AF</div>
-    <div class="logo-text">AGENT<em>FORGE</em></div>
-  </a>
+  <a href="/" class="nav-logo">Forge <span>AI</span></a>
   <div class="nav-links">
     <a href="/">Home</a>
     <a href="/blog">Blog</a>
+    <a href="/#contact" class="nav-cta">Get Your Free Site</a>
   </div>
 </nav>
 
-<main class="container">
-  <h1>Blog</h1>
-  <p class="subtitle">Insights on AI, websites, and growing your local business online.</p>
+<main class="blog-container">
+  <div class="blog-header">
+    <h1>Blog</h1>
+    <p>Insights on AI, websites, and growing your local business online.</p>
+  </div>
 
   <a href="/blog/why-every-local-business-needs-a-website-in-2026" class="post-card">
     <h2>Why Every Local Business Needs a Website in 2026</h2>
@@ -104,8 +74,10 @@ h1{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;margin-bottom:12
   </a>
 </main>
 
+</main>
+
 <footer class="footer">
-  &copy; 2026 Forge AI. All rights reserved.
+  &copy; 2026 Forge AI. All rights reserved. &nbsp;·&nbsp; <a href="/">forgeaiagent.com</a>
 </footer>
 </body>
 </html>
