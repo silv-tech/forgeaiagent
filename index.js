@@ -65,6 +65,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const getBase = () => process.env.PUBLIC_URL || `http://localhost:${PORT}`;
 
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] === 'http') {
+    return res.redirect(301, 'https://' + req.headers.host + req.url);
+  }
+  next();
+});
 app.use(cors());
 // Gzip responses. Skip SSE stream so progress events flush immediately.
 app.use(compression({
@@ -79,7 +86,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'agentforge-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' }
 }));
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
