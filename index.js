@@ -1117,12 +1117,23 @@ app.get('/api/analytics', (req,res) => {
   outreach.forEach(o => {
     if (o.sentAt) { const d=o.sentAt.slice(0,10); dailyEmails[d]=(dailyEmails[d]||0)+1; }
   });
+  // Per-day cohort: for each day emails were sent, how many got opened/clicked
+  const dailyOutreach = {};
+  outreachRecs.forEach(t => {
+    const o = outreach.find(o => o.leadId === t.leadId);
+    const d = (o?.sentAt || t.createdAt || '').slice(0, 10);
+    if (!d) return;
+    if (!dailyOutreach[d]) dailyOutreach[d] = { sent: 0, opens: 0, clicks: 0 };
+    dailyOutreach[d].sent++;
+    if (t.opens.length > 0) dailyOutreach[d].opens++;
+    if (t.clicks.length > 0) dailyOutreach[d].clicks++;
+  });
   res.json({
     total, withEmail, withSite, contacted, replied, hotLeads:hot,
     convRate: contacted>0?((hot/contacted)*100).toFixed(1):0,
     openRate, clickRate, replyRate, totalOpens, totalClicks, outreachTracked,
     followUpsSent, followUpLeads, followUpOpens, followUpClicks, followUpOpenRate, followUpClickRate,
-    cities, types, dailyLeads, dailyEmails,
+    cities, types, dailyLeads, dailyEmails, dailyOutreach,
     activeSequences: sequences.filter(s=>s.status==='active').length,
     scheduledPending: scheduled.filter(s=>s.status==='pending').length,
   });

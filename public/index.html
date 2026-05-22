@@ -897,6 +897,26 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="pr"><div class="pl">Replied</div><div class="pt"><div class="pf" id="pf4"></div></div><div class="pn" id="pn4">0</div></div>
       <div class="pr"><div class="pl">Hot Lead 🔥</div><div class="pt"><div class="pf" id="pf5"></div></div><div class="pn" id="pn5">0</div></div>
     </div>
+    <div class="pc" style="margin-bottom:14px">
+      <div class="pct">Daily Outreach Performance</div>
+      <div style="overflow-x:auto">
+        <table id="a-daily-table" style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.1);color:#6b7280;text-align:left">
+              <th style="padding:6px 10px">Date</th>
+              <th style="padding:6px 10px;text-align:center">Sent</th>
+              <th style="padding:6px 10px;text-align:center">Opened</th>
+              <th style="padding:6px 10px;text-align:center">Clicked</th>
+              <th style="padding:6px 10px;text-align:center">Open %</th>
+              <th style="padding:6px 10px;text-align:center">Click %</th>
+            </tr>
+          </thead>
+          <tbody id="a-daily-body">
+            <tr><td colspan="6" style="padding:12px 10px;color:#6b7280;text-align:center">No data yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
       <div class="pc">
         <div class="pct">Per City Breakdown</div>
@@ -1703,6 +1723,23 @@ async function loadAnal(){
       if(pf)pf.style.width=(v/denom*100)+'%';
       if(pn)pn.textContent=v;
     });
+    // Daily outreach cohort table
+    const tbody=document.getElementById('a-daily-body');
+    if(tbody&&d.dailyOutreach){
+      const rows=Object.entries(d.dailyOutreach).sort((a,b)=>b[0].localeCompare(a[0]));
+      tbody.innerHTML=rows.length?rows.map(([date,r])=>{
+        const or=r.sent?Math.round(r.opens/r.sent*100):0;
+        const cr=r.sent?Math.round(r.clicks/r.sent*100):0;
+        return `<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+          <td style="padding:7px 10px;color:#e5e7eb">${date}</td>
+          <td style="padding:7px 10px;text-align:center;color:#e5e7eb">${r.sent}</td>
+          <td style="padding:7px 10px;text-align:center;color:#34d399">${r.opens}</td>
+          <td style="padding:7px 10px;text-align:center;color:#60a5fa">${r.clicks}</td>
+          <td style="padding:7px 10px;text-align:center;color:#34d399">${or}%</td>
+          <td style="padding:7px 10px;text-align:center;color:#60a5fa">${cr}%</td>
+        </tr>`;
+      }).join(''):'<tr><td colspan="6" style="padding:12px 10px;color:#6b7280;text-align:center">No data yet</td></tr>';
+    }
     const cEl=document.getElementById('a-cities');
     if(cEl&&d.cities){
       cEl.innerHTML=Object.entries(d.cities).map(([city,c])=>`<div class="pr"><div class="pl">${city}</div><div class="pt"><div class="pf" style="width:${(c.total/max)*100}%"></div></div><div class="pn">${c.total}</div></div>`).join('')||'<div style="color:var(--t4);font-size:11px">No data</div>';
