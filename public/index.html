@@ -869,16 +869,16 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="ac"><div class="acl">Contacted</div><div class="acv" id="a-co">0</div></div>
       <div class="ac"><div class="acl">Replied</div><div class="acv" id="a-re">0</div></div>
       <div class="ac"><div class="acl">Hot Leads</div><div class="acv" id="a-ho">0</div></div>
-      <div class="ac"><div class="acl">Open Rate</div><div class="acv" id="a-or">0%</div></div>
-      <div class="ac"><div class="acl">Click Rate</div><div class="acv" id="a-clr">0%</div></div>
+      <div class="ac"><div class="acl">Open Rate</div><div class="acv" id="a-or">0%</div><div class="acl" id="a-or-raw" style="font-size:11px;color:#6b7280;margin-top:2px">0 of 0</div></div>
+      <div class="ac"><div class="acl">Click Rate</div><div class="acv" id="a-clr">0%</div><div class="acl" id="a-clr-raw" style="font-size:11px;color:#6b7280;margin-top:2px">0 of 0</div></div>
     </div>
     <div class="pc" style="margin-bottom:14px">
       <div class="pct">Follow-Up Tracker</div>
       <div class="ag">
         <div class="ac"><div class="acl">Follow-Ups Sent</div><div class="acv" id="a-fu-sent" style="color:#fbbf24">0</div></div>
         <div class="ac"><div class="acl">Leads Followed Up</div><div class="acv" id="a-fu-leads" style="color:#fbbf24">0</div></div>
-        <div class="ac"><div class="acl">FU Open Rate</div><div class="acv" id="a-fu-or" style="color:#fbbf24">0%</div></div>
-        <div class="ac"><div class="acl">FU Click Rate</div><div class="acv" id="a-fu-clr" style="color:#fbbf24">0%</div></div>
+        <div class="ac"><div class="acl">FU Open Rate</div><div class="acv" id="a-fu-or" style="color:#fbbf24">0%</div><div class="acl" id="a-fu-or-raw" style="font-size:11px;color:#6b7280;margin-top:2px">0 of 0</div></div>
+        <div class="ac"><div class="acl">FU Click Rate</div><div class="acv" id="a-fu-clr" style="color:#fbbf24">0%</div><div class="acl" id="a-fu-clr-raw" style="font-size:11px;color:#6b7280;margin-top:2px">0 of 0</div></div>
       </div>
       <div style="margin-top:10px">
         <div class="pr"><div class="pl">Sent</div><div class="pt"><div class="pf" id="pf-fu-s" style="background:linear-gradient(90deg,#fbbf24,#f59e0b)"></div></div><div class="pn" id="pn-fu-s">0</div></div>
@@ -1680,12 +1680,16 @@ async function loadAnal(){
     document.getElementById('a-re').textContent=d.replied;
     document.getElementById('a-ho').textContent=d.hotLeads;
     document.getElementById('a-or').textContent=(d.openRate||0)+'%';
+    document.getElementById('a-or-raw').textContent=(d.totalOpens||0)+' of '+(d.contacted||0);
     document.getElementById('a-clr').textContent=(d.clickRate||0)+'%';
+    document.getElementById('a-clr-raw').textContent=(d.totalClicks||0)+' of '+(d.contacted||0);
     // Follow-up tracker
     document.getElementById('a-fu-sent').textContent=d.followUpsSent||0;
     document.getElementById('a-fu-leads').textContent=d.followUpLeads||0;
     document.getElementById('a-fu-or').textContent=(d.followUpOpenRate||0)+'%';
+    document.getElementById('a-fu-or-raw').textContent=(d.followUpOpens||0)+' of '+(d.followUpsSent||0);
     document.getElementById('a-fu-clr').textContent=(d.followUpClickRate||0)+'%';
+    document.getElementById('a-fu-clr-raw').textContent=(d.followUpClicks||0)+' of '+(d.followUpsSent||0);
     const fuMax=d.followUpsSent||1;
     [['pf-fu-s',d.followUpsSent||0,fuMax],['pf-fu-o',d.followUpOpens||0,fuMax],['pf-fu-c',d.followUpClicks||0,fuMax]].forEach(([id,v,dm])=>{
       const bar=document.getElementById(id),num=document.getElementById(id.replace('pf','pn'));
