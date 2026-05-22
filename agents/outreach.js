@@ -396,7 +396,7 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
     to: emailAddress,
     reply_to: fromEmail,
     headers: {
-      'List-Unsubscribe': unsubscribeUrl ? `<${unsubscribeUrl}>` : `<mailto:${fromEmail}?subject=unsubscribe>`,
+      'List-Unsubscribe': unsubscribeUrl ? `<${unsubscribeUrl}>, <mailto:${fromEmail}?subject=unsubscribe>` : `<mailto:${fromEmail}?subject=unsubscribe>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
     },
     subject: copy.subject,

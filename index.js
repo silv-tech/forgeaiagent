@@ -180,7 +180,7 @@ fs.mkdirSync(DATA,{recursive:true});
 
 // Migrate: if volume was previously mounted at /app/leads, files are now at DATA_ROOT root
 // Move them into the leads/ subdirectory
-['leads.json','outreach.json','replies.json','sequences.json','scheduled.json','tracking.json','.env','.send-counter.json'].forEach(f => {
+['leads.json','outreach.json','replies.json','sequences.json','scheduled.json','tracking.json','unsubscribed.json','.env','.send-counter.json'].forEach(f => {
   const oldPath = path.join(DATA_ROOT, f);
   const newPath = path.join(DATA, f);
   if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
@@ -235,6 +235,16 @@ process.on('SIGTERM', () => { _flushPending(); process.exit(0); });
 let leads = load(LF), outreach = load(OF), replies = load(RF);
 let sequences = load(SEQ_F), scheduled = load(SCH_F), tracking = load(TF);
 let unsubscribed = load(USF); // array of lowercase email strings
+let unsubscribedSet = new Set(unsubscribed); // O(1) lookup
+const isUnsubscribed = email => unsubscribedSet.has((email||'').toLowerCase());
+const addUnsubscribed = email => {
+  const lower = (email||'').toLowerCase();
+  if (!unsubscribedSet.has(lower)) {
+    unsubscribedSet.add(lower);
+    unsubscribed.push(lower);
+    save(USF, unsubscribed);
+  }
+};
 
 // ── MIGRATION ────────────────────────────────────────────────────────────
 let migrated = false;
@@ -310,16 +320,18 @@ app.get('/c/:trackingId', (req, res) => {
   res.redirect(rec?.targetUrl || '/');
 });
 
-app.get('/unsubscribe', (req, res) => {
+const _handleUnsubscribe = (req, res) => {
   try {
-    const email = req.query.e ? Buffer.from(req.query.e, 'base64url').toString() : null;
-    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      const lower = email.toLowerCase();
-      if (!unsubscribed.includes(lower)) { unsubscribed.push(lower); save(USF, unsubscribed); }
-    }
+    const raw = Array.isArray(req.query.e) ? req.query.e[0] : req.query.e;
+    const email = raw ? Buffer.from(raw, 'base64url').toString() : null;
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) addUnsubscribed(email);
   } catch {}
+  // RFC 8058: POST one-click must return 200 with no redirect
+  if (req.method === 'POST') return res.sendStatus(200);
   res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Unsubscribed</title><style>body{font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f9fafb}div{text-align:center;padding:40px;max-width:400px}h2{color:#111;margin-bottom:8px}p{color:#6b7280;font-size:14px}</style></head><body><div><h2>You've been unsubscribed</h2><p>You won't receive any more emails from us.</p></div></body></html>`);
-});
+};
+app.get('/unsubscribe', _handleUnsubscribe);
+app.post('/unsubscribe', _handleUnsubscribe);
 
 // ── PUBLIC ROUTES (no auth required, SEO-crawlable) ─────────────────────
 app.use(express.static(path.join(__dirname,'public','seo'), {
@@ -670,7 +682,7 @@ app.post('/api/outreach/send', async (req,res) => {
     return res.status(400).json({ error:'Already sent to this address for this lead.' });
   // Only no-website leads need a demo URL. Has-website leads pitch a
   // redesign of the existing site, no CTA button, no demo to build first.
-  if (unsubscribed.includes(emailAddress.toLowerCase()))
+  if (isUnsubscribed(emailAddress))
     return res.status(400).json({ error:`⚠️ ${emailAddress} has unsubscribed. Remove them from your list before sending.`, unsubscribed: true });
   const needsDemo = !((outreachType === 'has_website') || (!outreachType && lead.website));
   if (needsDemo && !hasValidDemoUrl(lead.previewUrl))
@@ -750,7 +762,7 @@ app.post('/api/outreach/batch', async (req,res) => {
         failed++;
         continue;
       }
-      if (unsubscribed.includes(email.toLowerCase())) {
+      if (isUnsubscribed(email)) {
         emit(sessionId, { type:'outreach_batch', status:'error', message:`⚠️ ${lead.name}: Unsubscribed, skipped` });
         failed++;
         continue;
@@ -816,7 +828,7 @@ app.post('/api/outreach/followup-batch', async (req,res) => {
         emit(sessionId, { type:'followup_batch', status:'skipped', message:`⏭ ${lead.name}: Already sent 3 follow-ups` });
         continue;
       }
-      if (unsubscribed.includes(email.toLowerCase())) {
+      if (isUnsubscribed(email)) {
         emit(sessionId, { type:'followup_batch', status:'skipped', message:`⚠️ ${lead.name}: Unsubscribed, skipped` });
         continue;
       }
@@ -885,7 +897,7 @@ app.post('/api/scheduled/process', async (req,res) => {
   for (const s of due) {
     const f = findLead(s.leadId);
     if (!f) { s.status='cancelled'; continue; }
-    if (unsubscribed.includes(s.emailAddress.toLowerCase())) { s.status='cancelled'; continue; }
+    if (isUnsubscribed(s.emailAddress)) { s.status='cancelled'; continue; }
     try {
       const previewUrl = f.lead.previewUrl;
       const trackingId = randomUUID();
@@ -967,7 +979,7 @@ app.post('/api/sequences/process', async (req,res) => {
       try {
         const emailAddr = f.lead.outreachEmail || f.lead.foundEmail;
         if (!emailAddr) { step.status='skipped'; continue; }
-        if (unsubscribed.includes(emailAddr.toLowerCase())) { step.status='skipped'; seq.status='cancelled'; continue; }
+        if (isUnsubscribed(emailAddr)) { step.status='skipped'; seq.status='cancelled'; continue; }
         const prevOutreach = outreach.find(o => o.leadId === seq.leadId);
         const followUp = await generateFollowUpEmail(f.lead, step.step, prevOutreach?.subject || 'Your demo website');
         const trackingId = randomUUID();
@@ -1381,6 +1393,18 @@ app.get('/api/send-stats', (req,res) => {
 // ── TRACKING DATA ENDPOINT ───────────────────────────────────────────────
 app.get('/api/tracking', (req,res) => {
   res.json({ tracking });
+});
+
+// ── UNSUBSCRIBED LIST ────────────────────────────────────────────────────
+app.get('/api/unsubscribed', (req,res) => {
+  res.json({ unsubscribed, count: unsubscribed.length });
+});
+app.delete('/api/unsubscribed/:email', (req,res) => {
+  const lower = decodeURIComponent(req.params.email).toLowerCase();
+  unsubscribed = unsubscribed.filter(e => e !== lower);
+  unsubscribedSet.delete(lower);
+  save(USF, unsubscribed);
+  res.json({ ok: true });
 });
 
 // ── CRASH SAFETY ─────────────────────────────────────────────────────────
