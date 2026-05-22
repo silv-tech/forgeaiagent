@@ -386,18 +386,22 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   }
 
   const pixelHtml = trackingOpts?.pixelHtml || '';
+  const unsubscribeUrl = trackingOpts?.unsubscribeUrl || '';
+  const unsubscribeFooter = unsubscribeUrl
+    ? `<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e8ecf0;text-align:center"><p style="margin:0;font-size:11px;color:#9ca3af">Don't want to hear from us? <a href="${escapeHtml(unsubscribeUrl)}" style="color:#9ca3af;text-decoration:underline">Unsubscribe</a></p></div>`
+    : '';
 
   const emailPayload = {
     from: `Leif <${fromEmail}>`,
     to: emailAddress,
     reply_to: fromEmail,
     headers: {
-      'List-Unsubscribe': `<mailto:${fromEmail}?subject=unsubscribe>`,
+      'List-Unsubscribe': unsubscribeUrl ? `<${unsubscribeUrl}>` : `<mailto:${fromEmail}?subject=unsubscribe>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
     },
     subject: copy.subject,
-    text: copy.body,
-    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px"><table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-bottom:1px solid #e8ecf0;margin-bottom:24px;padding-bottom:16px"><tr><td style="vertical-align:middle"><span style="font-size:17px;font-weight:800;color:#111;letter-spacing:-0.3px">Forge <span style="color:#2563eb">AI</span></span></td><td align="right" style="vertical-align:middle"><span style="font-size:10px;letter-spacing:0.1em;color:#9ca3af;text-transform:uppercase">Websites &middot; Chatbots &middot; Follow-Ups</span></td></tr></table>${bodyHtml}${pixelHtml}</div>`
+    text: copy.body + (unsubscribeUrl ? `\n\nTo unsubscribe: ${unsubscribeUrl}` : ''),
+    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px"><table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-bottom:1px solid #e8ecf0;margin-bottom:24px;padding-bottom:16px"><tr><td style="vertical-align:middle"><span style="font-size:17px;font-weight:800;color:#111;letter-spacing:-0.3px">Forge <span style="color:#2563eb">AI</span></span></td><td align="right" style="vertical-align:middle"><span style="font-size:10px;letter-spacing:0.1em;color:#9ca3af;text-transform:uppercase">Websites &middot; Chatbots &middot; Follow-Ups</span></td></tr></table>${bodyHtml}${pixelHtml}${unsubscribeFooter}</div>`
   };
 
   let data;

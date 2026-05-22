@@ -203,6 +203,7 @@ const RF = path.join(DATA,'replies.json');
 const SEQ_F = path.join(DATA,'sequences.json');
 const SCH_F = path.join(DATA,'scheduled.json');
 const TF = path.join(DATA,'tracking.json');
+const USF = path.join(DATA,'unsubscribed.json');
 const load = f => { try { return fs.existsSync(f)?JSON.parse(fs.readFileSync(f)):[] } catch { return [] } };
 const save = (f,d) => {
   const tmp = f + '.tmp';
@@ -233,6 +234,7 @@ process.on('SIGINT', () => { _flushPending(); process.exit(0); });
 process.on('SIGTERM', () => { _flushPending(); process.exit(0); });
 let leads = load(LF), outreach = load(OF), replies = load(RF);
 let sequences = load(SEQ_F), scheduled = load(SCH_F), tracking = load(TF);
+let unsubscribed = load(USF); // array of lowercase email strings
 
 // ── MIGRATION ────────────────────────────────────────────────────────────
 let migrated = false;
@@ -306,6 +308,17 @@ app.get('/c/:trackingId', (req, res) => {
   const rec = tracking.find(t => t.trackingId === req.params.trackingId);
   if (rec) { rec.clicks.push({ at: new Date().toISOString() }); saveDebounced(TF, tracking); }
   res.redirect(rec?.targetUrl || '/');
+});
+
+app.get('/unsubscribe', (req, res) => {
+  try {
+    const email = req.query.e ? Buffer.from(req.query.e, 'base64url').toString() : null;
+    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      const lower = email.toLowerCase();
+      if (!unsubscribed.includes(lower)) { unsubscribed.push(lower); save(USF, unsubscribed); }
+    }
+  } catch {}
+  res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Unsubscribed</title><style>body{font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f9fafb}div{text-align:center;padding:40px;max-width:400px}h2{color:#111;margin-bottom:8px}p{color:#6b7280;font-size:14px}</style></head><body><div><h2>You've been unsubscribed</h2><p>You won't receive any more emails from us.</p></div></body></html>`);
 });
 
 // ── PUBLIC ROUTES (no auth required, SEO-crawlable) ─────────────────────
@@ -657,6 +670,8 @@ app.post('/api/outreach/send', async (req,res) => {
     return res.status(400).json({ error:'Already sent to this address for this lead.' });
   // Only no-website leads need a demo URL. Has-website leads pitch a
   // redesign of the existing site, no CTA button, no demo to build first.
+  if (unsubscribed.includes(emailAddress.toLowerCase()))
+    return res.status(400).json({ error:`⚠️ ${emailAddress} has unsubscribed. Remove them from your list before sending.`, unsubscribed: true });
   const needsDemo = !((outreachType === 'has_website') || (!outreachType && lead.website));
   if (needsDemo && !hasValidDemoUrl(lead.previewUrl))
     return res.status(400).json({ error:`No demo site built for ${lead.name}. Build the site first so the email has something to link to.` });
@@ -672,7 +687,8 @@ app.post('/api/outreach/send', async (req,res) => {
     const trackingId = randomUUID();
     const trackingOpts = {
       pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
-      clickUrl: `${getBase()}/c/${trackingId}`
+      clickUrl: `${getBase()}/c/${trackingId}`,
+      unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(emailAddress).toString('base64url')}`
     };
 
     const result = await sendOutreach(lead, previewUrl, emailAddress, p => emit(sessionId,{ type:'outreach',...p }), subject, body, trackingOpts, outreachType);
@@ -734,11 +750,17 @@ app.post('/api/outreach/batch', async (req,res) => {
         failed++;
         continue;
       }
+      if (unsubscribed.includes(email.toLowerCase())) {
+        emit(sessionId, { type:'outreach_batch', status:'error', message:`⚠️ ${lead.name}: Unsubscribed, skipped` });
+        failed++;
+        continue;
+      }
       const previewUrl = lead.previewUrl;
       const trackingId = randomUUID();
       const trackingOpts = {
         pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
-        clickUrl: `${getBase()}/c/${trackingId}`
+        clickUrl: `${getBase()}/c/${trackingId}`,
+        unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(email).toString('base64url')}`
       };
       const autoType = lead.website ? 'has_website' : 'no_website';
       const result = await sendOutreach(lead, previewUrl, email, () => {}, null, null, trackingOpts, autoType);
@@ -794,13 +816,18 @@ app.post('/api/outreach/followup-batch', async (req,res) => {
         emit(sessionId, { type:'followup_batch', status:'skipped', message:`⏭ ${lead.name}: Already sent 3 follow-ups` });
         continue;
       }
+      if (unsubscribed.includes(email.toLowerCase())) {
+        emit(sessionId, { type:'followup_batch', status:'skipped', message:`⚠️ ${lead.name}: Unsubscribed, skipped` });
+        continue;
+      }
       const step = Math.min(prevFollowUps + 1, 3);
       const followUp = await generateFollowUpEmail(lead, step, prevOutreach?.subject || 'Your demo website');
       const trackingId = randomUUID();
       const previewUrl = lead.previewUrl;
       const trackingOpts = {
         pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
-        clickUrl: `${getBase()}/c/${trackingId}`
+        clickUrl: `${getBase()}/c/${trackingId}`,
+        unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(email).toString('base64url')}`
       };
       const autoType = lead.website ? 'has_website' : 'no_website';
       const result = await sendOutreach(lead, previewUrl, email, ()=>{}, followUp.subject, followUp.body, trackingOpts, autoType);
@@ -858,12 +885,14 @@ app.post('/api/scheduled/process', async (req,res) => {
   for (const s of due) {
     const f = findLead(s.leadId);
     if (!f) { s.status='cancelled'; continue; }
+    if (unsubscribed.includes(s.emailAddress.toLowerCase())) { s.status='cancelled'; continue; }
     try {
       const previewUrl = f.lead.previewUrl;
       const trackingId = randomUUID();
       const trackingOpts = {
         pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
-        clickUrl: `${getBase()}/c/${trackingId}`
+        clickUrl: `${getBase()}/c/${trackingId}`,
+        unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(s.emailAddress).toString('base64url')}`
       };
       const autoType = f.lead.website ? 'has_website' : 'no_website';
       const result = await sendOutreach(f.lead, previewUrl, s.emailAddress, ()=>{}, s.subject||null, s.body||null, trackingOpts, autoType);
@@ -938,13 +967,15 @@ app.post('/api/sequences/process', async (req,res) => {
       try {
         const emailAddr = f.lead.outreachEmail || f.lead.foundEmail;
         if (!emailAddr) { step.status='skipped'; continue; }
+        if (unsubscribed.includes(emailAddr.toLowerCase())) { step.status='skipped'; seq.status='cancelled'; continue; }
         const prevOutreach = outreach.find(o => o.leadId === seq.leadId);
         const followUp = await generateFollowUpEmail(f.lead, step.step, prevOutreach?.subject || 'Your demo website');
         const trackingId = randomUUID();
         const previewUrl = f.lead.previewUrl;
         const trackingOpts = {
           pixelHtml: `<img src="${getBase()}/t/${trackingId}.png" width="1" height="1" style="display:block;opacity:0" alt="" />`,
-          clickUrl: `${getBase()}/c/${trackingId}`
+          clickUrl: `${getBase()}/c/${trackingId}`,
+          unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(emailAddr).toString('base64url')}`
         };
         const autoType = f.lead.website ? 'has_website' : 'no_website';
         await sendOutreach(f.lead, previewUrl, emailAddr, ()=>{}, followUp.subject, followUp.body, trackingOpts, autoType);
