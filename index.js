@@ -1120,7 +1120,7 @@ app.get('/api/analytics', (req,res) => {
   res.json({
     total, withEmail, withSite, contacted, replied, hotLeads:hot,
     convRate: contacted>0?((hot/contacted)*100).toFixed(1):0,
-    openRate, clickRate, replyRate, totalOpens, totalClicks,
+    openRate, clickRate, replyRate, totalOpens, totalClicks, outreachTracked,
     followUpsSent, followUpLeads, followUpOpens, followUpClicks, followUpOpenRate, followUpClickRate,
     cities, types, dailyLeads, dailyEmails,
     activeSequences: sequences.filter(s=>s.status==='active').length,

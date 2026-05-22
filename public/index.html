@@ -1680,9 +1680,9 @@ async function loadAnal(){
     document.getElementById('a-re').textContent=d.replied;
     document.getElementById('a-ho').textContent=d.hotLeads;
     document.getElementById('a-or').textContent=(d.openRate||0)+'%';
-    document.getElementById('a-or-raw').textContent=(d.totalOpens||0)+' of '+(d.contacted||0);
+    document.getElementById('a-or-raw').textContent=(d.totalOpens||0)+' of '+(d.outreachTracked||0);
     document.getElementById('a-clr').textContent=(d.clickRate||0)+'%';
-    document.getElementById('a-clr-raw').textContent=(d.totalClicks||0)+' of '+(d.contacted||0);
+    document.getElementById('a-clr-raw').textContent=(d.totalClicks||0)+' of '+(d.outreachTracked||0);
     // Follow-up tracker
     document.getElementById('a-fu-sent').textContent=d.followUpsSent||0;
     document.getElementById('a-fu-leads').textContent=d.followUpLeads||0;
