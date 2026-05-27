@@ -128,6 +128,12 @@ function getFollowUpExamples(type) {
     roofer: { short: 'seasonal roof inspection reminders and post-storm check-in messages', scenarios: 'After a job: "How\'s everything looking up there? Any issues, we\'re a call away." Before storm season: "Big storms forecast this month. Want a free quick inspection?" Annual: "It\'s been a year since your last roof check. Time for a look?"' },
     contractor: { short: 'project follow-ups, seasonal maintenance reminders, and referral thank-yous', scenarios: 'After a project: "How\'s everything holding up? Let us know if anything needs adjusting." Seasonal: "Spring is the best time for that deck project we talked about." Referral: "Thanks for sending the Johnsons our way. Your next project gets priority scheduling."' },
     cleaning: { short: 'recurring service reminders, seasonal deep-clean nudges, and satisfaction check-ins', scenarios: 'After a clean: "Hope everything is sparkling. Anything we missed, just let us know." Monthly: "Your next cleaning is coming up. Same day and time work?" Seasonal: "Spring deep clean slots are filling up. Want us to book yours?"' },
+    'marketing agency': { short: 'a check-in after campaign launch, plus quarterly strategy review reminders', scenarios: 'After onboarding: "Campaign is live. We\'ll send your first performance snapshot Friday." At 30 days: "Here\'s your month-one results. Let\'s talk next steps." Quarterly: "Q2 strategy session is on the books. Any new goals to add?"' },
+    'digital agency': { short: 'a check-in after campaign launch, plus quarterly strategy review reminders', scenarios: 'After onboarding: "Campaign is live. We\'ll send your first performance snapshot Friday." At 30 days: "Here\'s your month-one results. Let\'s talk next steps." Quarterly: "Q2 strategy session is on the books. Any new goals to add?"' },
+    'creative agency': { short: 'a check-in after project delivery, plus proactive campaign ideas each quarter', scenarios: 'After delivery: "Assets are live. Let us know how the team feels about the direction." At 30 days: "How are the new creatives performing? We have some fresh ideas." Quarterly: "New quarter, new concepts. Want to see what we\'ve been sketching?"' },
+    'advertising agency': { short: 'a check-in after campaign launch, plus budget optimization nudges', scenarios: 'After launch: "Ads are running. First data comes in 48 hours." At 14 days: "Early results are in. Click-through is looking strong." Monthly: "Monthly ad review is ready. A few tweaks could stretch your budget further."' },
+    'social media agency': { short: 'a content calendar reminder, plus engagement report check-ins', scenarios: 'After onboarding: "Your first week of content is scheduled. Preview it anytime." Weekly: "This week\'s posts are ready for your approval." Monthly: "Monthly engagement report is in. Your audience grew 12% this month."' },
+    agency: { short: 'a check-in after project kickoff, plus quarterly review reminders', scenarios: 'After kickoff: "Project is underway. We\'ll send a progress update Friday." At 30 days: "Month one is done. Here\'s where things stand." Quarterly: "Quarterly review time. Let\'s align on priorities for next quarter."' },
     default: { short: 'a thank-you message after their visit, plus periodic check-ins to keep them coming back', scenarios: 'After a visit: "Thanks for coming in. How was everything?" At 30 days: "It\'s been a month. We\'d love to see you again." Birthday: automatic birthday greeting with a special offer.' }
   };
   const sortedKeys = Object.keys(examples).filter(k => k !== 'default').sort((a, b) => b.length - a.length);
@@ -235,6 +241,45 @@ Return ONLY valid JSON with no extra text:
 {"subject":"...","body":"..."}`;
 }
 
+// ── AGENCY OUTREACH PROMPT ────────────────────────────────────────────────
+function buildAgencyOutreachPrompt(lead, type) {
+  return `You generate cold outreach emails targeting small agency owners. You will receive business data and must output a single plain-text email. Nothing else, no explanation, no preamble, just the subject line and email body.
+
+CONTEXT:
+- Business name: ${lead.name}
+- Business type: ${type}
+- Address: ${lead.address}
+- Rating: ${lead.rating && lead.rating !== 'N/A' ? lead.rating : 'no rating'}
+- Number of reviews: ${parseInt(lead.reviews) || 0}
+- Website: ${lead.website || 'unknown'}
+
+INSTRUCTIONS:
+Goal: Get a reply from a small agency owner by identifying that they are doing outreach manually and it is eating their time or producing inconsistent results.
+
+- Subject: 2-5 words maximum, lowercase except proper nouns. Reference something specific about running an agency or doing client outreach manually. Examples: "still doing outreach manually", "your clients need more leads", "outreach taking too long".
+- Paragraph 1: Open with one sentence that shows you understand what running a small agency feels like. Reference the fact that they are probably juggling client work and outreach at the same time with no system behind it.
+- Paragraph 2: Name the ONE problem. Outreach for clients is time consuming, inconsistent, and hard to scale manually. Most agencies either avoid it or do it badly because they have no automation behind it.
+- Paragraph 3: Pitch the ONE solution. You run fully automated personalized outreach campaigns for their clients using AI. Finds the leads, writes the emails, sends them, follows up automatically. They just forward the replies to their client.
+- Paragraph 4: One specific proof point. Something like "we sent 500 personalized emails last month for a test campaign with zero manual work after setup."
+- Paragraph 5: End with one short soft question under 8 words. Examples: "Want to see how it works?", "Is this something your clients need?", "Worth a quick look?"
+- Sign off: MUST end with Leif on its own line, then WebForge on the next line. This is required, never skip it.
+- Max length: 100 words.
+
+CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. The sign-off (Leif and WebForge) must always be present at the end.
+
+RULES:
+- Plain text only, no bullet points, bold, headers, or HTML
+- No "I hope this email finds you well" or "I came across your business"
+- No corporate words, no leverage, synergy, solutions, or optimize
+- Do not mention pricing in the first email
+- Write like a real person emailing one specific business, not a mass campaign
+- Every sentence must earn its place, cut anything that doesn't add value
+- NEVER use em dashes (—) anywhere. Use commas or periods instead.
+
+Return ONLY valid JSON with no extra text:
+{"subject":"...","body":"..."}`;
+}
+
 // ── EMAIL SENDING ─────────────────────────────────────────────────────────
 async function callAnthropicWithTimeout(client, params, timeoutMs = 60000) {
   const controller = new AbortController();
@@ -286,7 +331,9 @@ async function sendViaBrevo(emailOpts) {
 async function generateEmailCopy(lead, previewUrl, outreachType) {
   const client = getClient();
   const type = (lead.type || 'business').replace(/_/g, ' ');
-  const prompt = outreachType === 'has_website'
+  const prompt = outreachType === 'agency'
+    ? buildAgencyOutreachPrompt(lead, type)
+    : outreachType === 'has_website'
     ? buildWebsiteOutreachPrompt(lead, type)
     : buildEmailPrompt(lead, previewUrl, type);
   const msg = await callAnthropicWithTimeout(client, {
