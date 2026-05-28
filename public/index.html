@@ -1073,6 +1073,9 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 <script>
 // ── STATE ─────────────────────────────────────────────────────────────────
 let leads=[], lastReply=null, siteLead=null, trackingData=[], notesLeadId=null;
+let trackingMap=new Map();
+function rebuildTrackingMap(){trackingMap=new Map();for(const t of trackingData){if(!trackingMap.has(t.leadId))trackingMap.set(t.leadId,[]);trackingMap.get(t.leadId).push(t);}}
+const MAX_VISIBLE=200;
 let sSel=new Set(), efSel=new Set(), bSel=new Set();
 let collapsedCities=new Set();
 let sid='af_'+Math.random().toString(36).substr(2,9);
@@ -1353,7 +1356,9 @@ function drawScout(){
   document.getElementById('s-badge').textContent=sq?filtered.length+'/'+leads.length+' found':leads.length+' found';
   if(!filtered.length){e.style.display='flex';e.querySelector('.et').textContent=sq?'No Matches':'Scout Agent Ready';e.querySelector('.es').textContent=sq?'Try a different search term':'Set location, pick business types, then launch the Scout';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
-  const groups=groupByLocation(filtered);
+  const capped=filtered.length>MAX_VISIBLE;
+  const visible=capped?filtered.slice(0,MAX_VISIBLE):filtered;
+  const groups=groupByLocation(visible);
   const multi=groups.size>1;
   let html='';
   for(const [city,items] of groups){
@@ -1378,6 +1383,7 @@ function drawScout(){
     </td>
   </tr>`).join('');
   }
+  if(capped) html+=`<tr><td colspan="11" style="text-align:center;padding:10px;font-size:10.5px;color:var(--t3)">Showing ${MAX_VISIBLE} of ${filtered.length} leads — use search to filter</td></tr>`;
   document.getElementById('scout-body').innerHTML=html;
   document.getElementById('s-sel-txt').textContent=sSel.size+' selected';
 }
@@ -1425,14 +1431,16 @@ async function delSel(){
 async function exportCSV(){window.open('/api/leads/export/csv','_blank');}
 async function clearLeads(){if(!confirm('Clear all leads?'))return;leads=[];sSel.clear();efSel.clear();bSel.clear();await fetch('/api/leads',{method:'DELETE'});drawScout();updStats();}
 async function loadLeads(){try{const d=await(await fetch('/api/leads')).json();leads=d.leads||[];drawScout();updStats();}catch{}}
-async function loadTracking(){try{const d=await(await fetch('/api/tracking')).json();trackingData=d.tracking||[];}catch{trackingData=[];}}
+async function loadTracking(){try{const d=await(await fetch('/api/tracking')).json();trackingData=d.tracking||[];}catch{trackingData=[];}rebuildTrackingMap();}
 
 // ── EMAIL FINDER ──────────────────────────────────────────────────────────
 function drawEF(){
   const e=document.getElementById('ef-e'),t=document.getElementById('ef-tbl');
   if(!leads.length){e.style.display='flex';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
-  const groups=groupByLocation(leads);
+  const efCapped=leads.length>MAX_VISIBLE;
+  const efVisible=efCapped?leads.slice(0,MAX_VISIBLE):leads;
+  const groups=groupByLocation(efVisible);
   const multi=groups.size>1;
   let html='';
   for(const [city,items] of groups){
@@ -1447,6 +1455,7 @@ function drawEF(){
     <td><button class="ab" onclick="efOne('${l.id}')">Search</button> <button class="ab" onclick="efHunter('${l.id}')" style="font-size:8px;opacity:.7">Hunter</button></td>
   </tr>`).join('');
   }
+  if(efCapped) html+=`<tr><td colspan="6" style="text-align:center;padding:10px;font-size:10.5px;color:var(--t3)">Showing ${MAX_VISIBLE} of ${leads.length} leads — use search to filter</td></tr>`;
   document.getElementById('ef-body').innerHTML=html;
   document.getElementById('ef-sel-txt').textContent=efSel.size+' selected';
 }
@@ -1473,7 +1482,9 @@ function drawB(){
   const filtered=sq?leads.filter(l=>(l.name||'').toLowerCase().includes(sq)||(l.type||'').toLowerCase().replace(/_/g,' ').includes(sq)||(l.address||'').toLowerCase().includes(sq)||(l.status||'').toLowerCase().includes(sq)):leads;
   if(!filtered.length){e.style.display='flex';e.querySelector('.et').textContent=sq?'No Matches':'No Leads Yet';e.querySelector('.es').textContent=sq?'Try a different search term':'Run Scout first';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
-  const groups=groupByLocation(filtered);
+  const bCapped=filtered.length>MAX_VISIBLE;
+  const bVisible=bCapped?filtered.slice(0,MAX_VISIBLE):filtered;
+  const groups=groupByLocation(bVisible);
   const multi=groups.size>1;
   let html='';
   for(const [city,items] of groups){
@@ -1488,6 +1499,7 @@ function drawB(){
     <td><button class="ab" onclick="buildOne('${l.id}')">Build</button></td>
   </tr>`).join('');
   }
+  if(bCapped) html+=`<tr><td colspan="6" style="text-align:center;padding:10px;font-size:10.5px;color:var(--t3)">Showing ${MAX_VISIBLE} of ${filtered.length} leads — use search to filter</td></tr>`;
   document.getElementById('b-body').innerHTML=html;
   document.getElementById('b-sel-txt').textContent=bSel.size+' selected';
   document.getElementById('b-badge').textContent=sq?filtered.length+'/'+leads.length+' leads':leads.length+' leads';
@@ -1639,7 +1651,7 @@ async function sendOut(force){
   }catch(e){log('o-feed','✗ Network error: '+e.message,'er');btn(btnId,btnLabel,false);}
 }
 function getLeadTracking(id){
-  const recs=trackingData.filter(t=>t.leadId===id);
+  const recs=trackingMap.get(id)||[];
   const followUps=recs.filter(t=>t.type==='followup').length;
   return {opens:recs.reduce((s,r)=>s+r.opens.length,0),clicks:recs.reduce((s,r)=>s+r.clicks.length,0),followUps};
 }
@@ -1663,7 +1675,9 @@ function drawOut(){
   document.getElementById('o-badge').textContent=oq?sent.length+'/'+allSent.length+' sent':allSent.length+' sent';
   if(!sent.length){e.style.display='flex';e.querySelector('.et').textContent=oq?'No Matches':'No Outreach Sent Yet';e.querySelector('.es').textContent=oq?'Try a different search term':'Build demo sites, then send outreach';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
-  document.getElementById('o-tbl-body').innerHTML=sent.map((l,i)=>{
+  const oCapped=sent.length>MAX_VISIBLE;
+  const oVisible=oCapped?sent.slice(0,MAX_VISIBLE):sent;
+  document.getElementById('o-tbl-body').innerHTML=oVisible.map((l,i)=>{
     const tr=getLeadTracking(l.id);
     const trackHtml=(tr.opens||tr.clicks)?`${tr.opens?`<span class="ti ti-open">👁 ${tr.opens}</span> `:''}${tr.clicks?`<span class="ti ti-click">🔗 ${tr.clicks}</span>`:''}`:'<span style="color:var(--t4);font-size:9px">-</span>';
     return `<tr>
@@ -1676,7 +1690,7 @@ function drawOut(){
     <td>${trackHtml}</td>
     <td>${tr.followUps?`<span style="background:rgba(251,191,36,.15);color:#fbbf24;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600">${tr.followUps}x sent</span>`:'<span style="color:var(--t4);font-size:9px">-</span>'}</td>
     <td>${sb(l.status||'Sent')}</td>
-  </tr>`;}).join('');
+  </tr>`;}).join('')+(oCapped?`<tr><td colspan="9" style="text-align:center;padding:10px;font-size:10.5px;color:var(--t3)">Showing ${MAX_VISIBLE} of ${sent.length} — use search or date filter to narrow down</td></tr>`:'')
 }
 
 // ── OUTREACH SELECTION & BATCH FOLLOW-UP ──────────────────────────────────
@@ -1801,12 +1815,15 @@ function drawPipeline(){
   const buckets={};stages.forEach(s=>buckets[s]=[]);
   leads.forEach(l=>{const s=getLeadStage(l);if(buckets[s])buckets[s].push(l);});
   document.getElementById('pipe-badge').textContent=leads.length+' leads';
+  const PIPE_CAP=50;
   document.getElementById('kanban').innerHTML=stages.map(stage=>{
     const items=buckets[stage];
-    return `<div class="kcol"><div class="kcol-h">${stage}<span class="kcol-cnt">${items.length}</span></div><div class="kcol-body">${items.map(l=>`<div class="kcard">
+    const shown=items.slice(0,PIPE_CAP);
+    const extra=items.length-shown.length;
+    return `<div class="kcol"><div class="kcol-h">${stage}<span class="kcol-cnt">${items.length}</span></div><div class="kcol-body">${shown.map(l=>`<div class="kcard">
       <div class="kcard-name">${x(l.name)}</div><div class="kcard-city">${x(l.location||'')}</div>
       <div class="kcard-meta">${scoreBadge(l.score)}${l.foundEmail?'<span class="badge b-em" style="font-size:7px">email</span>':''}${l.siteFile?'<span class="badge b-built" style="font-size:7px">site</span>':''}</div>
-    </div>`).join('')}</div></div>`;
+    </div>`).join('')}${extra>0?`<div style="text-align:center;font-size:9.5px;color:var(--t4);padding:6px">+${extra} more</div>`:''}</div></div>`;
   }).join('');
 }
 
