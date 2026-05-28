@@ -688,6 +688,8 @@ app.post('/api/outreach/send', async (req,res) => {
   const { lead, index } = f;
   if (!emailAddress) return res.status(400).json({ error:'Email required' });
   if (!isValidEmail(emailAddress)) return res.status(400).json({ error:'Invalid email format' });
+  if (outreachType !== undefined && !['agency','has_website','no_website'].includes(outreachType))
+    return res.status(400).json({ error:`Invalid outreachType: ${outreachType}` });
   if (!force && outreach.find(o=>o.leadId===id&&o.sentTo===emailAddress))
     return res.status(400).json({ error:'Already sent to this address for this lead.' });
   // Only no-website leads need a demo URL. Has-website leads pitch a
