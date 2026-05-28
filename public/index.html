@@ -1210,7 +1210,7 @@ function connect(){
   if(sse)sse.close();
   sse=new EventSource(`/api/stream/${sid}`);
   sse.onopen=()=>{ _sseRetry=0; };
-  sse.onmessage=e=>{ _sseRetry=0; onSSE(JSON.parse(e.data)); };
+  sse.onmessage=e=>{ _sseRetry=0; try{onSSE(JSON.parse(e.data));}catch(err){console.warn('[SSE] Bad JSON:',err.message);} };
   sse.onerror=()=>{
     if(_sseTimer)return;
     const delay=Math.min(30000, 1000*Math.pow(2,_sseRetry++)) + Math.floor(Math.random()*400);
@@ -1444,10 +1444,17 @@ async function sDelSel(){
 }
 
 function updStats(){
-  const t=leads.length,ph=leads.filter(l=>l.phone&&l.phone!=='N/A').length,em=leads.filter(l=>l.foundEmail).length,si=leads.filter(l=>l.siteFile).length;
+  let ph=0,nw=0,hw=0,em=0,si=0;
+  for(const l of leads){
+    if(l.phone&&l.phone!=='N/A') ph++;
+    if(l.website) hw++; else nw++;
+    if(l.foundEmail) em++;
+    if(l.siteFile) si++;
+  }
+  const t=leads.length;
   document.getElementById('s-tot').textContent=t;
-  document.getElementById('s-nw').textContent=leads.filter(l=>!l.website).length;
-  document.getElementById('s-hw').textContent=leads.filter(l=>l.website).length;
+  document.getElementById('s-nw').textContent=nw;
+  document.getElementById('s-hw').textContent=hw;
   document.getElementById('s-ph').textContent=ph;
   document.getElementById('ef-tot').textContent=t;
   document.getElementById('ef-found').textContent=em;
@@ -1571,26 +1578,32 @@ function goOutreach(){closeOv('site-ov');go('outreach');if(siteLead!=null){pickL
 
 // ── OUTREACH ──────────────────────────────────────────────────────────────
 function fillSels(){
-  const o=document.getElementById('o-lead'),c=document.getElementById('c-lead'),cc=c.value;
-  const opts=leads.map(l=>`<option value="${l.id}">${l.name}${l.siteFile?' ✓':''}</option>`).join('');
-  c.innerHTML='<option value="">Select a lead</option>'+opts;
+  const c=document.getElementById('c-lead'),cc=c.value;
+  // Closer only needs leads that have been contacted (have a reply to handle)
+  const contacted=leads.filter(l=>l.outreachEmail);
+  c.innerHTML='<option value="">Select a lead ('+contacted.length+' contacted)</option>'+contacted.map(l=>`<option value="${l.id}">${x(l.name)}${l.siteFile?' ✓':''}</option>`).join('');
   if(cc)c.value=cc;
-  renderLeadDrop();
 }
+const LEAD_DROP_HINT='<div style="padding:10px 12px;font-size:11px;color:var(--t4)">Type to search leads...</div>';
 function renderLeadDrop(filter){
   const list=document.getElementById('o-lead-list');
-  const q=(filter||'').toLowerCase();
-  const filtered=q?leads.filter(l=>(l.name||'').toLowerCase().includes(q)||(l.type||'').toLowerCase().replace(/_/g,' ').includes(q)||(l.address||'').toLowerCase().includes(q)):leads;
+  const q=(filter||'').toLowerCase().trim();
+  if(!q){list.innerHTML=LEAD_DROP_HINT;return;}
+  const filtered=leads.filter(l=>(l.name||'').toLowerCase().includes(q)||(l.type||'').toLowerCase().replace(/_/g,' ').includes(q)||(l.address||'').toLowerCase().includes(q));
   if(!filtered.length){list.innerHTML='<div style="padding:10px 12px;font-size:11px;color:var(--t4)">No leads found</div>';return;}
-  list.innerHTML=filtered.map(l=>{
-    const hasSite=l.siteFile;
-    const hasEmail=l.foundEmail;
-    const hasWeb=l.website;
-    const tags=(hasWeb?'<span style="color:var(--amber);font-size:9px;margin-left:4px">WEB</span>':'')+(hasSite?'<span style="color:var(--cyan);font-size:9px;margin-left:4px">SITE</span>':'')+(hasEmail?'<span style="color:var(--green);font-size:9px;margin-left:4px">EMAIL</span>':'');
+  const shown=filtered.length>50?filtered.slice(0,50):filtered;
+  const extra=filtered.length-shown.length;
+  list.innerHTML=shown.map(l=>{
+    const tags=(l.website?'<span style="color:var(--amber);font-size:9px;margin-left:4px">WEB</span>':'')+(l.siteFile?'<span style="color:var(--cyan);font-size:9px;margin-left:4px">SITE</span>':'')+(l.foundEmail?'<span style="color:var(--green);font-size:9px;margin-left:4px">EMAIL</span>':'');
     return `<div class="ld-item" onmousedown="pickLead('${l.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;display:flex;align-items:center;justify-content:space-between" onmouseenter="this.style.background='rgba(255,255,255,.07)'" onmouseleave="this.style.background='none'"><div><div style="font-size:11.5px;color:var(--t1);font-weight:500">${x(l.name)}</div><div style="font-size:9.5px;color:var(--t4);margin-top:1px">${x(l.address||'')}</div></div><div>${tags}</div></div>`;
-  }).join('');
+  }).join('')+(extra>0?`<div style="padding:8px 12px;font-size:10px;color:var(--t4);text-align:center">+${extra} more — refine search</div>`:'');
 }
-function openLeadDrop(){const list=document.getElementById('o-lead-list');list.style.display='block';renderLeadDrop(document.getElementById('o-lead-search').value);}
+function openLeadDrop(){
+  const list=document.getElementById('o-lead-list');
+  list.style.display='block';
+  const q=document.getElementById('o-lead-search').value;
+  if(q) renderLeadDrop(q); else list.innerHTML=LEAD_DROP_HINT;
+}
 function closeLeadDrop(){document.getElementById('o-lead-list').style.display='none';}
 function filterLeadDrop(){const q=document.getElementById('o-lead-search').value;document.getElementById('o-lead-list').style.display='block';renderLeadDrop(q);}
 function pickLead(id){
@@ -1636,9 +1649,9 @@ function oChg(){
   } else { badge.style.display='none'; }
   const info=document.getElementById('o-lead-info');
   if(lead){
-    const ratingStr=lead.rating&&lead.rating!=='N/A'?'<span style="color:var(--amber)">★ '+lead.rating+'</span> <span style="color:var(--t3)">('+lead.reviews+' reviews)</span>':'<span style="color:var(--t4)">No rating</span>';
+    const ratingStr=lead.rating&&lead.rating!=='N/A'?'<span style="color:var(--amber)">★ '+x(String(lead.rating))+'</span> <span style="color:var(--t3)">('+x(String(lead.reviews||''))+')</span>':'<span style="color:var(--t4)">No rating</span>';
     const webStr=lead.website?'<span style="color:var(--amber);font-weight:700">Has Website</span> <a href="'+x(lead.website)+'" target="_blank" style="color:var(--cyan);font-size:9.5px;text-decoration:none;word-break:break-all">'+x(lead.website)+'</a>':'<span style="color:var(--green);font-weight:700">No Website</span>';
-    const typeStr='<span style="color:var(--t2)">'+(lead.type||'').replace(/_/g,' ')+'</span>';
+    const typeStr='<span style="color:var(--t2)">'+x((lead.type||'').replace(/_/g,' '))+'</span>';
     info.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px 16px"><div>'+typeStr+'</div><div>'+ratingStr+'</div><div>'+webStr+'</div></div>';
     info.style.display='block';
   } else { info.style.display='none'; }

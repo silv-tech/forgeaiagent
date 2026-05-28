@@ -1103,12 +1103,10 @@ app.post('/api/leads/score', (req,res) => {
 
 // ── ANALYTICS (enhanced) ─────────────────────────────────────────────────
 app.get('/api/analytics', (req,res) => {
-  const total=leads.length,
-        withEmail=leads.filter(l=>l.foundEmail).length,
-        withSite=leads.filter(l=>l.siteFile).length,
-        contacted=leads.filter(l=>l.outreachEmail).length,
-        hot=leads.filter(l=>l.status==='Hot Lead 🔥').length,
-        replied=replies.length;
+  // Single-pass over leads instead of 4 separate .filter() calls
+  let withEmail=0,withSite=0,contacted=0,hot=0;
+  for(const l of leads){ if(l.foundEmail)withEmail++; if(l.siteFile)withSite++; if(l.outreachEmail)contacted++; if(l.status==='Hot Lead 🔥')hot++; }
+  const total=leads.length, replied=replies.length;
   // Tracking stats
   const outreachRecs = tracking.filter(t=>t.type==='outreach'||t.type==='ab_test');
   const followUpRecs = tracking.filter(t=>t.type==='followup');
@@ -1136,10 +1134,12 @@ app.get('/api/analytics', (req,res) => {
     if (l.outreachEmail) cities[city].contacted++;
     if (l.status==='Hot Lead 🔥') cities[city].hot++;
   });
+  // Build Map once for O(1) lookups instead of O(n) findLead per reply
+  const leadById = new Map(leads.map(l => [l.id, l]));
   replies.forEach(r => {
-    const f = findLead(r.leadId);
-    if (f) {
-      const city = f.lead.location || 'Unknown';
+    const lead = leadById.get(r.leadId);
+    if (lead) {
+      const city = lead.location || 'Unknown';
       if (cities[city]) cities[city].replied++;
     }
   });
@@ -1162,8 +1162,9 @@ app.get('/api/analytics', (req,res) => {
   });
   // Per-day cohort: for each day emails were sent, how many got opened/clicked
   const dailyOutreach = {};
+  const outreachByLead = new Map(outreach.map(o => [o.leadId, o]));
   outreachRecs.forEach(t => {
-    const o = outreach.find(o => o.leadId === t.leadId);
+    const o = outreachByLead.get(t.leadId);
     const d = (o?.sentAt || t.createdAt || '').slice(0, 10);
     if (!d) return;
     if (!dailyOutreach[d]) dailyOutreach[d] = { sent: 0, opens: 0, clicks: 0 };
