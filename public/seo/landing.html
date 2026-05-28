@@ -526,5 +526,13 @@
   </footer>
 
   <script src="/main.js"></script>
+  <script>
+    if (window.location.pathname === '/how-it-works') {
+      setTimeout(() => {
+        const el = document.getElementById('demo-video');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
+    }
+  </script>
 </body>
 </html>
