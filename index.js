@@ -691,7 +691,7 @@ app.post('/api/outreach/send', async (req,res) => {
   // redesign of the existing site, no CTA button, no demo to build first.
   if (isUnsubscribed(emailAddress))
     return res.status(400).json({ error:`⚠️ ${emailAddress} has unsubscribed. Remove them from your list before sending.`, unsubscribed: true });
-  const needsDemo = !((outreachType === 'has_website') || (!outreachType && lead.website));
+  const needsDemo = !((outreachType === 'has_website') || (outreachType === 'agency') || (!outreachType && lead.website));
   if (needsDemo && !hasValidDemoUrl(lead.previewUrl))
     return res.status(400).json({ error:`No demo site built for ${lead.name}. Build the site first so the email has something to link to.` });
   // Prevent duplicate concurrent sends
