@@ -246,24 +246,24 @@ input[type=range]{flex:1;accent-color:var(--cyan);cursor:pointer;padding:0}
 .gap{height:16px}
 
 /* ── TYPE PICKER ── */
-.type-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;min-height:24px}
+.type-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:20px}
 .ttag{
-  display:inline-flex;align-items:center;gap:5px;padding:3px 9px;
-  border-radius:20px;font-size:10px;font-weight:600;
-  background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.3);color:var(--cyan);
+  display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
+  border-radius:20px;font-size:10.5px;font-weight:700;
+  background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.35);color:var(--cyan);
 }
-.ttag span{cursor:pointer;opacity:.6;line-height:1;font-size:12px}
-.ttag span:hover{opacity:1}
-.tpicker{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;max-height:210px;overflow-y:auto;padding-right:4px}
-.tcat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);padding:0 2px}
-.tcat-items{display:flex;flex-wrap:wrap;gap:3px}
+.ttag span{cursor:pointer;opacity:.5;line-height:1;font-size:13px;transition:opacity .15s}
+.ttag span:hover{opacity:1;color:var(--red)}
+.tpicker{display:flex;flex-direction:column;gap:10px;margin-bottom:4px;max-height:260px;overflow-y:auto;padding-right:4px}
+.tcat-label{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);padding:0 2px;margin-bottom:2px}
+.tcat-items{display:flex;flex-wrap:wrap;gap:4px}
 .tp{
-  padding:3px 9px;border-radius:20px;border:1px solid var(--b1);
-  background:transparent;font-family:var(--font);font-size:10px;font-weight:600;
-  color:var(--t4);cursor:pointer;transition:all .15s;white-space:nowrap;
+  padding:4px 10px;border-radius:20px;border:1px solid var(--b1);
+  background:transparent;font-family:var(--font);font-size:10.5px;font-weight:600;
+  color:var(--t3);cursor:pointer;transition:all .15s;white-space:nowrap;
 }
-.tp:hover{border-color:var(--b3);color:var(--t2)}
-.tp.sel{border-color:rgba(0,229,255,.35);background:rgba(0,229,255,.1);color:var(--cyan)}
+.tp:hover{border-color:var(--b2);color:var(--t1);background:rgba(255,255,255,.04)}
+.tp.sel{border-color:rgba(0,229,255,.4);background:rgba(0,229,255,.12);color:var(--cyan);box-shadow:0 0 8px rgba(0,229,255,.12)}
 
 /* ── SCAN ANIM ── */
 .scan{display:flex;align-items:center;gap:6px;font-size:10px;font-family:var(--mono);color:var(--cyan)}
@@ -553,30 +553,49 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 <!-- ══════════ SCOUT ══════════ -->
 <div class="page on" id="pg-scout">
   <div class="sb">
+
+    <!-- Location + Business Types -->
     <div class="ss">
-      <div class="lbl">Search Parameters</div>
-      <div class="f"><span>City / Location</span><input type="text" id="s-loc" placeholder="e.g. Baguio City, Philippines"></div>
-      <div class="f">
-        <span>Business Types <em style="color:var(--t3);font-style:normal;font-size:9.5px;font-weight:400">(up to 5)</em></span>
+      <div class="lbl">Scout Agent</div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">City / Location</div>
+        <input type="text" id="s-loc" placeholder="e.g. Baguio City, Philippines" style="width:100%;padding:9px 12px;font-size:12.5px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+      </div>
+
+      <div style="margin-bottom:4px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)">Business Types</div>
+          <div id="s-type-count" style="font-size:9px;font-family:var(--mono);color:var(--cyan);background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);padding:2px 8px;border-radius:8px;font-weight:700">0 / 5</div>
+        </div>
         <div class="type-tags" id="ttags"></div>
         <div class="tpicker" id="tpicker"></div>
-        <div style="font-size:9.5px;color:var(--t4);margin-top:3px">Click to add · click × to remove</div>
+        <div style="font-size:9px;color:var(--t4);margin-top:6px;letter-spacing:.02em">Tap to add · tap × to remove · up to 5</div>
       </div>
-      <div class="f">
-        <span>Website Filter</span>
-        <select id="s-filter" style="font-size:11px">
-          <option value="no_website">No website only (default)</option>
-          <option value="all">All businesses</option>
-        </select>
-      </div>
-      <div class="f">
-        <span>Max leads per type</span>
-        <div class="range-row">
-          <input type="range" id="s-max" min="5" max="50" value="20" oninput="document.getElementById('rv').textContent=this.value">
-          <div class="rv" id="rv">20</div>
+    </div>
+
+    <!-- Scan Settings -->
+    <div class="ss">
+      <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Scan Settings</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:9px;color:var(--t3);font-weight:600;margin-bottom:5px">Website Filter</div>
+          <select id="s-filter" style="width:100%;font-size:11px;padding:7px 9px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:var(--s2);color:var(--t1);outline:none;cursor:pointer">
+            <option value="no_website">No website only</option>
+            <option value="all">All businesses</option>
+          </select>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+            <div style="font-size:9px;color:var(--t3);font-weight:600">Max Leads</div>
+            <div class="rv" id="rv">20</div>
+          </div>
+          <input type="range" id="s-max" min="5" max="50" value="20" oninput="document.getElementById('rv').textContent=this.value" style="width:100%;accent-color:var(--cyan)">
         </div>
       </div>
     </div>
+
+    <!-- Stats -->
     <div class="sg">
       <div class="sc"><div class="sl">Total Leads</div><div class="sv" id="s-tot">0</div></div>
       <div class="sc"><div class="sl">This Run</div><div class="sv dim" id="s-run">0</div></div>
@@ -584,20 +603,36 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="sc"><div class="sl">No Website</div><div class="sv dim" id="s-nw" style="color:var(--green)">0</div></div>
       <div class="sc"><div class="sl">Has Website</div><div class="sv dim" id="s-hw" style="color:#ff6b85">0</div></div>
     </div>
+
+    <!-- Live Feed -->
     <div class="feed-wrap">
       <div class="lbl">Live Feed</div>
       <div class="prog"><div class="pb" id="s-pb"></div></div>
       <div class="feed" id="s-feed"><div class="fl">Waiting for launch...</div></div>
     </div>
+
+    <!-- Actions -->
     <div class="ss">
-      <button class="btn btn-main" id="scout-btn" onclick="runScout()">▶ Run Scout Agent</button>
-      <div style="font-size:10.5px;color:var(--cyan);font-weight:600;margin:10px 0 4px" id="s-sel-txt">0 selected</div>
-      <button class="btn btn-red" onclick="sDelSel()">✕ Delete Selected</button>
-      <button class="btn btn-sec" onclick="sSelAll()">Select All Without Email</button>
-      <button class="btn btn-sec" onclick="sClear()">Clear Selection</button>
-      <button class="btn btn-vio" onclick="scoreAll()">⬡ Score All Leads</button>
-      <button class="btn btn-sec" onclick="exportCSV()">↓ Export CSV</button>
-      <button class="btn btn-red" onclick="clearLeads()">✕ Clear All Leads</button>
+      <button class="btn btn-main" id="scout-btn" onclick="runScout()" style="font-size:13px;padding:11px 12px">▶ Run Scout Agent</button>
+
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--b1)">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Selection</div>
+        <div style="font-size:10.5px;color:var(--cyan);font-weight:700;margin-bottom:8px" id="s-sel-txt">0 selected</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+          <button class="btn btn-sec" onclick="sSelAll()" style="font-size:10px;padding:7px 10px">No-Email</button>
+          <button class="btn btn-sec" onclick="sClear()" style="font-size:10px;padding:7px 10px">Clear</button>
+        </div>
+        <button class="btn btn-red" onclick="sDelSel()" style="font-size:10.5px;padding:8px 12px">✕ Delete Selected</button>
+      </div>
+
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Data</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+          <button class="btn btn-vio" onclick="scoreAll()" style="font-size:10px;padding:7px 10px">⬡ Score All</button>
+          <button class="btn btn-sec" onclick="exportCSV()" style="font-size:10px;padding:7px 10px">↓ Export CSV</button>
+        </div>
+        <button class="btn btn-red" onclick="clearLeads()" style="font-size:10px;padding:7px 12px;opacity:.55" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.55'">✕ Clear All Leads</button>
+      </div>
     </div>
     <div class="gap"></div>
   </div>
@@ -1117,7 +1152,7 @@ const TYPES=[
   {v:'creative_agency',l:'Creative Agency',c:'Agencies'},{v:'advertising_agency',l:'Advertising Agency',c:'Agencies'},
   {v:'social_media_agency',l:'Social Media Agency',c:'Agencies'},
 ];
-let selTypes=['restaurant'];
+let selTypes=[];
 
 
 // ── CITY GROUPING ────────────────────────────────────────────────────────
@@ -1328,12 +1363,16 @@ function initTypes(){
   drawTags();
 }
 function togType(v){
-  if(selTypes.includes(v)){if(selTypes.length===1)return;selTypes=selTypes.filter(x=>x!==v);}
+  if(selTypes.includes(v)){selTypes=selTypes.filter(x=>x!==v);}
   else{if(selTypes.length>=5){log('s-feed','Max 5 types at once','wn');return;}selTypes.push(v);}
   drawTags();
 }
 function drawTags(){
-  document.getElementById('ttags').innerHTML=selTypes.map(v=>{const t=TYPES.find(x=>x.v===v);return`<span class="ttag">${t?.l||v} <span onclick="togType('${v}')">×</span></span>`;}).join('');
+  const count=document.getElementById('s-type-count');
+  if(count)count.textContent=selTypes.length+' / 5';
+  document.getElementById('ttags').innerHTML=selTypes.length
+    ? selTypes.map(v=>{const t=TYPES.find(x=>x.v===v);return`<span class="ttag">${t?.l||v} <span onclick="togType('${v}')">×</span></span>`;}).join('')
+    : '<span style="font-size:10px;color:var(--t4);font-style:italic">None selected — pick types below</span>';
   TYPES.forEach(t=>{const el=document.getElementById('tp-'+t.v);if(el)el.className=`tp ${selTypes.includes(t.v)?'sel':''}`;});
 }
 
@@ -1341,6 +1380,7 @@ function drawTags(){
 async function runScout(){
   const loc=document.getElementById('s-loc').value.trim();
   if(!loc){log('s-feed','Enter a location first','er');return;}
+  if(!selTypes.length){log('s-feed','Select at least one business type','er');return;}
   btn('scout-btn','Scanning...',true);
   document.getElementById('scan-anim').style.display='flex';
   document.getElementById('s-run').textContent='0';
