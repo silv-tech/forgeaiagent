@@ -251,6 +251,80 @@ Return ONLY valid JSON with no extra text:
 
 // ── AGENCY OUTREACH PROMPT ────────────────────────────────────────────────
 function buildAgencyOutreachPrompt(lead, type) {
+  const typeKey = type.toLowerCase().replace(/\s+/g, '_');
+
+  const ctx = {
+    marketing_agency: {
+      pain: 'Running a marketing agency means managing client campaigns and finding new clients at the same time, with no real system behind the prospecting.',
+      problem: 'Manual client outreach is slow, inconsistent, and hard to scale. Most marketing agencies either skip it or do it badly, and the pipeline suffers for it.',
+      pitch: 'We run fully automated personalized outreach for your agency using AI. We find the leads, write the emails, send them, and follow up. You just forward the replies.',
+    },
+    digital_agency: {
+      pain: 'Running a digital agency means delivering work for current clients while somehow finding the next one, with no consistent system behind the search.',
+      problem: 'Manual prospecting takes time you do not have. Most digital agencies rely on referrals and have no reliable way to fill the pipeline when work slows down.',
+      pitch: 'We handle the full prospecting and outreach pipeline for your agency using AI. We find potential clients, write personalized emails, send them, and follow up. You focus on delivery.',
+    },
+    creative_agency: {
+      pain: 'Creative agencies are great at the work but business development, finding brands to pitch and following up consistently, almost never gets the attention it deserves.',
+      problem: 'Manual brand outreach is easy to deprioritize when client work picks up. Most creative agencies miss deals simply because the follow-up never happened.',
+      pitch: 'We run automated outreach to brands and businesses that fit your niche using AI. We find them, write the pitch, send it, and follow up. You handle the creative conversation.',
+    },
+    advertising_agency: {
+      pain: 'Running an advertising agency means chasing new clients while managing active campaigns at the same time, with no real outreach system behind the new business effort.',
+      problem: 'Finding businesses ready to invest in advertising is manual, slow, and inconsistent. Most ad agencies grow through referrals because cold outreach never gets systematized.',
+      pitch: 'We scout businesses with no ad presence and run automated personalized outreach on your behalf using AI. We find them, write the pitch, send it, and follow up until they reply.',
+    },
+    social_media_agency: {
+      pain: 'Running a social media agency means constantly looking for the next client while keeping up with content for the ones you already have, with no outreach system behind the search.',
+      problem: 'Manual prospecting for social clients is time consuming and inconsistent. Most agencies rely on referrals because there is no automated way to reach businesses that need their help.',
+      pitch: 'We find businesses with a weak or missing social presence and run personalized outreach campaigns on your behalf using AI. We scout, write, send, and follow up automatically.',
+    },
+    seo_agency: {
+      pain: 'Running an SEO agency means identifying businesses losing search traffic and reaching out before a competitor does, with no automated system to do it consistently.',
+      problem: 'Manually finding local businesses ranking poorly and sending personalized outreach does not scale. Most SEO agencies miss opportunities simply because the prospecting never gets systematized.',
+      pitch: 'We scout local businesses with weak search presence and run automated personalized outreach for your agency using AI. We find them, write the pitch, send it, and follow up.',
+    },
+    pr_agency: {
+      pain: 'Running a PR agency means constantly pitching new brands while managing active campaigns, with no outreach system behind the new business effort.',
+      problem: 'Manual brand outreach is inconsistent and easy to deprioritize when current campaigns demand attention. Most PR agencies miss clients simply because the follow-up never happens at scale.',
+      pitch: 'We find brands and businesses that need PR representation and run automated personalized outreach on your behalf using AI. We identify the targets, write the pitch, send it, and follow up.',
+    },
+    web_design_agency: {
+      pain: 'Running a web design agency means finding businesses with outdated or missing websites and reaching out before a competitor does, with no system to do it at scale.',
+      problem: 'Manually searching for businesses that need a new site and sending personalized outreach one by one does not scale. Most web design agencies miss deals because prospecting never gets automated.',
+      pitch: 'We scout businesses with no website or a clearly outdated one and run automated personalized outreach on your behalf using AI. We find them, write the pitch, send it, and follow up.',
+    },
+    video_production_agency: {
+      pain: 'Running a video production agency means finding businesses that need video content before they go to a competitor, with no consistent outreach system to make it happen.',
+      problem: 'Manually identifying businesses running no video content and sending personalized pitches does not scale. Most video agencies rely on referrals because cold prospecting never gets systematized.',
+      pitch: 'We find businesses with no video presence and run automated personalized outreach on your behalf using AI. We scout the targets, write the pitch, send it, and follow up automatically.',
+    },
+    branding_agency: {
+      pain: 'Running a branding agency means finding businesses that need a rebrand or are launching something new and reaching out at exactly the right time, with no system to do it consistently.',
+      problem: 'Manual outreach to branding prospects is inconsistent and timing dependent. Most branding agencies miss opportunities because there is no automated way to stay in front of the right businesses.',
+      pitch: 'We find new and growing businesses that need branding work and run automated personalized outreach on your behalf using AI. We identify the targets, write the pitch, send it, and follow up.',
+    },
+    content_marketing_agency: {
+      pain: 'Running a content marketing agency means finding businesses with no content strategy and convincing them they need one, with no outreach system to do it at scale.',
+      problem: 'Manually identifying businesses with weak content presence and sending personalized pitches does not scale. Most content agencies grow through referrals because systematic outreach never gets built.',
+      pitch: 'We scout businesses with no content marketing presence and run automated personalized outreach for your agency using AI. We find them, write the pitch, send it, and follow up.',
+    },
+    email_marketing_agency: {
+      pain: 'Running an email marketing agency means finding businesses leaving money on the table with no email strategy and reaching them before they figure it out themselves.',
+      problem: 'Manually identifying businesses with no email list or campaigns and sending personalized outreach does not scale. Most email agencies rely on referrals because prospecting never gets systematized.',
+      pitch: 'We find businesses with no email marketing presence and run automated personalized outreach on your behalf using AI. We scout them, write the pitch, send it, and follow up until they reply.',
+    },
+    media_buying_agency: {
+      pain: 'Running a media buying agency means finding businesses leaving ad budget on the table and reaching out before a competitor does, with no system to prospect consistently.',
+      problem: 'Manually identifying businesses with no paid ad presence and sending personalized pitches does not scale. Most media buying agencies grow through referrals because cold outreach never gets automated.',
+      pitch: 'We find businesses spending nothing on paid media and run automated personalized outreach on your behalf using AI. We identify the targets, write the pitch, send it, and follow up automatically.',
+    },
+  }[typeKey] || {
+    pain: 'Running a small agency means doing client work and finding new clients at the same time, with no real system behind the outreach.',
+    problem: 'Manual prospecting is slow, inconsistent, and hard to scale. Most agencies either skip it or do it badly, and their pipeline suffers.',
+    pitch: 'We run fully automated personalized outreach for your agency using AI. We find the leads, write the emails, send them, and follow up. You just forward the replies.',
+  };
+
   return `You write cold outreach emails to small agency owners. Output only the subject and body, no explanation.
 
 CONTEXT:
@@ -259,17 +333,19 @@ CONTEXT:
 
 BODY STRUCTURE — write these four paragraphs in order, each separated by a blank line:
 
-Paragraph 1: "Running a small agency means doing client work and outreach at the same time with no system backing it up."
+Paragraph 1: "${ctx.pain}"
 
-Paragraph 2: "Manual outreach for your clients is slow, inconsistent, and does not scale. Agencies either skip it or do it badly. Your clients miss leads they could be getting."
+Paragraph 2: "${ctx.problem}"
 
-Paragraph 3: "We run fully automated personalized outreach for your clients using AI. We find the leads, write the emails, send them, and follow up. You just forward the replies."
+Paragraph 3: "${ctx.pitch}"
 
 Paragraph 4: "We just ran a test campaign, 100 personalized emails sent in under 10 minutes with zero manual work after setup."
 
-After paragraph 4, add one short soft question on its own line. Default: "Want to see how it works?" Never ask for a call. Never mention pricing.
+After paragraph 4, add one short soft question on its own line. Make it specific to a ${type}. Never ask for a call. Never mention pricing.
 
 Sign off: Leif on its own line, then ForgeAI on the next line. Nothing else after that.
+
+SUBJECT LINE: 2-5 words, lowercase, specific to a ${type} and their biggest prospecting pain.
 
 RULES:
 - Plain text only. No bullet points, no bold, no headers, no HTML.
