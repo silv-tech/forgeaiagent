@@ -1150,7 +1150,11 @@ const TYPES=[
   {v:'computer_store',l:'Computer Parts',c:'Other Services'},
   {v:'marketing_agency',l:'Marketing Agency',c:'Agencies'},{v:'digital_agency',l:'Digital Agency',c:'Agencies'},
   {v:'creative_agency',l:'Creative Agency',c:'Agencies'},{v:'advertising_agency',l:'Advertising Agency',c:'Agencies'},
-  {v:'social_media_agency',l:'Social Media Agency',c:'Agencies'},
+  {v:'social_media_agency',l:'Social Media Agency',c:'Agencies'},{v:'seo_agency',l:'SEO Agency',c:'Agencies'},
+  {v:'pr_agency',l:'PR Agency',c:'Agencies'},{v:'web_design_agency',l:'Web Design Agency',c:'Agencies'},
+  {v:'video_production_agency',l:'Video Production Agency',c:'Agencies'},{v:'branding_agency',l:'Branding Agency',c:'Agencies'},
+  {v:'content_marketing_agency',l:'Content Marketing Agency',c:'Agencies'},{v:'email_marketing_agency',l:'Email Marketing Agency',c:'Agencies'},
+  {v:'media_buying_agency',l:'Media Buying Agency',c:'Agencies'},
 ];
 let selTypes=[];
 
@@ -1613,7 +1617,7 @@ function pickLead(id){
   closeLeadDrop();
   oChg();
 }
-const AGENCY_TYPES=new Set(['marketing_agency','digital_agency','creative_agency','advertising_agency','social_media_agency']);
+const AGENCY_TYPES=new Set(['marketing_agency','digital_agency','creative_agency','advertising_agency','social_media_agency','seo_agency','pr_agency','web_design_agency','video_production_agency','branding_agency','content_marketing_agency','email_marketing_agency','media_buying_agency']);
 function getOutreachType(){
   const id=document.getElementById('o-lead').value;
   const lead=leads.find(l=>l.id===id);
