@@ -251,41 +251,31 @@ Return ONLY valid JSON with no extra text:
 
 // ── AGENCY OUTREACH PROMPT ────────────────────────────────────────────────
 function buildAgencyOutreachPrompt(lead, type) {
-  return `You generate cold outreach emails targeting small agency owners. You will receive business data and must output a single plain-text email. Nothing else, no explanation, no preamble, just the subject line and email body.
+  return `You write cold outreach emails to small agency owners. Output only the subject and body, no explanation.
 
 CONTEXT:
 - Business name: ${lead.name}
 - Business type: ${type}
-- Address: ${lead.address}
-- Rating: ${lead.rating && lead.rating !== 'N/A' ? lead.rating : 'no rating'}
-- Number of reviews: ${parseInt(lead.reviews) || 0}
-- Website: ${lead.website || 'unknown'}
 
-INSTRUCTIONS:
-Goal: Get a reply from a small agency owner by identifying that they are doing outreach manually and it is eating their time or producing inconsistent results.
+BODY STRUCTURE — write these four paragraphs in order, each separated by a blank line:
 
-- Subject: 2-5 words maximum, lowercase except proper nouns. Reference something specific about running an agency or doing client outreach manually. Examples: "still doing outreach manually", "your clients need more leads", "outreach taking too long".
-- Paragraph 1: Open with one sentence that shows you understand what running a small agency feels like. Reference the fact that they are probably juggling client work and outreach at the same time with no system behind it.
-- Paragraph 2: Name the ONE problem. Outreach for clients is time consuming, inconsistent, and hard to scale manually. Most agencies either avoid it or do it badly because they have no automation behind it.
-- Paragraph 3: Pitch the ONE solution. You run fully automated personalized outreach campaigns for their clients using AI. Finds the leads, writes the emails, sends them, follows up automatically. They just forward the replies to their client.
-- Paragraph 4: One specific proof point. Something like "we sent 500 personalized emails last month for a test campaign with zero manual work after setup."
-- Paragraph 5: End with one short soft question under 8 words. Examples: "Want to see how it works?", "Is this something your clients need?", "Worth a quick look?"
-- Sign off: MUST end with Leif on its own line, then ForgeAI on the next line. This is required, never skip it.
-- Max length: 100 words.
+Paragraph 1: "Running a small agency means doing client work and outreach at the same time with no system backing it up."
 
-CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. The sign-off (Leif and ForgeAI) must always be present at the end.
+Paragraph 2: "Manual outreach for your clients is slow, inconsistent, and does not scale. Agencies either skip it or do it badly. Your clients miss leads they could be getting."
+
+Paragraph 3: "We run fully automated personalized outreach for your clients using AI. We find the leads, write the emails, send them, and follow up. You just forward the replies."
+
+Paragraph 4: "Last month we sent 500 personalized emails for one client with zero manual work after setup."
+
+After paragraph 4, add one short soft question on its own line. Default: "Want to see how it works?" Never ask for a call. Never mention pricing.
+
+Sign off: Leif on its own line, then ForgeAI on the next line. Nothing else after that.
 
 RULES:
-- Plain text only, no bullet points, bold, headers, or HTML
-- No "I hope this email finds you well" or "I came across your business"
-- No corporate words, no leverage, synergy, solutions, or optimize
-- Do not mention pricing in the first email
-- Write like a real person emailing one specific business, not a mass campaign
-- Every sentence must earn its place, cut anything that doesn't add value
-- NEVER use em dashes (—) anywhere. Use commas or periods instead.
-
-Return ONLY valid JSON with no extra text:
-{"subject":"...","body":"..."}`;
+- Plain text only. No bullet points, no bold, no headers, no HTML.
+- No corporate words. No em dashes. No exclamation points.
+- Max 100 words total in the body.
+- Return ONLY valid JSON: {"subject":"...","body":"..."}`;
 }
 
 // ── EMAIL SENDING ─────────────────────────────────────────────────────────
@@ -421,7 +411,10 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
 
     // Sign-off
     if (/^(Leif|ForgeAI|ForgeAIAgent)$/i.test(trimmedLine)) {
-      if (/^Leif$/i.test(trimmedLine)) {
+      if (isAgency) {
+        // Plain two-line sign-off for agency — no title, no links, no button
+        bodyHtml += `<p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(trimmedLine)}</p>`;
+      } else if (/^Leif$/i.test(trimmedLine)) {
         bodyHtml += `<div style="margin-top:28px;padding-top:20px;border-top:1px solid #e8ecf0"><p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#111">Leif</p><p style="margin:0 0 6px;font-size:13px;color:#6b7280">Founder, Forge AI</p><p style="margin:0;font-size:13px"><a href="mailto:leif@forgeaiagent.com" style="color:#2563eb;text-decoration:none">leif@forgeaiagent.com</a><span style="color:#d1d5db;margin:0 8px">|</span><a href="https://forgeaiagent.com" style="color:#2563eb;text-decoration:none">forgeaiagent.com</a></p></div>`;
       }
       continue;
@@ -441,11 +434,6 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
     bodyHtml += `<p style="margin:16px 0 20px"><a href="https://app.forgeaiagent.com/how-it-works" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
   }
 
-  // Inject "See What We Can Do" button for agency leads
-  if (isAgency && !bodyHtml.includes('See What We Can Do')) {
-    bodyHtml += `<p style="margin:16px 0 20px"><a href="https://www.forgeaiagent.com" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See What We Can Do</a></p>`;
-  }
-
   const pixelHtml = trackingOpts?.pixelHtml || '';
   const unsubscribeUrl = trackingOpts?.unsubscribeUrl || '';
   const unsubscribeFooter = unsubscribeUrl
@@ -462,7 +450,7 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
     },
     subject: copy.subject,
     text: copy.body + (unsubscribeUrl ? `\n\nTo unsubscribe: ${unsubscribeUrl}` : ''),
-    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px"><table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-bottom:1px solid #e8ecf0;margin-bottom:24px;padding-bottom:16px"><tr><td style="vertical-align:middle"><span style="font-size:17px;font-weight:800;color:#111;letter-spacing:-0.3px">Forge <span style="color:#2563eb">AI</span></span></td><td align="right" style="vertical-align:middle"><span style="font-size:10px;letter-spacing:0.1em;color:#9ca3af;text-transform:uppercase">Websites &middot; Chatbots &middot; Follow-Ups</span></td></tr></table>${bodyHtml}${pixelHtml}${unsubscribeFooter}</div>`
+    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px">${isAgency ? '' : `<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-bottom:1px solid #e8ecf0;margin-bottom:24px;padding-bottom:16px"><tr><td style="vertical-align:middle"><span style="font-size:17px;font-weight:800;color:#111;letter-spacing:-0.3px">Forge <span style="color:#2563eb">AI</span></span></td><td align="right" style="vertical-align:middle"><span style="font-size:10px;letter-spacing:0.1em;color:#9ca3af;text-transform:uppercase">Websites &middot; Chatbots &middot; Follow-Ups</span></td></tr></table>`}${bodyHtml}${pixelHtml}${unsubscribeFooter}</div>`
   };
 
   let data;
