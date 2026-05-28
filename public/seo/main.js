@@ -19,10 +19,8 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     const target = id ? document.getElementById(id) : null;
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      history.replaceState(null, '', '/#' + id);
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      history.replaceState(null, '', '/');
     }
   });
 });
