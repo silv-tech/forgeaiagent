@@ -738,73 +738,101 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 <div class="page" id="pg-outreach">
   <div class="sb">
     <div class="ss">
-      <div class="lbl">Send Outreach</div>
-      <div class="f"><span>Select Lead</span>
-        <div style="position:relative" id="o-lead-wrap">
-          <input type="text" id="o-lead-search" placeholder="Search leads..." autocomplete="off" oninput="onSearchLeadDrop()" onfocus="openLeadDrop()" style="width:100%;padding:7px 10px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s" onfocusin="this.style.borderColor='var(--cyan)'" onfocusout="setTimeout(()=>{closeLeadDrop()},180)">
-          <div id="o-lead-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:var(--s1);border:1px solid rgba(255,255,255,.12);border-top:none;border-radius:0 0 8px 8px;z-index:50"></div>
-          <input type="hidden" id="o-lead" value="">
-        </div>
+      <!-- Step 1: Pick a Lead -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet2));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(0,229,255,.3)">1</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Pick a Lead</div>
       </div>
-      <div id="o-outreach-type-badge" style="display:none;font-size:10px;font-weight:700;padding:5px 10px;border-radius:5px;margin-bottom:8px;letter-spacing:.04em"></div>
-      <div id="o-lead-info" style="display:none;font-size:10.5px;padding:9px 11px;border:1px solid var(--b1);border-radius:6px;background:var(--s2);margin-bottom:8px;line-height:1.7"></div>
-      <div class="f"><span>Recipient Email</span><input type="email" id="o-email" placeholder="owner@business.com"></div>
+      <div style="position:relative;margin-bottom:10px" id="o-lead-wrap">
+        <input type="text" id="o-lead-search" placeholder="Search leads by name or type..." autocomplete="off" oninput="onSearchLeadDrop()" onfocus="openLeadDrop()" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box" onfocusin="this.style.borderColor='var(--cyan)'" onfocusout="setTimeout(()=>{closeLeadDrop()},180)">
+        <div id="o-lead-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:var(--s1);border:1px solid rgba(255,255,255,.12);border-top:none;border-radius:0 0 9px 9px;z-index:50"></div>
+        <input type="hidden" id="o-lead" value="">
+      </div>
+      <div id="o-lead-info" style="display:none;font-size:10.5px;padding:10px 12px;border:1px solid var(--b1);border-radius:9px;background:var(--s2);margin-bottom:10px;line-height:1.8"></div>
+      <div id="o-outreach-type-badge" style="display:none;font-size:11.5px;font-weight:700;padding:11px 14px;border-radius:9px;margin-bottom:4px;line-height:1.5"></div>
+    </div>
+
+    <div class="ss">
+      <!-- Step 2: Recipient Email -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet2));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(0,229,255,.3)">2</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Recipient Email</div>
+      </div>
+      <input type="email" id="o-email" placeholder="owner@business.com" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box;margin-bottom:8px" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
       <div class="hint" id="o-hint" onclick="useEmail()">💡 Use found email: <span id="o-hint-v"></span></div>
-      <div id="o-local-warn" style="display:none;font-size:10px;color:var(--amber);padding:7px 9px;border:1px solid rgba(255,179,0,.25);border-radius:5px;background:rgba(255,179,0,.05);margin-bottom:8px;line-height:1.6">
-        ⚠ This lead's preview URL is on localhost. Go to <strong>Settings → Cloudflare Pages</strong> and add your credentials, then rebuild this site to get a permanent public link.
+      <div id="o-local-warn" style="display:none;font-size:10.5px;color:var(--amber);padding:9px 12px;border:1px solid rgba(255,179,0,.25);border-radius:8px;background:rgba(255,179,0,.05);margin-bottom:8px;line-height:1.65">
+        ⚠ Preview URL is on localhost. Go to <strong>Settings → Cloudflare Pages</strong> and add your credentials, then rebuild to get a public link.
       </div>
-      <div id="o-dup-warn" style="display:none;font-size:10px;color:var(--amber);padding:7px 9px;border:1px solid rgba(255,179,0,.25);border-radius:5px;background:rgba(255,179,0,.05);margin-bottom:8px;line-height:1.6">
-        ⚠ Previously contacted <span id="o-dup-email" style="font-weight:700"></span> on <span id="o-dup-date"></span>. You can still send to a different email, or force resend below.
+      <div id="o-dup-warn" style="display:none;font-size:10.5px;color:var(--amber);padding:9px 12px;border:1px solid rgba(255,179,0,.25);border-radius:8px;background:rgba(255,179,0,.05);margin-bottom:8px;line-height:1.65">
+        ⚠ Already contacted <span id="o-dup-email" style="font-weight:700"></span> on <span id="o-dup-date"></span>. Send to a different email, or use Force Resend below.
       </div>
-      <div id="o-prev-box" style="display:none">
-        <div style="font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:5px">Email Preview, <span style="color:var(--cyan);font-weight:400;text-transform:none">editable before sending</span></div>
+    </div>
+
+    <div class="ss">
+      <!-- Step 3: Preview & Send -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet2));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(0,229,255,.3)">3</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Preview &amp; Send</div>
+      </div>
+      <div id="o-prev-box" style="display:none;margin-bottom:12px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Email Preview — <span style="color:var(--cyan);font-weight:400;text-transform:none;letter-spacing:0">editable before sending</span></div>
         <div class="ebox">
           <div class="f" style="margin-bottom:6px"><span>Subject</span><input type="text" id="o-subj" placeholder="Subject line..."></div>
           <div class="f"><span>Body</span><textarea id="o-email-body" style="min-height:420px;resize:vertical;font-size:12px;line-height:1.8" placeholder="Email body..."></textarea></div>
         </div>
-        <div id="o-samples-box" style="display:none;margin-top:8px">
-          <div style="font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:6px">3 Free Samples Included</div>
-          <div style="font-size:9.5px;font-weight:700;color:var(--t3);margin-bottom:3px">Instagram Caption</div>
-          <div class="ebox" style="margin-bottom:6px"><div class="ebody" id="o-s1"></div></div>
-          <div style="font-size:9.5px;font-weight:700;color:var(--t3);margin-bottom:3px">Review Response</div>
-          <div class="ebox" style="margin-bottom:6px"><div class="ebody" id="o-s2"></div></div>
-          <div style="font-size:9.5px;font-weight:700;color:var(--t3);margin-bottom:3px">Follow-Up Message</div>
+        <div id="o-samples-box" style="display:none;margin-top:10px">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:8px">3 Free Samples Included</div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:4px">Instagram Caption</div>
+          <div class="ebox" style="margin-bottom:8px"><div class="ebody" id="o-s1"></div></div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:4px">Review Response</div>
+          <div class="ebox" style="margin-bottom:8px"><div class="ebody" id="o-s2"></div></div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:4px">Follow-Up Message</div>
           <div class="ebox"><div class="ebody" id="o-s3"></div></div>
         </div>
       </div>
-      <button class="btn btn-vio" id="o-prev-btn" onclick="prevEmail()" style="margin-bottom:8px">◈ Preview Email Copy</button>
-      <button class="btn btn-main" id="o-send-btn" onclick="sendOut()" style="margin-bottom:8px">▶ Send Outreach</button>
-      <button class="btn" id="o-force-btn" onclick="sendOut(true)" style="background:rgba(255,77,109,.1);color:#ff6b85;border:1px solid rgba(255,77,109,.25);font-size:9.5px;padding:7px 12px">⚡ Force Resend</button>
+      <button class="btn btn-vio" id="o-prev-btn" onclick="prevEmail()" style="margin-bottom:8px;font-size:12.5px;padding:10px 12px">◈ Preview Email Copy</button>
+      <button class="btn btn-main" id="o-send-btn" onclick="sendOut()" style="margin-bottom:14px;font-size:13px;padding:11px 12px">▶ Send Outreach</button>
+      <div style="text-align:center">
+        <button id="o-force-btn" onclick="sendOut(true)" style="background:none;border:none;font-family:var(--font);font-size:10.5px;color:var(--red);opacity:.55;cursor:pointer;padding:2px 0;letter-spacing:.02em;transition:opacity .2s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.55'">⚡ Force Resend (skip duplicate check)</button>
+      </div>
     </div>
-    <div class="ss" style="padding-top:16px">
-      <div class="lbl">Follow-Up</div>
-      <button class="btn btn-sec" id="o-fu-btn" onclick="batchFollowUp()">🔄 Follow-Up Selected</button>
+
+    <div class="ss">
+      <!-- Follow-Up -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--amber);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">↩</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Follow-Up</div>
+      </div>
+      <div style="font-size:10.5px;color:var(--t3);line-height:1.65;margin-bottom:11px">Check leads in the log below, then send personalized follow-ups to all of them in one click.</div>
+      <button class="btn btn-sec" id="o-fu-btn" onclick="batchFollowUp()" style="font-size:12px;padding:10px 12px">🔄 Follow-Up Selected</button>
       <div class="batch-prog" id="batch-prog" style="display:none">
         <div class="prog"><div class="pb" id="batch-pb"></div></div>
         <div class="batch-msg" id="batch-msg">Preparing...</div>
       </div>
     </div>
-    <div class="feed-wrap" style="margin-top:8px">
-      <div class="lbl">Feed</div>
+
+    <div class="feed-wrap" style="margin-top:4px">
+      <div class="lbl">Activity Feed</div>
       <div class="feed" id="o-feed"><div class="fl">Waiting...</div></div>
     </div>
   </div>
+
   <div class="main">
     <div class="mh">
       <div class="mt">OUTREACH LOG</div>
       <div class="cnt" id="o-badge">0 sent</div>
       <div class="acts"><button class="ab v" onclick="go('closer')">→ Closer</button></div>
     </div>
-    <div style="padding:8px 18px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <div style="position:relative;flex:1;min-width:140px;display:flex;align-items:center">
+    <div style="padding:10px 18px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="position:relative;flex:1;min-width:160px;display:flex;align-items:center">
         <svg style="position:absolute;left:10px;pointer-events:none;opacity:.35" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="o-search" placeholder="Search outreach log..." oninput="onSearchO()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
+        <input type="text" id="o-search" placeholder="Search outreach log..." oninput="onSearchO()" style="width:100%;padding:8px 12px 8px 32px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
       </div>
-      <select id="o-date-filter" onchange="drawOut()" style="padding:7px 10px;font-size:11px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;cursor:pointer">
+      <select id="o-date-filter" onchange="drawOut()" style="padding:8px 10px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;cursor:pointer">
         <option value="">All dates</option>
       </select>
-      <button class="ab" id="o-sel-btn" onclick="oSelectVisible()" style="font-size:10px;white-space:nowrap;color:var(--cyan)">Select visible</button>
-      <button class="ab" onclick="document.getElementById('o-search').value='';document.getElementById('o-date-filter').value='';oSel.clear();drawOut();oSelUpd()" style="font-size:10px;white-space:nowrap;opacity:.6">Clear</button>
+      <button class="ab" id="o-sel-btn" onclick="oSelectVisible()" style="font-size:11px;white-space:nowrap;color:var(--cyan)">Select visible</button>
+      <button class="ab" onclick="document.getElementById('o-search').value='';document.getElementById('o-date-filter').value='';oSel.clear();drawOut();oSelUpd()" style="font-size:11px;white-space:nowrap;opacity:.6">Clear</button>
     </div>
     <div class="tw">
       <div class="empty" id="o-e"><div class="ei">📨</div><div class="et">No Outreach Sent Yet</div><div class="es">Build demo sites, then send outreach</div></div>
@@ -1268,7 +1296,7 @@ function onSSE(d){
   if(d.type==='builder_done'){if(d.leadId){const l=findLeadLocal(d.leadId);if(l){l.siteFile=d.filename;l.previewUrl=d.previewUrl;l.status='Site Built';}drawB();updStats();}}
   if(d.type==='builder_batch_done'){btn('b-btn','▶ Build Selected',false);bar('b-pb',100);setTimeout(()=>bar('b-pb',0),2000);log('b-feed','✓ All builds complete','gr');}
   if(d.type==='outreach')log('o-feed',d.message,d.status==='sent'?'gr':d.status==='error'?'er':'');
-  if(d.type==='outreach_done'){btn('o-send-btn','▶ Send Outreach',false);btn('o-force-btn','⚡ Force Resend',false);const ol=findLeadLocal(d.leadId);if(ol&&d.result){ol.outreachEmail=d.result.sentTo;ol.outreachSentAt=d.result.sentAt;ol.status='Outreach Sent';}oChg();drawOut();}
+  if(d.type==='outreach_done'){btn('o-send-btn','▶ Send Outreach',false);btn('o-force-btn','⚡ Force Resend (skip duplicate check)',false);const ol=findLeadLocal(d.leadId);if(ol&&d.result){ol.outreachEmail=d.result.sentTo;ol.outreachSentAt=d.result.sentAt;ol.status='Outreach Sent';}oChg();drawOut();}
   if(d.type==='outreach_batch'){
     log('o-feed',d.message,d.status==='sent'?'gr':d.status==='error'?'er':'');
     if(d.progress!=null){bar('batch-pb',d.progress);document.getElementById('batch-msg').textContent=d.message;}
@@ -1520,9 +1548,11 @@ function pickLead(id){
   closeLeadDrop();
   oChg();
 }
+const AGENCY_TYPES=new Set(['marketing_agency','digital_agency','creative_agency','advertising_agency','social_media_agency']);
 function getOutreachType(){
   const id=document.getElementById('o-lead').value;
   const lead=leads.find(l=>l.id===id);
+  if(AGENCY_TYPES.has(lead?.type)) return 'agency';
   return lead?.website ? 'has_website' : 'no_website';
 }
 function oChg(){
@@ -1534,18 +1564,22 @@ function oChg(){
   const dupWarn=document.getElementById('o-dup-warn');
   const badge=document.getElementById('o-outreach-type-badge');
   if(lead){
-    if(lead.website){
-      badge.textContent='Website Outreach';
-      badge.style.display='inline-block';
+    badge.style.display='block';
+    if(AGENCY_TYPES.has(lead.type)){
+      badge.innerHTML='<div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:3px;font-weight:600">Email Strategy</div><div style="font-size:12.5px;font-weight:800">Agency Outreach</div><div style="font-size:10px;opacity:.7;margin-top:3px;font-weight:400">Targets agency owners doing manual client outreach</div>';
+      badge.style.color='var(--cyan)';
+      badge.style.background='rgba(0,200,255,.07)';
+      badge.style.border='1px solid rgba(0,200,255,.25)';
+    } else if(lead.website){
+      badge.innerHTML='<div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:3px;font-weight:600">Email Strategy</div><div style="font-size:12.5px;font-weight:800">Website Outreach</div><div style="font-size:10px;opacity:.7;margin-top:3px;font-weight:400">Pitches a redesign or upgrade to their existing site</div>';
       badge.style.color='var(--amber)';
-      badge.style.background='rgba(255,179,0,.1)';
-      badge.style.border='1px solid rgba(255,179,0,.3)';
+      badge.style.background='rgba(255,179,0,.07)';
+      badge.style.border='1px solid rgba(255,179,0,.25)';
     } else {
-      badge.textContent='No-Website Outreach';
-      badge.style.display='inline-block';
+      badge.innerHTML='<div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:3px;font-weight:600">Email Strategy</div><div style="font-size:12.5px;font-weight:800">No-Website Outreach</div><div style="font-size:10px;opacity:.7;margin-top:3px;font-weight:400">Offers to build them a brand new website from scratch</div>';
       badge.style.color='var(--green)';
-      badge.style.background='rgba(0,255,136,.08)';
-      badge.style.border='1px solid rgba(0,255,136,.3)';
+      badge.style.background='rgba(0,255,136,.07)';
+      badge.style.border='1px solid rgba(0,255,136,.25)';
     }
   } else { badge.style.display='none'; }
   const info=document.getElementById('o-lead-info');
@@ -1595,7 +1629,7 @@ async function sendOut(force){
   const subject=document.getElementById('o-subj')?.value?.trim();
   const body=document.getElementById('o-email-body')?.value?.trim();
   const btnId=force?'o-force-btn':'o-send-btn';
-  const btnLabel=force?'⚡ Force Resend':'▶ Send Outreach';
+  const btnLabel=force?'⚡ Force Resend (skip duplicate check)':'▶ Send Outreach';
   btn(btnId,'Sending...',true);
   log('o-feed',`${force?'Force sending':'Sending'} to ${em}...`,'hi');
   const outreachType=getOutreachType();
