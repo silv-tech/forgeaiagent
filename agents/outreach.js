@@ -265,7 +265,7 @@ Paragraph 2: "Manual outreach for your clients is slow, inconsistent, and does n
 
 Paragraph 3: "We run fully automated personalized outreach for your clients using AI. We find the leads, write the emails, send them, and follow up. You just forward the replies."
 
-Paragraph 4: "2 hours ago we sent 500 personalized emails for one client with zero manual work after setup."
+Paragraph 4: "An hour ago we sent 500 personalized emails for one client with zero manual work after setup."
 
 After paragraph 4, add one short soft question on its own line. Default: "Want to see how it works?" Never ask for a call. Never mention pricing.
 
