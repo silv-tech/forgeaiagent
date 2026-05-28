@@ -566,7 +566,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div style="margin-bottom:4px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)">Business Types</div>
-          <div id="s-type-count" style="font-size:9px;font-family:var(--mono);color:var(--cyan);background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);padding:2px 8px;border-radius:8px;font-weight:700">0 / 5</div>
+          <div id="s-type-count" style="font-size:9px;font-family:var(--mono);color:var(--cyan);background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);padding:2px 8px;border-radius:8px;font-weight:700">0</div>
         </div>
         <div class="type-tags" id="ttags"></div>
         <div class="tpicker" id="tpicker"></div>
@@ -1368,12 +1368,12 @@ function initTypes(){
 }
 function togType(v){
   if(selTypes.includes(v)){selTypes=selTypes.filter(x=>x!==v);}
-  else{if(selTypes.length>=5){log('s-feed','Max 5 types at once','wn');return;}selTypes.push(v);}
+  else{selTypes.push(v);}
   drawTags();
 }
 function drawTags(){
   const count=document.getElementById('s-type-count');
-  if(count)count.textContent=selTypes.length+' / 5';
+  if(count)count.textContent=selTypes.length;
   document.getElementById('ttags').innerHTML=selTypes.length
     ? selTypes.map(v=>{const t=TYPES.find(x=>x.v===v);return`<span class="ttag">${t?.l||v} <span onclick="togType('${v}')">×</span></span>`;}).join('')
     : '<span style="font-size:10px;color:var(--t4);font-style:italic">None selected — pick types below</span>';
