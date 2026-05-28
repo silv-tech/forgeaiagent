@@ -1076,6 +1076,9 @@ app.post('/api/leads/:id/notes', (req,res) => {
 
 // ── LEAD SCORING ──────────────────────────────────────────────────────────
 app.post('/api/leads/score', (req,res) => {
+  // Pre-build Sets for O(1) lookups instead of O(n) tracking.find() per lead
+  const openedLeads = new Set(tracking.filter(t => t.opens.length > 0).map(t => t.leadId));
+  const clickedLeads = new Set(tracking.filter(t => t.clicks.length > 0).map(t => t.leadId));
   leads.forEach(l => {
     let score = 0;
     // Rating: 0-20pts (5.0 = 20pts)
@@ -1089,11 +1092,9 @@ app.post('/api/leads/score', (req,res) => {
     // Email confidence: 0-15pts
     if (l.emailConfidence) score += Math.round((l.emailConfidence/100)*15);
     // Opened email: 10pts
-    const tr = tracking.find(t => t.leadId === l.id && t.opens.length > 0);
-    if (tr) score += 10;
+    if (openedLeads.has(l.id)) score += 10;
     // Clicked: 10pts
-    const tc = tracking.find(t => t.leadId === l.id && t.clicks.length > 0);
-    if (tc) score += 10;
+    if (clickedLeads.has(l.id)) score += 10;
     l.score = Math.min(100, score);
   });
   save(LF, leads);
