@@ -94,14 +94,14 @@ const LOGIN_USER = process.env.LOGIN_USER || 'leif';
 const LOGIN_PASS = process.env.LOGIN_PASS || 'forgeai2026';
 
 app.get('/login', (req, res) => {
-  if (req.session.auth) return res.redirect('/');
+  if (req.session.auth) return res.redirect('/app');
   res.send(`<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>AgentForge, Login</title>
+<title>ForgeAI | Sign In</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23060810'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial Black,sans-serif' font-weight='900' font-size='13' fill='%2300e5ff'>AF</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -164,7 +164,7 @@ app.post('/login', (req, res) => {
   const { username, password } = req.body;
   if (username === LOGIN_USER && password === LOGIN_PASS) {
     req.session.auth = true;
-    return res.redirect('/');
+    return res.redirect('/app');
   }
   res.redirect('/login?err=1');
 });
@@ -438,16 +438,19 @@ app.post('/api/contact', async (req, res) => {
   sendContactNotification(record);
 });
 
-// ── LANDING PAGE (public, SEO-crawlable homepage for non-authed visitors) ─
-app.get('/', (req, res, next) => {
-  if (req.session.auth) return next();
+// ── LANDING PAGE (public, always) ─────────────────────────────────────────
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname,'public','seo','landing.html'));
 });
 
 // ── AUTH MIDDLEWARE ───────────────────────────────────────────────────────
 app.use((req, res, next) => {
-  if (req.path === '/login' || req.path === '/logout' || req.path === '/profile.jpg' || req.path === '/profile.webp') return next();
+  // Public: auth/logout routes, static assets (so landing page CSS/JS/images load), tracking pixel
+  if (req.path === '/login' || req.path === '/logout') return next();
+  if (/\.(css|js|jpg|jpeg|png|webp|svg|ico|xml|txt|woff|woff2|gif)$/.test(req.path)) return next();
   if (req.session.auth) return next();
+  // Unauthenticated API calls get JSON error instead of redirect
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
   res.redirect('/login');
 });
 app.use(express.static(path.join(__dirname,'public'), {
@@ -458,11 +461,15 @@ app.use(express.static(path.join(__dirname,'public'), {
       res.setHeader('Cache-Control','no-cache, no-store, must-revalidate');
       res.setHeader('Pragma','no-cache');
     } else if (/\.(?:js|css|woff2?|ttf|otf|svg|png|jpg|jpeg|gif|webp|ico)$/i.test(p)) {
-      // Static assets, allow the browser to revalidate cheaply via ETag.
       res.setHeader('Cache-Control','public, max-age=86400, stale-while-revalidate=604800');
     }
   }
 }));
+
+// ── APP (protected tool) ───────────────────────────────────────────────────
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname,'public','index.html'));
+});
 const SITES_DIR = path.join(DATA_ROOT,'sites');
 fs.mkdirSync(SITES_DIR,{recursive:true});
 app.use('/sites', express.static(SITES_DIR, {
