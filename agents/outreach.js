@@ -436,7 +436,7 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
 
   // Inject "See How It Works" button for agency leads
   if (isAgency) {
-    bodyHtml += `<p style="margin:16px 0 20px"><a href="https://www.forgeaiagent.com/#how-it-works" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
+    bodyHtml += `<p style="margin:16px 0 20px"><a href="https://www.forgeaiagent.com/#demo-video" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
   }
 
   const pixelHtml = trackingOpts?.pixelHtml || '';
