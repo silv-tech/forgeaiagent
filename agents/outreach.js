@@ -389,8 +389,9 @@ Return ONLY valid JSON:
 
 async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectOverride, bodyOverride, trackingOpts, outreachType) {
   const isHasWebsite = outreachType === 'has_website';
+  const isAgency = outreachType === 'agency';
 
-  if (!isHasWebsite && !hasValidDemoUrl(previewUrl)) {
+  if (!isHasWebsite && !isAgency && !hasValidDemoUrl(previewUrl)) {
     throw new NoDemoError(`No demo site built for ${lead.name}. Run the Builder first so the email has a real demo to link to.`);
   }
 
@@ -413,7 +414,7 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
     const trimmedLine = l.trim();
 
     // URL-only line — render as "View Your Demo Website" button (no_website only)
-    if (!isHasWebsite && trimmedLine.match(/^https?:\/\/\S+$/) && previewUrl && trimmedLine.includes(previewUrl.split('/')[2])) {
+    if (!isHasWebsite && !isAgency && trimmedLine.match(/^https?:\/\/\S+$/) && previewUrl && trimmedLine.includes(previewUrl.split('/')[2])) {
       bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(previewUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">View Your Demo Website</a></p>`;
       continue;
     }
@@ -431,13 +432,18 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   }
 
   // Inject demo button after body if Claude didn't output URL on its own line
-  if (!isHasWebsite && previewUrl && !bodyHtml.includes('View Your Demo Website')) {
+  if (!isHasWebsite && !isAgency && previewUrl && !bodyHtml.includes('View Your Demo Website')) {
     bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(previewUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">View Your Demo Website</a></p>`;
   }
 
   // Inject "See How It Works" button for has_website leads
   if (isHasWebsite && !bodyHtml.includes('See How It Works')) {
     bodyHtml += `<p style="margin:16px 0 20px"><a href="https://app.forgeaiagent.com/how-it-works" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
+  }
+
+  // Inject "See What We Can Do" button for agency leads
+  if (isAgency && !bodyHtml.includes('See What We Can Do')) {
+    bodyHtml += `<p style="margin:16px 0 20px"><a href="https://www.forgeaiagent.com" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See What We Can Do</a></p>`;
   }
 
   const pixelHtml = trackingOpts?.pixelHtml || '';
