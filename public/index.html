@@ -1389,7 +1389,8 @@ async function runScout(){
   document.getElementById('scan-anim').style.display='flex';
   document.getElementById('s-run').textContent='0';
   log('s-feed',`Launching ${selTypes.length} search(es) in ${loc}...`,'hi');
-  await post('/api/scout/run',{location:loc,businessTypes:selTypes,maxLeads:document.getElementById('s-max').value,filter:document.getElementById('s-filter').value,sessionId:sid});
+  const r=await post('/api/scout/run',{location:loc,businessTypes:selTypes,maxLeads:document.getElementById('s-max').value,filter:document.getElementById('s-filter').value,sessionId:sid});
+  if(!r.ok){btn('scout-btn','▶ Run Scout Agent',false);document.getElementById('scan-anim').style.display='none';}
 }
 
 function scoreBadge(s){if(s==null)return'';return s>=70?`<span class="score score-hi">${s}</span>`:s>=40?`<span class="score score-md">${s}</span>`:`<span class="score score-lo">${s}</span>`;}
@@ -1939,6 +1940,7 @@ function x(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function btn(id,lbl,dis){const b=document.getElementById(id);if(!b)return;if(lbl)b.textContent=lbl;b.disabled=dis;}
 async function post(url,body){
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.status===401){window.location.href='/login';return r;}
   if(!r.ok){const e=await r.json().catch(()=>({error:'Request failed'}));const feed=url.includes('scout')?'s-feed':url.includes('email')||url.includes('finder')?'ef-feed':url.includes('builder')?'b-feed':url.includes('outreach')?'o-feed':url.includes('closer')?'c-feed':null;if(feed)log(feed,'✗ '+( e.error||'Request failed'),'er');const btns={'scout':'scout-btn','emailfinder':'ef-btn','builder':'b-btn','outreach':'o-send-btn','closer':'c-btn'};for(const[k,v]of Object.entries(btns)){if(url.includes(k))btn(v,null,false);}}
   return r;
 }
