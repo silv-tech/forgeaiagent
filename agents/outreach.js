@@ -14,9 +14,9 @@ function loadCounter() {
     const data = JSON.parse(fs.readFileSync(COUNTER_FILE, 'utf8'));
     const now = Date.now();
     if (data.startedAt && (now - data.startedAt) < RESET_INTERVAL_MS) return data;
-    return { startedAt: now, resend: 0, smtp: 0 };
+    return { startedAt: now, resend: 0, brevo: 0, smtp: 0 };
   } catch {
-    return { startedAt: Date.now(), resend: 0, smtp: 0 };
+    return { startedAt: Date.now(), resend: 0, brevo: 0, smtp: 0 };
   }
 }
 

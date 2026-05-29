@@ -27,7 +27,7 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 // If someone lands with a hash in the URL (shared link), honor the scroll.
 if (window.location.hash) {
   const target = document.getElementById(window.location.hash.slice(1));
-  if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 0);
+  if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 50);
 }
 
 // ── NAV SHADOW ON SCROLL ────────────────────────────────────────────────

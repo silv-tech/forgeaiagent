@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const { randomUUID } = require('crypto');
+const AGENCY_TYPES = new Set(['marketing_agency','digital_agency','creative_agency','advertising_agency','social_media_agency','seo_agency','pr_agency','web_design_agency','video_production_agency','branding_agency','content_marketing_agency','email_marketing_agency','media_buying_agency']);
 // Persistent data directory, set DATA_DIR env var on Railway to your volume mount path (e.g. /data)
 const DATA_ROOT = process.env.DATA_DIR || __dirname;
 const leadsEnv = path.join(DATA_ROOT, 'leads', '.env');
@@ -344,7 +345,7 @@ app.use(express.static(path.join(__dirname,'public','seo'), {
     }
   }
 }));
-app.get('/how-it-works', (req, res) => res.sendFile(path.join(__dirname,'public','how-it-works.html')));
+app.get('/how-it-works', (req, res) => res.sendFile(path.join(__dirname,'public','seo','landing.html')));
 app.get('/blog', (req, res) => res.sendFile(path.join(__dirname,'public','seo','blog','index.html')));
 app.get('/blog/:slug', (req, res) => {
   const file = path.join(__dirname,'public','seo','blog', req.params.slug + '.html');
@@ -786,7 +787,7 @@ app.post('/api/outreach/batch', async (req,res) => {
         clickUrl: `${getBase()}/c/${trackingId}`,
         unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(email).toString('base64url')}`
       };
-      const autoType = lead.website ? 'has_website' : 'no_website';
+      const autoType = AGENCY_TYPES.has(lead.type) ? 'agency' : (lead.website ? 'has_website' : 'no_website');
       const result = await sendOutreach(lead, previewUrl, email, () => {}, null, null, trackingOpts, autoType);
       // Only create tracking record AFTER successful send
       tracking.push({ trackingId, leadId:lead.id, type:'outreach', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
@@ -853,7 +854,7 @@ app.post('/api/outreach/followup-batch', async (req,res) => {
         clickUrl: `${getBase()}/c/${trackingId}`,
         unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(email).toString('base64url')}`
       };
-      const autoType = lead.website ? 'has_website' : 'no_website';
+      const autoType = AGENCY_TYPES.has(lead.type) ? 'agency' : (lead.website ? 'has_website' : 'no_website');
       const result = await sendOutreach(lead, previewUrl, email, ()=>{}, followUp.subject, followUp.body, trackingOpts, autoType);
       // Only create tracking record AFTER successful send
       tracking.push({ trackingId, leadId:lead.id, type:'followup', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
@@ -918,7 +919,7 @@ app.post('/api/scheduled/process', async (req,res) => {
         clickUrl: `${getBase()}/c/${trackingId}`,
         unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(s.emailAddress).toString('base64url')}`
       };
-      const autoType = f.lead.website ? 'has_website' : 'no_website';
+      const autoType = AGENCY_TYPES.has(f.lead.type) ? 'agency' : (f.lead.website ? 'has_website' : 'no_website');
       const result = await sendOutreach(f.lead, previewUrl, s.emailAddress, ()=>{}, s.subject||null, s.body||null, trackingOpts, autoType);
       // Only create tracking record AFTER successful send
       tracking.push({ trackingId, leadId:s.leadId, type:'outreach', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
@@ -1001,7 +1002,7 @@ app.post('/api/sequences/process', async (req,res) => {
           clickUrl: `${getBase()}/c/${trackingId}`,
           unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(emailAddr).toString('base64url')}`
         };
-        const autoType = f.lead.website ? 'has_website' : 'no_website';
+        const autoType = AGENCY_TYPES.has(f.lead.type) ? 'agency' : (f.lead.website ? 'has_website' : 'no_website');
         await sendOutreach(f.lead, previewUrl, emailAddr, ()=>{}, followUp.subject, followUp.body, trackingOpts, autoType);
         // Only create tracking record AFTER successful send
         tracking.push({ trackingId, leadId:seq.leadId, type:'followup', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:now });
