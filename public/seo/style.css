@@ -299,10 +299,7 @@ section {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #f97316, #7c3aed);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #f97316;
 }
 
 .hero p {
