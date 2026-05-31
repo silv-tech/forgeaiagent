@@ -1368,7 +1368,7 @@ function initTypes(){
 }
 function togType(v){
   if(selTypes.includes(v)){selTypes=selTypes.filter(x=>x!==v);}
-  else{selTypes.push(v);}
+  else{if(selTypes.length>=5){log('s-feed','Maximum 5 business types per run','er');return;}selTypes.push(v);}
   drawTags();
 }
 function drawTags(){

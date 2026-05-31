@@ -498,12 +498,27 @@ app.get('/api/stream/:id', (req,res) => {
 const emit = (sid,d) => { if(sid&&sessions[sid]) sessions[sid](d) };
 
 // ── SCOUT ─────────────────────────────────────────────────────────────────
+let scoutRunning = false;
+let dailyScoutRuns = 0;
+let dailyScoutDate = new Date().toDateString();
+const MAX_SCOUT_RUNS_PER_DAY = 50;
+
 app.post('/api/scout/run', async (req,res) => {
   const { location, businessTypes, businessType, maxLeads, filter, sessionId } = req.body;
   if (!location) return res.status(400).json({ error:'Location required' });
+  if (scoutRunning) return res.status(409).json({ error:'Scout already running, please wait' });
+  // Reset daily counter at midnight
+  const today = new Date().toDateString();
+  if (today !== dailyScoutDate) { dailyScoutRuns = 0; dailyScoutDate = today; }
+  if (dailyScoutRuns >= MAX_SCOUT_RUNS_PER_DAY) return res.status(429).json({ error:`Daily scout limit reached (${MAX_SCOUT_RUNS_PER_DAY} runs). Resets at midnight.` });
+  dailyScoutRuns++;
+  scoutRunning = true;
   res.json({ status:'started' });
   try {
-    await runScout({ location, businessTypes, businessType, maxLeads:parseInt(maxLeads)||20, filter:filter||'no_website' }, p => {
+    // Server-side caps: max 50 leads, max 5 business types
+    const cappedLeads = Math.min(parseInt(maxLeads) || 20, 50);
+    const cappedTypes = (businessTypes?.length ? businessTypes.slice(0, 5) : [businessType]).filter(Boolean);
+    await runScout({ location, businessTypes: cappedTypes, maxLeads: cappedLeads, filter:filter||'no_website' }, p => {
       if (p.lead) {
         if (!leads.find(l=>l.name===p.lead.name&&l.address===p.lead.address)) {
           p.lead.id = randomUUID();
@@ -514,6 +529,7 @@ app.post('/api/scout/run', async (req,res) => {
     });
     emit(sessionId, { type:'scout_done', total: leads.length });
   } catch(e) { emit(sessionId, { type:'error', agent:'scout', message:e.message }); }
+  finally { scoutRunning = false; }
 });
 
 // ── EMAIL FINDER ──────────────────────────────────────────────────────────
