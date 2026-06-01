@@ -376,6 +376,191 @@ section {
   transform: translateY(-1px);
 }
 
+/* ── INBOX MOCKUP ────────────────────────────────────────────────────── */
+.inbox-mockup {
+  max-width: 580px;
+  margin: 40px auto 0;
+  perspective: 800px;
+}
+
+.inbox-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.inbox-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.inbox-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s;
+}
+
+.inbox-tab.active {
+  color: #0f172a;
+  font-weight: 600;
+  border-bottom-color: #f97316;
+  background: #fff;
+}
+
+.inbox-emails {
+  padding: 0;
+}
+
+.inbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+  color: #64748b;
+  transition: background 0.15s;
+}
+
+.inbox-row:last-child {
+  border-bottom: none;
+}
+
+.inbox-row.unread {
+  background: #fffbf5;
+}
+
+.inbox-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f97316;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.4);
+}
+
+.inbox-row:not(.unread) .inbox-dot {
+  display: none;
+}
+
+.inbox-sender {
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+
+.inbox-row.unread .inbox-sender {
+  font-weight: 700;
+}
+
+.inbox-preview {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #64748b;
+  text-align: left;
+}
+
+.inbox-row.unread .inbox-preview {
+  color: #334155;
+}
+
+.inbox-preview strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.inbox-row.unread .inbox-preview strong {
+  font-weight: 700;
+}
+
+.inbox-time {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.inbox-row.unread .inbox-time {
+  color: #f97316;
+  font-weight: 600;
+}
+
+.inbox-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+@media (max-width: 768px) {
+  .inbox-mockup {
+    margin: 32px auto 0;
+  }
+
+  .inbox-tab {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
+  .inbox-row {
+    padding: 11px 14px;
+    gap: 8px;
+  }
+
+  .inbox-sender {
+    min-width: 80px;
+    font-size: 12px;
+  }
+
+  .inbox-preview {
+    font-size: 12px;
+  }
+
+  .inbox-time {
+    display: none;
+  }
+
+  .inbox-badge {
+    top: 10px;
+    right: 10px;
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .inbox-tab svg {
+    display: none;
+  }
+
+  .inbox-sender {
+    min-width: 70px;
+  }
+}
+
 /* ── SOCIAL PROOF STRIP ──────────────────────────────────────────────── */
 .proof-strip {
   background: #0f172a;
