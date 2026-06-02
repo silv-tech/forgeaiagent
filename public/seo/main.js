@@ -61,6 +61,34 @@ document.querySelectorAll('.faq-question').forEach(btn => {
   });
 });
 
+// ── LIVE STATS ─────────────────────────────────────────────────────────
+(async () => {
+  try {
+    const res = await fetch('/api/public-stats');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const animate = (el, target) => {
+      if (!el || target <= 0) return;
+      const duration = 1200;
+      const start = performance.now();
+      const step = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.floor(target * eased).toLocaleString() + '+';
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+
+    animate(document.getElementById('stat-leads'), data.totalLeads);
+    animate(document.getElementById('stat-emails'), data.emailsSent);
+    animate(document.getElementById('stat-sites'), data.sitesBuilt);
+  } catch {
+    // Static fallbacks already in HTML
+  }
+})();
+
 // ── CONTACT FORM ────────────────────────────────────────────────────────
 const form = document.getElementById('contactForm');
 form.addEventListener('submit', async (e) => {

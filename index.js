@@ -439,6 +439,18 @@ app.post('/api/contact', async (req, res) => {
   sendContactNotification(record);
 });
 
+// ── PUBLIC STATS (no auth, aggregate counts only) ────────────────────────
+app.get('/api/public-stats', (req, res) => {
+  try {
+    const totalLeads = leads.length;
+    const emailsSent = leads.filter(l => l.outreachSentAt).length;
+    const sitesBuilt = leads.filter(l => l.siteFile).length;
+    res.json({ totalLeads, emailsSent, sitesBuilt });
+  } catch {
+    res.json({ totalLeads: 0, emailsSent: 0, sitesBuilt: 0 });
+  }
+});
+
 // ── LANDING PAGE (public, always) ─────────────────────────────────────────
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname,'public','seo','landing.html'));
@@ -871,7 +883,7 @@ app.post('/api/outreach/followup-batch', async (req,res) => {
         unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(email).toString('base64url')}`
       };
       const autoType = AGENCY_TYPES.has(lead.type) ? 'agency' : (lead.website ? 'has_website' : 'no_website');
-      const result = await sendOutreach(lead, previewUrl, email, ()=>{}, followUp.subject, followUp.body, trackingOpts, autoType);
+      const result = await sendOutreach(lead, previewUrl, email, ()=>{}, followUp.subject, followUp.body, trackingOpts, autoType, true);
       // Only create tracking record AFTER successful send
       tracking.push({ trackingId, leadId:lead.id, type:'followup', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
       save(TF, tracking);
@@ -1019,7 +1031,7 @@ app.post('/api/sequences/process', async (req,res) => {
           unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(emailAddr).toString('base64url')}`
         };
         const autoType = AGENCY_TYPES.has(f.lead.type) ? 'agency' : (f.lead.website ? 'has_website' : 'no_website');
-        await sendOutreach(f.lead, previewUrl, emailAddr, ()=>{}, followUp.subject, followUp.body, trackingOpts, autoType);
+        await sendOutreach(f.lead, previewUrl, emailAddr, ()=>{}, followUp.subject, followUp.body, trackingOpts, autoType, true);
         // Only create tracking record AFTER successful send
         tracking.push({ trackingId, leadId:seq.leadId, type:'followup', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:now });
         step.status='sent'; step.sentAt=new Date().toISOString();

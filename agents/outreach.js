@@ -171,7 +171,7 @@ Goal: Get a reply by showing them a free website you already built for them, and
 - Subject: 2-5 words maximum. Must reference something specific and real about their business — their review count, rating, or a pain point tied to having no website. Should feel like an observation, not a sales pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no website", "your customers can't find you", "${lead.name} deserves a site", "${lead.rating} stars but invisible online". Make the owner feel like you specifically noticed something about their business.
 - Paragraph 1: acknowledge their review count and rating in one sentence. Make it feel like you actually looked them up, not a template.
 - Paragraph 2: one sentence on the problem. People search their name and find nothing — no way to book, check hours, or even confirm they exist.
-- Paragraph 3: lead with the main offer — you already built them a free website. This is the hero. Keep it to 1-2 sentences max. Say it's already done and it's completely theirs to keep for free. Do NOT include the URL anywhere in the sentence. After this paragraph, on its own line with nothing else, output exactly this URL: ${previewUrl} — the system will automatically turn it into a button.
+- Paragraph 3: lead with the main offer — you already built them a free website. This is the hero. Keep it to 1-2 sentences max. Say it's already done and it's completely theirs to keep for free. Do NOT include the URL anywhere in the sentence. After this paragraph, on its own line with nothing else, output exactly this URL: ${previewUrl}
 - Paragraph 4: an AI chatbot they can personally train to answer exactly the way they want, in their own voice, not a generic bot. It handles customer questions 24/7 and they get notified every time someone asks something. IMPORTANT: the sentence MUST include that they train it themselves to answer exactly how they want — do not drop this point.
 - Paragraph 5: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out — the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear.
 - Paragraph 6: make it clear everything is completely free. Say you'd love a quick call — not to sell anything, just to hear what's actually giving them headaches in their business, then show them how this helps. Keep it casual and genuine. Do NOT say "customize" or "tailor".
@@ -224,7 +224,7 @@ Goal: Get a reply by naming a specific moment the owner recognizes and offering 
 - Paragraph 1: mention you were researching ${type} businesses in ${city} and noticed something specific and positive about their rating or review count. One natural opening sentence.
 - Paragraph 2 (timeline hook): name the exact moment the problem shows up — the specific moment when customers decide whether to come back. Use the INDUSTRY FOLLOW-UP CONTEXT above to make this moment specific and real. Make the owner picture the situation. Most businesses go silent exactly at that moment.
 - Paragraph 3: an AI chatbot added to their existing website. They personally train it to respond exactly the way they want, in their own voice. It handles customer questions 24/7 and they get notified every time someone asks something. One clean sentence. MUST include that they train it themselves to answer exactly how they want.
-- Paragraph 4: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out — the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear. Do NOT include any URLs. A "See How It Works" button will be added automatically below your text.
+- Paragraph 4: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out — the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear. Do NOT include any URLs.
 - Paragraph 5: make it clear you'll set both up completely free. Say you'd like a quick call — not to sell anything, but to hear what's actually causing friction in their business day to day. Keep it casual and genuine. Do NOT say "customize" or "tailor".
 - Paragraph 6: end with one short interest-based question. Examples: "Is keeping more customers coming back something you're working on right now?", "Open to seeing how this works for a ${type}?", "Worth a quick look?". Must be under 12 words.
 - Sign off: MUST end with Leif on its own line, then ForgeAIAgent on the next line. This is required, never skip it.
@@ -453,7 +453,7 @@ Return ONLY valid JSON:
   return cleanCopy(result);
 }
 
-async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectOverride, bodyOverride, trackingOpts, outreachType) {
+async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectOverride, bodyOverride, trackingOpts, outreachType, isFollowUp) {
   const isHasWebsite = outreachType === 'has_website';
   const isAgency = outreachType === 'agency';
 
@@ -471,7 +471,7 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   const fromEmail = RESEND_FROM || SMTP_USER || 'leif@forgeaiagent.com';
   onProgress({ status: 'sending', message: `Sending to ${emailAddress}...` });
 
-  // Build HTML — Forge AI branded header + clean body + footer
+  // Build HTML — clean personal email style (no branding, no buttons)
   let bodyText = copy.body;
   const lines = bodyText.split('\n').filter(l => l.trim());
   let bodyHtml = '';
@@ -479,46 +479,37 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   for (const l of lines) {
     const trimmedLine = l.trim();
 
-    // URL-only line — render as "View Your Demo Website" button (no_website only)
+    // URL-only line — render as plain text link (no_website only, first-touch skips links)
     if (!isHasWebsite && !isAgency && trimmedLine.match(/^https?:\/\/\S+$/) && previewUrl && trimmedLine.includes(previewUrl.split('/')[2])) {
-      bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(previewUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">View Your Demo Website</a></p>`;
+      bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111"><a href="${escapeHtml(previewUrl)}" style="color:#2563eb;text-decoration:underline">${escapeHtml(previewUrl)}</a></p>`;
       continue;
     }
 
-    // Sign-off
+    // Sign-off — plain text, like a real person
     if (/^(Leif|ForgeAI|ForgeAIAgent)$/i.test(trimmedLine)) {
-      if (isAgency) {
-        // Plain two-line sign-off for agency — no title, no links, no button
-        bodyHtml += `<p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(trimmedLine)}</p>`;
-      } else if (/^Leif$/i.test(trimmedLine)) {
-        bodyHtml += `<div style="margin-top:28px;padding-top:20px;border-top:1px solid #e8ecf0"><p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#111">Leif</p><p style="margin:0 0 6px;font-size:13px;color:#6b7280">Founder, Forge AI</p><p style="margin:0;font-size:13px"><a href="mailto:leif@forgeaiagent.com" style="color:#2563eb;text-decoration:none">leif@forgeaiagent.com</a><span style="color:#d1d5db;margin:0 8px">|</span><a href="https://forgeaiagent.com" style="color:#2563eb;text-decoration:none">forgeaiagent.com</a></p></div>`;
-      }
+      bodyHtml += `<p style="margin:0 0 4px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(trimmedLine)}</p>`;
       continue;
     }
 
     // Default paragraph
-    bodyHtml += `<p style="margin:0 0 18px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(l)}</p>`;
+    bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(l)}</p>`;
   }
 
-  // Inject demo button after body if Claude didn't output URL on its own line
-  if (!isHasWebsite && !isAgency && previewUrl && !bodyHtml.includes('View Your Demo Website')) {
-    bodyHtml += `<p style="margin:16px 0 20px"><a href="${escapeHtml(previewUrl)}" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">View Your Demo Website</a></p>`;
-  }
-
-  // Inject "See How It Works" button for has_website leads
-  if (isHasWebsite && !bodyHtml.includes('See How It Works')) {
-    bodyHtml += `<p style="margin:16px 0 20px"><a href="https://www.forgeaiagent.com/how-it-works" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
-  }
-
-  // Inject "See How It Works" button for agency leads
-  if (isAgency) {
-    bodyHtml += `<p style="margin:16px 0 20px"><a href="https://www.forgeaiagent.com/how-it-works" style="display:inline-block;padding:12px 24px;background:#111;color:#fff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px">See How It Works</a></p>`;
+  // Follow-ups get links (recipient already got the intro); first-touch emails stay clean
+  if (isFollowUp) {
+    if (!isHasWebsite && !isAgency && previewUrl && !bodyHtml.includes(previewUrl)) {
+      bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111">Here's the demo I put together: <a href="${escapeHtml(previewUrl)}" style="color:#2563eb;text-decoration:underline">${escapeHtml(previewUrl)}</a></p>`;
+    }
+    if ((isHasWebsite || isAgency) && !bodyHtml.includes('forgeaiagent.com')) {
+      bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111"><a href="https://www.forgeaiagent.com/how-it-works" style="color:#2563eb;text-decoration:underline">See how it works</a></p>`;
+    }
   }
 
   const pixelHtml = trackingOpts?.pixelHtml || '';
   const unsubscribeUrl = trackingOpts?.unsubscribeUrl || '';
+  // Plain text unsubscribe line (no styled footer)
   const unsubscribeFooter = unsubscribeUrl
-    ? `<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e8ecf0;text-align:center"><p style="margin:0;font-size:11px;color:#9ca3af">Don't want to hear from us? <a href="${escapeHtml(unsubscribeUrl)}" style="color:#9ca3af;text-decoration:underline">Unsubscribe</a></p></div>`
+    ? `<p style="margin:24px 0 0;font-size:11px;color:#999">To stop receiving emails: <a href="${escapeHtml(unsubscribeUrl)}" style="color:#999;text-decoration:underline">unsubscribe</a></p>`
     : '';
 
   const emailPayload = {
@@ -530,8 +521,8 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
     },
     subject: copy.subject,
-    text: copy.body + (unsubscribeUrl ? `\n\nTo unsubscribe: ${unsubscribeUrl}` : ''),
-    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px">${isAgency ? '' : `<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-bottom:1px solid #e8ecf0;margin-bottom:24px;padding-bottom:16px"><tr><td style="vertical-align:middle"><span style="font-size:17px;font-weight:800;color:#111;letter-spacing:-0.3px">Forge <span style="color:#2563eb">AI</span></span></td><td align="right" style="vertical-align:middle"><span style="font-size:10px;letter-spacing:0.1em;color:#9ca3af;text-transform:uppercase">Websites &middot; Chatbots &middot; Follow-Ups</span></td></tr></table>`}${bodyHtml}${pixelHtml}${unsubscribeFooter}</div>`
+    text: copy.body + (unsubscribeUrl ? `\n\nTo stop receiving emails: ${unsubscribeUrl}` : ''),
+    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px">${bodyHtml}${pixelHtml}${unsubscribeFooter}</div>`
   };
 
   let data;
@@ -587,9 +578,12 @@ async function generateFollowUpEmail(lead, step, previousSubject) {
   const client = getClient();
   const type = (lead.type || 'business').replace(/_/g, ' ');
   const hasWebsite = !!lead.website;
-  const scenarioDesc = hasWebsite
+  const isAgency = /agency/i.test(lead.type || '');
+  const scenarioDesc = isAgency
+    ? 'SCENARIO: This is an agency owner. The first email pitched fully automated AI-powered cold email outreach for their agency: we find their leads, write personalized emails, send them, and follow up automatically. They just forward the replies. Do NOT mention chatbots, demo websites, or website building. Stay focused on the outreach automation pitch.'
+    : hasWebsite
     ? 'SCENARIO A: Business has a website. First email offered a free AI chatbot on their existing site (they train it themselves, get notified on questions) plus a fully automated follow-up system that contacts customers without any manual work from the owner.'
-    : 'SCENARIO B: Business has no website. A free demo site was already built for them with an AI chatbot included. The first email offered the demo site plus a separate automated follow-up system. A "View Your Demo Website" button is automatically added below the email body, so NEVER include any URLs.';
+    : 'SCENARIO B: Business has no website. A free demo site was already built for them with an AI chatbot included. The first email offered the demo site plus a separate automated follow-up system. A link to the demo is automatically added below the email body, so NEVER include any URLs.';
 
   const angles = [
     'This is follow-up #1. Acknowledge the previous email briefly, then introduce one real industry statistic that makes the core problem feel urgent. Tie it back to their specific situation.',
