@@ -168,18 +168,18 @@ CONTEXT:
 INSTRUCTIONS:
 Goal: Get a reply by showing them a free website you already built for them, and making clear what it comes with.
 
-- Subject: 2-5 words maximum. Must reference something specific and real about their business — their review count, rating, or a pain point tied to having no website. Should feel like an observation, not a sales pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no website", "your customers can't find you", "${lead.name} deserves a site", "${lead.rating} stars but invisible online". Make the owner feel like you specifically noticed something about their business.
+- Subject: 2-5 words maximum. Must reference something specific and real about their business,their review count, rating, or a pain point tied to having no website. Should feel like an observation, not a sales pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no website", "your customers can't find you", "${lead.name} deserves a site", "${lead.rating} stars but invisible online". Make the owner feel like you specifically noticed something about their business.
 - Paragraph 1: acknowledge their review count and rating in one sentence. Make it feel like you actually looked them up, not a template.
-- Paragraph 2: one sentence on the problem. People search their name and find nothing — no way to book, check hours, or even confirm they exist.
-- Paragraph 3: lead with the main offer — you already built them a free website. This is the hero. Keep it to 1-2 sentences max. Say it's already done and it's completely theirs to keep for free. Do NOT include the URL anywhere in the sentence. After this paragraph, on its own line with nothing else, output exactly this URL: ${previewUrl}
-- Paragraph 4: an AI chatbot they can personally train to answer exactly the way they want, in their own voice, not a generic bot. It handles customer questions 24/7 and they get notified every time someone asks something. IMPORTANT: the sentence MUST include that they train it themselves to answer exactly how they want — do not drop this point.
-- Paragraph 5: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out — the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear.
-- Paragraph 6: make it clear everything is completely free. Say you'd love a quick call — not to sell anything, just to hear what's actually giving them headaches in their business, then show them how this helps. Keep it casual and genuine. Do NOT say "customize" or "tailor".
-- Paragraph 7: end with one short soft question about the call. Examples: "Sound fair?", "Worth 5 minutes?", "Interested?". Must be under 8 words. Do NOT say "Want to see it?" or "Worth a quick look?" — the button handles that.
+- Paragraph 2: one sentence on the problem. People search their name and find nothing,no way to book, check hours, or even confirm they exist.
+- Paragraph 3: lead with the main offer,you already built them a free website. This is the hero. Keep it to 1-2 sentences max. Say it's already done and it's completely theirs to keep for free. Do NOT include the URL anywhere in the sentence. After this paragraph, on its own line with nothing else, output exactly this URL: ${previewUrl}
+- Paragraph 4: an AI chatbot they can personally train to answer exactly the way they want, in their own voice, not a generic bot. It handles customer questions 24/7 and they get notified every time someone asks something. IMPORTANT: the sentence MUST include that they train it themselves to answer exactly how they want,do not drop this point.
+- Paragraph 5: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out,the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear.
+- Paragraph 6: make it clear everything is completely free. Say you'd love a quick call,not to sell anything, just to hear what's actually giving them headaches in their business, then show them how this helps. Keep it casual and genuine. Do NOT say "customize" or "tailor".
+- Paragraph 7: end with one short soft question about the call. Examples: "Sound fair?", "Worth 5 minutes?", "Interested?". Must be under 8 words. Do NOT say "Want to see it?" or "Worth a quick look?",the button handles that.
 - Sign off: MUST end with Leif on its own line, then ForgeAIAgent on the next line. This is required, never skip it.
 - Max length: 140 words
 
-CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. Paragraphs 4 and 5 are two distinct features — each on its own paragraph with a blank line between them. Do not combine any points. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
+CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. Paragraphs 4 and 5 are two distinct features,each on its own paragraph with a blank line between them. Do not combine any points. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
 
 RULES:
 - Plain text only, no bullet points, bold, headers, or HTML
@@ -220,17 +220,17 @@ ${followUpExamples.scenarios}
 INSTRUCTIONS:
 Goal: Get a reply by naming a specific moment the owner recognizes and offering two clearly separate tools.
 
-- Subject: 2-5 words maximum. Reference something specific about their business — their review count, rating, or a pain point tied to their industry. Should feel like an observation, not a pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no follow-up system", "after the visit is the gap", "${lead.rating} stars, losing regulars", "your ${type} customers aren't coming back".
+- Subject: 2-5 words maximum. Reference something specific about their business,their review count, rating, or a pain point tied to their industry. Should feel like an observation, not a pitch. Do not use "Quick question". Do not use "help". Use lowercase except for business name or proper nouns. Examples: "${reviews} reviews, no follow-up system", "after the visit is the gap", "${lead.rating} stars, losing regulars", "your ${type} customers aren't coming back".
 - Paragraph 1: mention you were researching ${type} businesses in ${city} and noticed something specific and positive about their rating or review count. One natural opening sentence.
-- Paragraph 2 (timeline hook): name the exact moment the problem shows up — the specific moment when customers decide whether to come back. Use the INDUSTRY FOLLOW-UP CONTEXT above to make this moment specific and real. Make the owner picture the situation. Most businesses go silent exactly at that moment.
+- Paragraph 2 (timeline hook): name the exact moment the problem shows up,the specific moment when customers decide whether to come back. Use the INDUSTRY FOLLOW-UP CONTEXT above to make this moment specific and real. Make the owner picture the situation. Most businesses go silent exactly at that moment.
 - Paragraph 3: an AI chatbot added to their existing website. They personally train it to respond exactly the way they want, in their own voice. It handles customer questions 24/7 and they get notified every time someone asks something. One clean sentence. MUST include that they train it themselves to answer exactly how they want.
-- Paragraph 4: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out — the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear. Do NOT include any URLs.
-- Paragraph 5: make it clear you'll set both up completely free. Say you'd like a quick call — not to sell anything, but to hear what's actually causing friction in their business day to day. Keep it casual and genuine. Do NOT say "customize" or "tailor".
+- Paragraph 4: a completely separate automated follow-up system. The key point: the owner does not write messages, schedule anything, or decide when to reach out,the system does all of that automatically. It knows when to contact each customer and sends the text or email for them, no manual work needed. One clean sentence that makes this hands-off nature clear. Do NOT include any URLs.
+- Paragraph 5: make it clear you'll set both up completely free. Say you'd like a quick call,not to sell anything, but to hear what's actually causing friction in their business day to day. Keep it casual and genuine. Do NOT say "customize" or "tailor".
 - Paragraph 6: end with one short interest-based question. Examples: "Is keeping more customers coming back something you're working on right now?", "Open to seeing how this works for a ${type}?", "Worth a quick look?". Must be under 12 words.
 - Sign off: MUST end with Leif on its own line, then ForgeAIAgent on the next line. This is required, never skip it.
 - Max length: 130 words
 
-CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. Paragraphs 3 and 4 are two distinct separate features — each on its own paragraph with a blank line between them. Do not combine them. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
+CRITICAL FORMATTING RULE: Every paragraph MUST be separated by a blank line. Paragraphs 3 and 4 are two distinct separate features,each on its own paragraph with a blank line between them. Do not combine them. The sign-off (Leif and ForgeAIAgent) must always be present at the end.
 
 RULES:
 - Plain text only, no bullet points, bold, headers, or HTML
@@ -331,7 +331,7 @@ CONTEXT:
 - Business name: ${lead.name}
 - Business type: ${type}
 
-BODY STRUCTURE — write these four paragraphs in order, each separated by a blank line:
+BODY STRUCTURE,write these four paragraphs in order, each separated by a blank line:
 
 Paragraph 1: "${ctx.pain}"
 
@@ -471,7 +471,7 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   const fromEmail = RESEND_FROM || SMTP_USER || 'leif@forgeaiagent.com';
   onProgress({ status: 'sending', message: `Sending to ${emailAddress}...` });
 
-  // Build HTML — clean personal email style (no branding, no buttons)
+  // Build HTML,clean personal email style (no branding, no buttons)
   let bodyText = copy.body;
   const lines = bodyText.split('\n').filter(l => l.trim());
   let bodyHtml = '';
@@ -479,13 +479,13 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   for (const l of lines) {
     const trimmedLine = l.trim();
 
-    // URL-only line — render as plain text link (no_website only, first-touch skips links)
+    // URL-only line,render as plain text link (no_website only, first-touch skips links)
     if (!isHasWebsite && !isAgency && trimmedLine.match(/^https?:\/\/\S+$/) && previewUrl && trimmedLine.includes(previewUrl.split('/')[2])) {
       bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111"><a href="${escapeHtml(previewUrl)}" style="color:#2563eb;text-decoration:underline">${escapeHtml(previewUrl)}</a></p>`;
       continue;
     }
 
-    // Sign-off — plain text, like a real person
+    // Sign-off,plain text, like a real person
     if (/^(Leif|ForgeAI|ForgeAIAgent)$/i.test(trimmedLine)) {
       bodyHtml += `<p style="margin:0 0 4px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(trimmedLine)}</p>`;
       continue;
