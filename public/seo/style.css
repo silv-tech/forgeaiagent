@@ -1162,6 +1162,13 @@ section {
   letter-spacing: -0.02em;
 }
 
+.proof-item:last-child .proof-number {
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 6px;
+  padding: 4px 14px;
+  margin-bottom: 4px;
+}
+
 .proof-label {
   font-family: var(--mono);
   font-size: 11px;
