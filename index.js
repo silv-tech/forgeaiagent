@@ -103,7 +103,7 @@ app.get('/login', (req, res) => {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>ForgeAI | Sign In</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23060810'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial Black,sans-serif' font-weight='900' font-size='13' fill='%2300e5ff'>AF</text></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'><rect width='32' height='32' rx='8' fill='%23060810'/><path d='M16 5L21 15L18.5 15L18.5 23L13.5 23L13.5 15L11 15Z' fill='%2300e5ff'/><rect x='10' y='25' width='12' height='2.5' rx='1.25' fill='%2300e5ff' opacity='0.4'/><circle cx='16' cy='8' r='1.5' fill='white' opacity='0.9'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -113,7 +113,8 @@ body::after{content:'';position:fixed;top:50%;left:50%;width:800px;height:800px;
 .wrap{position:relative;z-index:1}
 .card{background:rgba(11,15,26,.85);backdrop-filter:blur(20px);border:1px solid rgba(30,42,69,.6);border-radius:20px;padding:52px 44px 44px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.4),0 0 80px rgba(0,229,255,.03)}
 .logo-wrap{text-align:center;margin-bottom:36px}
-.logo-icon{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#0a0e1a,#111830);border:1px solid rgba(0,229,255,.2);font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#00e5ff;letter-spacing:.02em;margin-bottom:14px;box-shadow:0 0 20px rgba(0,229,255,.08)}
+.logo-icon{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#0a0e1a,#111830);border:1px solid rgba(0,229,255,.2);margin-bottom:14px;box-shadow:0 0 30px rgba(0,229,255,.1),0 0 60px rgba(0,229,255,.03);animation:iconPulse 3s ease-in-out infinite}
+@keyframes iconPulse{0%,100%{box-shadow:0 0 30px rgba(0,229,255,.1),0 0 60px rgba(0,229,255,.03)}50%{box-shadow:0 0 40px rgba(0,229,255,.18),0 0 80px rgba(0,229,255,.06)}}
 .logo-text{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;letter-spacing:.04em}
 .logo-text em{font-style:normal;color:#00e5ff}
 .logo-sub{font-size:11px;color:#4a5d80;letter-spacing:.12em;text-transform:uppercase;margin-top:4px}
@@ -136,8 +137,8 @@ button:active{transform:translateY(0)}
 <div class="wrap">
 <div class="card">
   <div class="logo-wrap">
-    <div class="logo-icon">AF</div>
-    <div class="logo-text">AGENT<em>FORGE</em></div>
+    <div class="logo-icon"><svg viewBox="0 0 32 32" fill="none" width="32" height="32" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="fg" x1="16" y1="3" x2="16" y2="27" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#00f5ff"/><stop offset="1" stop-color="#0088bb"/></linearGradient></defs><path d="M16 3L22 15L18.5 15L18.5 24L13.5 24L13.5 15L10 15Z" fill="url(#fg)"/><rect x="9" y="26" width="14" height="3" rx="1.5" fill="#00e5ff" opacity="0.35"/><circle cx="16" cy="7" r="2" fill="white" opacity="0.85"/><circle cx="16" cy="7" r="4" stroke="#00e5ff" stroke-width="0.5" opacity="0.3"/><line x1="12" y1="5" x2="10" y2="3" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" opacity="0.4"/><line x1="20" y1="5" x2="22" y2="3" stroke="#00e5ff" stroke-width="0.8" stroke-linecap="round" opacity="0.4"/><circle cx="10" cy="3" r="1" fill="#00e5ff" opacity="0.3"/><circle cx="22" cy="3" r="1" fill="#00e5ff" opacity="0.3"/></svg></div>
+    <div class="logo-text">FORGE<em>AI</em></div>
     <div class="logo-sub">Command Center</div>
   </div>
   ${req.query.err ? '<div class="err">Invalid username or password.</div>' : ''}
@@ -1462,7 +1463,7 @@ process.on('unhandledRejection', (reason) => {
 
 app.listen(PORT, () => {
   console.log(`\n  ╔══════════════════════════════════╗`);
-  console.log(`  ║   AgentForge → localhost:${PORT}   ║`);
+  console.log(`  ║   ForgeAI → localhost:${PORT}   ║`);
   console.log(`  ╚══════════════════════════════════╝\n`);
   console.log(`  Google Places : ${process.env.GOOGLE_PLACES_API_KEY?'✓ Ready':'✗ Missing'}`);
   console.log(`  Anthropic     : ${process.env.ANTHROPIC_API_KEY&&process.env.ANTHROPIC_API_KEY!=='your_anthropic_key_here'?'✓ Ready':'✗ Add in Settings'}`);

@@ -26,7 +26,7 @@ function fetchPage(url, maxRedirects = 5) {
     if (maxRedirects <= 0) return reject(new Error('Too many redirects'));
     const timer = setTimeout(() => reject(new Error('Timeout')), 8000);
     const client = url.startsWith('https') ? https : http;
-    client.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AgentForge/1.0)' } }, res => {
+    client.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ForgeAI/1.0)' } }, res => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         clearTimeout(timer);
         return fetchPage(res.headers.location, maxRedirects - 1).then(resolve).catch(reject);

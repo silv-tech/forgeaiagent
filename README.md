@@ -1,4 +1,4 @@
-# AgentForge 🤖
+# ForgeAI 🤖
 
 AI-powered lead finder. Finds local businesses without websites.
 

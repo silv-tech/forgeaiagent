@@ -8,7 +8,6 @@ hamburger.addEventListener('click', () => {
 });
 
 // ── IN-PAGE NAV LINKS ───────────────────────────────────────────────────
-// Smooth-scroll to section and update the URL so it reflects where you are.
 document.querySelectorAll('a[href^="#"]').forEach(link => {
   link.addEventListener('click', (e) => {
     const href = link.getAttribute('href');
@@ -24,32 +23,10 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     }
   });
 });
-// If someone lands with a hash in the URL (shared link), honor the scroll.
 if (window.location.hash) {
   const target = document.getElementById(window.location.hash.slice(1));
   if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 50);
 }
-
-// ── NAV SHADOW ON SCROLL ────────────────────────────────────────────────
-const nav = document.querySelector('.nav');
-window.addEventListener('scroll', () => {
-  nav.style.boxShadow = window.scrollY > 10
-    ? '0 1px 12px rgba(0,0,0,0.06)'
-    : 'none';
-});
-
-// ── SCROLL ANIMATIONS ──────────────────────────────────────────────────
-const fadeEls = document.querySelectorAll('.fade-in');
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry, i) => {
-    if (entry.isIntersecting) {
-      setTimeout(() => entry.target.classList.add('visible'), i * 80);
-      observer.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.15 });
-
-fadeEls.forEach(el => observer.observe(el));
 
 // ── FAQ ACCORDION ──────────────────────────────────────────────────────
 document.querySelectorAll('.faq-question').forEach(btn => {
@@ -61,29 +38,19 @@ document.querySelectorAll('.faq-question').forEach(btn => {
   });
 });
 
-// ── LIVE STATS ─────────────────────────────────────────────────────────
+// ── LIVE STATS (fetch real numbers from API) ────────────────────────────
 (async () => {
   try {
     const res = await fetch('/api/public-stats');
     if (!res.ok) return;
     const data = await res.json();
-
-    const animate = (el, target) => {
-      if (!el || target <= 0) return;
-      const duration = 1200;
-      const start = performance.now();
-      const step = (now) => {
-        const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        el.textContent = Math.floor(target * eased).toLocaleString() + '+';
-        if (progress < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val > 0) el.textContent = val.toLocaleString() + '+';
     };
-
-    animate(document.getElementById('stat-leads'), data.totalLeads);
-    animate(document.getElementById('stat-emails'), data.emailsSent);
-    animate(document.getElementById('stat-sites'), data.sitesBuilt);
+    set('stat-leads', data.totalLeads);
+    set('stat-emails', data.emailsSent);
+    set('stat-sites', data.sitesBuilt);
   } catch {
     // Static fallbacks already in HTML
   }
@@ -115,7 +82,7 @@ form.addEventListener('submit', async (e) => {
 
     if (res.ok) {
       btn.textContent = 'Sent! We\'ll be in touch.';
-      btn.style.background = '#16a34a';
+      btn.style.background = '#22c55e';
       form.reset();
     } else {
       btn.textContent = 'Something went wrong. Try again.';
