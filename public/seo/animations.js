@@ -5,18 +5,8 @@
 (function() {
   'use strict';
 
-  // ── PAGE LOADER ──────────────────────────────────────────────────────
-  const loader = document.getElementById('pageLoader');
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      if (loader) loader.classList.add('done');
-      initAnimations();
-    }, 1600);
-  });
-  // Failsafe: remove loader after 3s no matter what
-  setTimeout(() => {
-    if (loader) loader.classList.add('done');
-  }, 3000);
+  // Init animations on page load
+  window.addEventListener('load', () => initAnimations());
 
   function initAnimations() {
     initHeroReveal();
