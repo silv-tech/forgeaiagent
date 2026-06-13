@@ -139,7 +139,7 @@ function renderOutreachHtml(opts) {
               <span style="font-size:19px;font-weight:800;color:#0f172a;letter-spacing:-.01em">Forge <span style="color:#2563eb">AI</span></span>
             </td>
             <td align="right" style="vertical-align:middle">
-              <span style="font-size:10.5px;color:#94a3b8;letter-spacing:.14em;text-transform:uppercase;font-weight:600">Websites &middot; Chatbots &middot; Follow-ups</span>
+              <span style="font-size:10.5px;color:#94a3b8;letter-spacing:.14em;text-transform:uppercase;font-weight:600">AI-Powered Outreach</span>
             </td>
           </tr>
         </table>

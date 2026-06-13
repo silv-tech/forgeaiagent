@@ -110,8 +110,8 @@ for (const [name, html] of [['has_website', HAS_WEBSITE], ['no_website', NO_WEBS
   check(`${name}: no raw URLs inside body paragraphs`,
     !/<p[^>]*>[^<]*https?:\/\/[^<]*<\/p>/i.test(html),
     'body paragraph contains a raw URL, should be in CTA button only');
-  check(`${name}: tagline "Websites, Chatbots, Follow-ups" present`,
-    /Websites\s*&middot;\s*Chatbots\s*&middot;\s*Follow-ups/.test(html));
+  check(`${name}: tagline "AI-Powered Outreach" present`,
+    /AI-Powered Outreach/.test(html));
 }
 
 console.log('');

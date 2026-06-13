@@ -1,7 +1,7 @@
 {
   "name": "forgeai",
   "version": "3.1.1",
-  "description": "AI-powered lead generation, site builder & outreach system",
+  "description": "AI-powered lead generation & cold email outreach system for agencies",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

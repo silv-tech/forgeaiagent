@@ -73,8 +73,8 @@ async function buildOgCard() {
         <div class="brand-name">Forge <em>AI</em></div>
       </div>
       <div class="pill">AI-Powered Growth</div>
-      <h1>Professional Websites for <span class="accent">Local Businesses.</span></h1>
-      <p class="sub">Free demo sites, AI chatbots, and automated follow-ups. No credit card. No commitment.</p>
+      <h1>Cold Email Outreach for <span class="accent">Agencies.</span></h1>
+      <p class="sub">AI-personalized cold emails that land in primary. Fully automated. Built for agencies.</p>
     </div>
     <div class="footer">
       <span>Built by AI, in minutes, not weeks.</span>

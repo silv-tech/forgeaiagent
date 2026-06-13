@@ -519,7 +519,8 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
   </div>
   <div class="tab on"  onclick="go('scout')">⬡ Scout</div>
   <div class="tab"     onclick="go('finder')">◈ Email Finder</div>
-  <div class="tab"     onclick="go('builder')">◉ Builder</div>
+  <!-- HIDDEN: Builder tab removed during email-only refocus -->
+  <!-- <div class="tab"     onclick="go('builder')">◉ Builder</div> -->
   <div class="tab"     onclick="go('outreach')">◎ Outreach</div>
   <div class="tab"     onclick="go('closer')">⬢ Closer</div>
   <div class="tab"     onclick="go('pipeline')">▥ Pipeline</div>
@@ -543,7 +544,8 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="sb-bar" id="bb-bar"></div>
     </div>
     <div class="chip off" id="cp-smtp"   onclick="go('settings')">Email</div>
-    <div class="chip off" id="cp-cf"     onclick="go('settings')">Cloudflare</div>
+    <!-- HIDDEN: Cloudflare chip removed during email-only refocus -->
+    <!-- <div class="chip off" id="cp-cf" onclick="go('settings')">Cloudflare</div> -->
     <a href="/logout" class="chip" style="color:var(--t4);border-color:rgba(255,77,109,.3);text-decoration:none;cursor:pointer;margin-left:4px" onmouseover="this.style.color='#ff6b85';this.style.borderColor='#ff6b85'" onmouseout="this.style.color='var(--t4)';this.style.borderColor='rgba(255,77,109,.3)'">Logout</a>
   </div>
 </div>
@@ -699,7 +701,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="cnt" id="ef-badge">0 leads</div>
       <div class="acts">
         <button class="ab" onclick="efSelAll()">Select All</button>
-        <button class="ab v" onclick="go('builder')">→ Builder</button>
+        <button class="ab v" onclick="go('outreach')">→ Outreach</button>
       </div>
     </div>
     <div class="tw">
@@ -715,7 +717,8 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
   </div>
 </div>
 
-<!-- ══════════ BUILDER ══════════ -->
+<!-- ══════════ BUILDER (HIDDEN — email-only refocus) ══════════ -->
+<!--
 <div class="page" id="pg-builder">
   <div class="sb">
     <div class="ss">
@@ -765,6 +768,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     </div>
   </div>
 </div>
+-->
 
 
 
@@ -870,7 +874,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <button class="ab" onclick="document.getElementById('o-search').value='';document.getElementById('o-date-filter').value='';oSel.clear();drawOut();oSelUpd()" style="font-size:11px;white-space:nowrap;opacity:.6">Clear</button>
     </div>
     <div class="tw">
-      <div class="empty" id="o-e"><div class="ei">📨</div><div class="et">No Outreach Sent Yet</div><div class="es">Build demo sites, then send outreach</div></div>
+      <div class="empty" id="o-e"><div class="ei">📨</div><div class="et">No Outreach Sent Yet</div><div class="es">Scout leads and find emails first, then send outreach</div></div>
       <table id="o-tbl" style="display:none">
         <thead><tr><th><input type="checkbox" onchange="oTogAll(this.checked)"></th><th>#</th><th>Business</th><th>Sent To</th><th>Preview</th><th>Sent At</th><th>Tracking</th><th>Follow-Ups</th><th>Status</th></tr></thead>
         <tbody id="o-tbl-body"></tbody>
@@ -928,7 +932,8 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <div class="ag">
       <div class="ac"><div class="acl">Leads Found</div><div class="acv" id="a-tot">0</div></div>
       <div class="ac"><div class="acl">Emails Found</div><div class="acv" id="a-em">0</div></div>
-      <div class="ac"><div class="acl">Sites Built</div><div class="acv" id="a-si">0</div></div>
+      <!-- HIDDEN: Sites Built stat removed during email-only refocus -->
+      <!-- <div class="ac"><div class="acl">Sites Built</div><div class="acv" id="a-si">0</div></div> -->
       <div class="ac"><div class="acl">Contacted</div><div class="acv" id="a-co">0</div></div>
       <div class="ac"><div class="acl">Replied</div><div class="acv" id="a-re">0</div></div>
       <div class="ac"><div class="acl">Hot Leads</div><div class="acv" id="a-ho">0</div></div>
@@ -1067,7 +1072,8 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 
 </div><!-- .app -->
 
-<!-- SITE PREVIEW MODAL -->
+<!-- SITE PREVIEW MODAL (HIDDEN — email-only refocus) -->
+<!--
 <div class="ov" id="site-ov">
   <div class="modal" style="width:800px">
     <div class="modal-t">Site Preview</div>
@@ -1082,6 +1088,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     </div>
   </div>
 </div>
+-->
 
 <!-- REPLY MODAL -->
 <div class="ov" id="reply-ov">
@@ -1259,7 +1266,7 @@ async function checkCfg(){
     }
   }catch{}
 }
-function setChip(id,ok,lbl){const e=document.getElementById(id);e.className=`chip ${ok?'on':'off'}`;e.textContent=ok?`${lbl} ✓`:lbl;}
+function setChip(id,ok,lbl){const e=document.getElementById(id);if(!e)return;e.className=`chip ${ok?'on':'off'}`;e.textContent=ok?`${lbl} ✓`:lbl;}
 function setSS(id,ok){const e=document.getElementById(id);e.className=`ss-badge ${ok?'on':'off'}`;e.textContent=ok?'Connected ✓':'Not Set';}
 function setSavedPlaceholder(id,ok,msg){const e=document.getElementById(id);if(e&&ok){e.placeholder=msg;e.value='';} }
 
@@ -1310,12 +1317,14 @@ setInterval(updateSendBadge,30000); // refresh every 30s
 
 // ── NAV ───────────────────────────────────────────────────────────────────
 function go(name){
+  if(name==='builder') name='outreach'; // Builder hidden — redirect to outreach
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.getElementById('pg-'+name).classList.add('on');
-  const icons={scout:'⬡ Scout',finder:'◈ Email Finder',builder:'◉ Builder',outreach:'◎ Outreach',closer:'⬢ Closer',pipeline:'▥ Pipeline',analytics:'▤ Analytics',settings:'⚙ Settings'};
+  const pg=document.getElementById('pg-'+name);
+  if(!pg)return;
+  pg.classList.add('on');
+  const icons={scout:'⬡ Scout',finder:'◈ Email Finder',outreach:'◎ Outreach',closer:'⬢ Closer',pipeline:'▥ Pipeline',analytics:'▤ Analytics',settings:'⚙ Settings'};
   document.querySelectorAll('.tab').forEach(t=>{if(t.textContent.trim()===icons[name])t.classList.add('on');});
-  if(name==='builder')drawB();
   if(name==='finder')drawEF();
   if(name==='outreach'){loadTracking().then(()=>drawOut());fillSels();}
   if(name==='closer')fillSels();
@@ -1327,10 +1336,17 @@ function go(name){
 function findLeadLocal(id){ return leads.find(l=>l.id===id); }
 function onSSE(d){
   if(d.type==='scout'){
-    log('s-feed',d.message,d.status==='lead_found'?'gr':d.status==='error'?'er':d.status==='type_done'?'ok':'');
-    if(d.lead){leads.push(d.lead);document.getElementById('s-run').textContent=d.leadsFound;drawScout();updStats();}
+    if(d._duplicate&&d.status==='lead_found'){
+      log('s-feed','↻ '+d.lead.name+' (already exists)','');
+    } else {
+      log('s-feed',d.message,d.status==='lead_found'?'gr':d.status==='error'?'er':d.status==='type_done'?'ok':'');
+    }
+    if(d.lead&&!d._duplicate){
+      if(!leads.find(l=>l.id===d.lead.id)){leads.push(d.lead);}
+      document.getElementById('s-run').textContent=d.leadsFound;drawScout();updStats();
+    }
   }
-  if(d.type==='scout_done'){bar('s-pb',100);setTimeout(()=>bar('s-pb',0),2500);btn('scout-btn','▶ Run Scout Agent',false);document.getElementById('scan-anim').style.display='none';log('s-feed','✓ Scout complete.','gr');loadLeads().then(()=>{drawB();drawEF();});}
+  if(d.type==='scout_done'){bar('s-pb',100);setTimeout(()=>bar('s-pb',0),2500);btn('scout-btn','▶ Run Scout Agent',false);document.getElementById('scan-anim').style.display='none';const parts=[];if(d.newCount)parts.push(d.newCount+' new');if(d.dupCount)parts.push(d.dupCount+' already existed');if(d.errCount)parts.push(d.errCount+' save errors');log('s-feed','✓ Scout complete'+(parts.length?' — '+parts.join(', '):''),'gr');loadLeads().then(()=>{drawB();drawEF();});}
   if(d.type==='emailfinder')log('ef-feed',d.message,d.status==='found'?'gr':d.status==='error'?'er':'');
   if(d.type==='emailfinder_done'){if(d.email&&d.leadId){const l=findLeadLocal(d.leadId);if(l){l.foundEmail=d.email;l.emailConfidence=d.confidence;}drawEF();drawScout();updStats();}}
   if(d.type==='emailfinder_batch_done'){log('ef-feed',`✓ Done, ${d.found}/${d.total} emails found`,'gr');btn('ef-btn','▶ Find Emails',false);bar('ef-pb',0);loadCreds();}
@@ -1527,9 +1543,10 @@ async function loadCreds(){
   try{const d=await(await fetch('/api/emailfinder/credits')).json();document.getElementById('ef-cred').textContent=d.credits?`${d.credits.available} remaining / ${d.credits.used} used`:'Add Hunter key in Settings';}catch{}
 }
 
-// ── BUILDER ───────────────────────────────────────────────────────────────
+// ── BUILDER (hidden — email-only refocus) ─────────────────────────────────
 function drawB(){
   const e=document.getElementById('b-e'),t=document.getElementById('b-tbl');
+  if(!e||!t)return; // Builder page is hidden
   const sq=(document.getElementById('b-search')?.value||'').trim().toLowerCase();
   const filtered=sq?leads.filter(l=>(l.name||'').toLowerCase().includes(sq)||(l.type||'').toLowerCase().replace(/_/g,' ').includes(sq)||(l.address||'').toLowerCase().includes(sq)||(l.status||'').toLowerCase().includes(sq)):leads;
   if(!filtered.length){e.style.display='flex';e.querySelector('.et').textContent=sq?'No Matches':'No Leads Yet';e.querySelector('.es').textContent=sq?'Try a different search term':'Run Scout first';t.style.display='none';return;}
@@ -1556,7 +1573,7 @@ function drawB(){
   document.getElementById('b-sel-txt').textContent=bSel.size+' selected';
   document.getElementById('b-badge').textContent=sq?filtered.length+'/'+leads.length+' leads':leads.length+' leads';
 }
-function bTog(id,c){c?bSel.add(id):bSel.delete(id);document.getElementById('b-sel-txt').textContent=bSel.size+' selected';}
+function bTog(id,c){c?bSel.add(id):bSel.delete(id);const bst=document.getElementById('b-sel-txt');if(bst)bst.textContent=bSel.size+' selected';}
 function bTogAll(c){bSel.clear();if(c)leads.forEach(l=>bSel.add(l.id));drawB();}
 function bSelAll(){bSel.clear();leads.forEach(l=>{if(!l.siteFile)bSel.add(l.id);});drawB();}
 function bClear(){bSel.clear();const a=document.getElementById('b-all');if(a)a.checked=false;drawB();}
@@ -1731,7 +1748,7 @@ function drawOut(){
   if(selBtn) selBtn.textContent=df?'Select all ('+sent.length+')':'Select visible';
   const e=document.getElementById('o-e'),t=document.getElementById('o-tbl');
   document.getElementById('o-badge').textContent=oq?sent.length+'/'+allSent.length+' sent':allSent.length+' sent';
-  if(!sent.length){e.style.display='flex';e.querySelector('.et').textContent=oq?'No Matches':'No Outreach Sent Yet';e.querySelector('.es').textContent=oq?'Try a different search term':'Build demo sites, then send outreach';t.style.display='none';return;}
+  if(!sent.length){e.style.display='flex';e.querySelector('.et').textContent=oq?'No Matches':'No Outreach Sent Yet';e.querySelector('.es').textContent=oq?'Try a different search term':'Scout leads and find emails first, then send outreach';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
   const oCapped=sent.length>MAX_VISIBLE;
   const oVisible=oCapped?sent.slice(0,MAX_VISIBLE):sent;
@@ -1804,7 +1821,7 @@ async function loadAnal(){
     const d=await(await fetch('/api/analytics')).json();
     document.getElementById('a-tot').textContent=d.total;
     document.getElementById('a-em').textContent=d.withEmail;
-    document.getElementById('a-si').textContent=d.withSite;
+    const aSi=document.getElementById('a-si');if(aSi)aSi.textContent=d.withSite;
     document.getElementById('a-co').textContent=d.contacted;
     document.getElementById('a-re').textContent=d.replied;
     document.getElementById('a-ho').textContent=d.hotLeads;

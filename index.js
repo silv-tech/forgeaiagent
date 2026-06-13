@@ -13,8 +13,9 @@ const compression = require('compression');
 const session = require('express-session');
 
 const { runScout }              = require('./agents/scout');
-const { buildDemoSite }         = require('./agents/builder');
-const { deployDemoSite: cfDeploy, isConfigured: cfConfigured } = require('./agents/cloudflare');
+// HIDDEN: Builder + Cloudflare disabled during email-only refocus
+// const { buildDemoSite }         = require('./agents/builder');
+// const { deployDemoSite: cfDeploy, isConfigured: cfConfigured } = require('./agents/cloudflare');
 const { sendOutreach, generateEmailPreview, generateFollowUpEmail, hasValidDemoUrl } = require('./agents/outreach');
 
 // Daily send counter (resets every 24h). Lives here because it used to be
@@ -346,12 +347,12 @@ app.use(express.static(path.join(__dirname,'public','seo'), {
     }
   }
 }));
-app.get('/how-it-works', (req, res) => res.sendFile(path.join(__dirname,'public','seo','landing.html')));
+app.get('/how-it-works', (req, res) => res.redirect(301, '/'));
 app.get('/blog', (req, res) => res.sendFile(path.join(__dirname,'public','seo','blog','index.html')));
 app.get('/blog/:slug', (req, res) => {
   const file = path.join(__dirname,'public','seo','blog', req.params.slug + '.html');
   if (fs.existsSync(file)) return res.sendFile(file);
-  res.status(404).send('Not found');
+  res.redirect(301, '/blog');
 });
 
 // Landing-page contact form (public, no auth).
@@ -531,16 +532,36 @@ app.post('/api/scout/run', async (req,res) => {
     // Server-side caps: max 50 leads, max 5 business types
     const cappedLeads = Math.min(parseInt(maxLeads) || 20, 50);
     const cappedTypes = (businessTypes?.length ? businessTypes.slice(0, 5) : [businessType]).filter(Boolean);
+    let newCount = 0, dupCount = 0, errCount = 0;
     await runScout({ location, businessTypes: cappedTypes, maxLeads: cappedLeads, filter:filter||'no_website' }, p => {
       if (p.lead) {
-        if (!leads.find(l=>l.name===p.lead.name&&l.address===p.lead.address)) {
+        const existing = leads.find(l=>l.name===p.lead.name&&l.address===p.lead.address);
+        if (!existing) {
           p.lead.id = randomUUID();
-          leads.push(p.lead); save(LF,leads);
+          leads.push(p.lead);
+          try { save(LF,leads); } catch(e) { errCount++; console.error('[scout] save error:', e.message); }
+          p._saved = true;
+          newCount++;
+        } else {
+          // Update existing lead with fresh data (rating, reviews, phone, website)
+          let updated = false;
+          if (p.lead.rating && p.lead.rating !== 'N/A' && existing.rating === 'N/A') { existing.rating = p.lead.rating; updated = true; }
+          if (p.lead.reviews && !existing.reviews) { existing.reviews = p.lead.reviews; updated = true; }
+          if (p.lead.phone && p.lead.phone !== 'N/A' && (!existing.phone || existing.phone === 'N/A')) { existing.phone = p.lead.phone; updated = true; }
+          if (p.lead.website && !existing.website) { existing.website = p.lead.website; updated = true; }
+          if (p.lead.google_maps_url && !existing.google_maps_url) { existing.google_maps_url = p.lead.google_maps_url; updated = true; }
+          if (updated) { try { save(LF,leads); } catch(e) { console.error('[scout] save error:', e.message); } }
+          // Send the existing lead (with id) so frontend can track it
+          p.lead = existing;
+          p._duplicate = true;
+          dupCount++;
         }
       }
       emit(sessionId, { type:'scout', ...p });
     });
-    emit(sessionId, { type:'scout_done', total: leads.length });
+    // Save once at end to catch any missed saves
+    try { save(LF,leads); } catch(e) { console.error('[scout] final save error:', e.message); }
+    emit(sessionId, { type:'scout_done', total: leads.length, newCount, dupCount, errCount });
   } catch(e) { emit(sessionId, { type:'error', agent:'scout', message:e.message }); }
   finally { scoutRunning = false; }
 });
@@ -637,30 +658,32 @@ app.get('/api/emailfinder/credits', async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-// ── BUILDER ───────────────────────────────────────────────────────────────
+// ── BUILDER (DISABLED — email-only refocus) ──────────────────────────────
+// Builder routes commented out. Code preserved in archive/site-builder branch.
+/*
 app.post('/api/builder/build', async (req,res) => {
   const { id, sessionId } = req.body;
   const f = findLead(id);
   if (!f) return res.status(404).json({ error:'Lead not found' });
   const { lead, index } = f;
   res.json({ status:'started' });
-  emit(sessionId, { type:'builder', status:'start', message:`🚀 Starting build for ${lead.name}...` });
+  emit(sessionId, { type:'builder', status:'start', message:'Starting build for '+lead.name+'...' });
   try {
     const { filename, html } = await buildDemoSite(lead, p => emit(sessionId,{ type:'builder',...p }));
-    let previewUrl = `${getBase()}/sites/${filename}`;
+    let previewUrl = getBase()+'/sites/'+filename;
     if (cfConfigured()) {
       try {
         previewUrl = await cfDeploy(lead.name, html, p => emit(sessionId,{ type:'builder',...p }));
       } catch(cfErr) {
-        emit(sessionId, { type:'builder', status:'warn', message:`⚠️  Cloudflare deploy failed: ${cfErr.message}, using local URL` });
+        emit(sessionId, { type:'builder', status:'warn', message:'Cloudflare deploy failed: '+cfErr.message+', using local URL' });
       }
     }
     leads[index] = { ...leads[index], siteFile:filename, previewUrl, status:'Site Built' };
     save(LF,leads);
-    emit(sessionId, { type:'builder', status:'done', message:`✅ ${lead.name}, site live! ${previewUrl}` });
+    emit(sessionId, { type:'builder', status:'done', message:lead.name+', site live! '+previewUrl });
     emit(sessionId, { type:'builder_done', leadId:id, filename, previewUrl });
   } catch(e) {
-    emit(sessionId, { type:'builder', status:'error', message:`❌ Failed: ${e.message}` });
+    emit(sessionId, { type:'builder', status:'error', message:'Failed: '+e.message });
     emit(sessionId, { type:'error', agent:'builder', message:e.message });
   }
 });
@@ -669,36 +692,37 @@ app.post('/api/builder/build-batch', async (req,res) => {
   const { ids, sessionId } = req.body;
   if (!ids?.length) return res.status(400).json({ error:'No leads' });
   res.json({ status:'started' });
-  emit(sessionId, { type:'builder', status:'start', message:`🚀 Building ${ids.length} site(s)...` });
+  emit(sessionId, { type:'builder', status:'start', message:'Building '+ids.length+' site(s)...' });
   let built = 0;
   for (let i = 0; i < ids.length; i++) {
     const f = findLead(ids[i]);
     if (!f) continue;
     const { lead, index } = f;
-    emit(sessionId, { type:'builder', status:'building', message:`[${i+1}/${ids.length}] Building: ${lead.name}...` });
+    emit(sessionId, { type:'builder', status:'building', message:'['+(i+1)+'/'+ids.length+'] Building: '+lead.name+'...' });
     try {
       const { filename, html } = await buildDemoSite(lead, p => emit(sessionId,{ type:'builder',...p }));
-      let previewUrl = `${getBase()}/sites/${filename}`;
+      let previewUrl = getBase()+'/sites/'+filename;
       if (cfConfigured()) {
         try {
           previewUrl = await cfDeploy(lead.name, html, p => emit(sessionId,{ type:'builder',...p }));
         } catch(cfErr) {
-          emit(sessionId, { type:'builder', status:'warn', message:`⚠️  Cloudflare deploy failed: ${cfErr.message}, using local URL` });
+          emit(sessionId, { type:'builder', status:'warn', message:'Cloudflare deploy failed: '+cfErr.message+', using local URL' });
         }
       }
       leads[index] = { ...leads[index], siteFile:filename, previewUrl, status:'Site Built' };
       save(LF,leads);
       built++;
-      emit(sessionId, { type:'builder', status:'done', message:`✅ [${built}/${ids.length}] ${lead.name} live!` });
+      emit(sessionId, { type:'builder', status:'done', message:'['+built+'/'+ids.length+'] '+lead.name+' live!' });
       emit(sessionId, { type:'builder_done', leadId:ids[i], filename, previewUrl });
     } catch(e) {
-      emit(sessionId, { type:'builder', status:'error', message:`❌ ${lead.name}: ${e.message}` });
+      emit(sessionId, { type:'builder', status:'error', message:lead.name+': '+e.message });
     }
     await new Promise(r=>setTimeout(r,800));
   }
   emit(sessionId, { type:'builder_batch_done', built, total:ids.length });
-  emit(sessionId, { type:'builder', status:'complete', message:`🏁 Done, ${built}/${ids.length} sites built` });
+  emit(sessionId, { type:'builder', status:'complete', message:'Done, '+built+'/'+ids.length+' sites built' });
 });
+*/
 
 // ── OUTREACH ──────────────────────────────────────────────────────────────
 app.post('/api/outreach/preview', async (req,res) => {
