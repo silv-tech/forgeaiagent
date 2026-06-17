@@ -43,8 +43,7 @@
 </head>
 <body>
 
-  <!-- SCROLL PROGRESS -->
-  <div class="scroll-progress" id="scrollProgress"></div>
+  <!-- scroll progress removed -->
 
   <!-- PARTICLE CANVAS -->
   <canvas id="particleCanvas"></canvas>
@@ -61,20 +60,20 @@
   <div class="cursor-glow" id="cursorGlow"></div>
 
   <!-- NAV -->
-  <nav class="nav">
+  <nav class="nav nav-inline">
     <div class="container">
-      <a href="#" class="nav-logo">Forge <span>AI</span></a>
-      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
-        <span></span><span></span><span></span>
-      </button>
+      <a href="/" class="nav-logo">Forge <span>AI</span></a>
       <ul class="nav-links" id="navLinks">
         <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="#for-agencies">For Agencies</a></li>
+        <li><a href="/voice">Voice AI</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#faq">FAQ</a></li>
         <li><a href="/login" class="nav-signin">Sign In</a></li>
-        <li><a href="#contact" class="nav-cta">Get Started</a></li>
+        <li><a href="#contact" class="nav-cta">Get Started <span>&rarr;</span></a></li>
       </ul>
+      <button class="hamburger hamburger-mobile" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
 
@@ -651,10 +650,16 @@
           <p class="footer-tagline">Automated cold email outreach for agencies.</p>
         </div>
         <div class="footer-col">
+          <h4 class="footer-heading">Services</h4>
+          <ul class="footer-links">
+            <li><a href="/">Cold Email Outreach</a></li>
+            <li><a href="/voice">AI Voice Receptionist</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
           <h4 class="footer-heading">Navigation</h4>
           <ul class="footer-links">
             <li><a href="#how-it-works">How It Works</a></li>
-            <li><a href="#for-agencies">For Agencies</a></li>
             <li><a href="#faq">FAQ</a></li>
           </ul>
         </div>

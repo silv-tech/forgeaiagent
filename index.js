@@ -466,6 +466,9 @@ app.get('/', (req, res) => {
 app.get('/how-it-works', (req, res) => {
   res.sendFile(path.join(__dirname,'public','seo','landing.html'));
 });
+app.get('/voice', (req, res) => {
+  res.sendFile(path.join(__dirname,'public','seo','voice.html'));
+});
 
 // ── AUTH MIDDLEWARE ───────────────────────────────────────────────────────
 app.use((req, res, next) => {

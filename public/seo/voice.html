@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI Voice Receptionist that answers your business calls 24/7. Sounds like a real person. Takes messages, books appointments, transfers calls. Built by Forge AI.">
+  <meta name="keywords" content="AI receptionist, AI phone answering, virtual receptionist, AI voice agent, business phone answering service">
+  <link rel="canonical" href="https://www.forgeaiagent.com/voice">
+  <meta property="og:title" content="AI Voice Receptionist | Forge AI">
+  <meta property="og:description" content="Your business phone, answered by AI that sounds human. 24/7. Takes messages, books appointments, never misses a call.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.forgeaiagent.com/voice">
+  <title>AI Voice Receptionist | Forge AI</title>
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- scroll progress removed -->
+
+  <!-- PARTICLE CANVAS -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- CURSOR SPOTLIGHT -->
+  <div class="cursor-glow" id="cursorGlow"></div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="container">
+      <a href="/" class="nav-logo">Forge <span>AI</span></a>
+      <a href="#contact" class="nav-cta">Get Started <span>&rarr;</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- FULLSCREEN MENU -->
+  <div class="fs-menu" id="fsMenu">
+    <div class="fs-menu-links">
+      <a href="/" class="fs-link"><span class="fs-num">01</span>Services</a>
+      <a href="/voice" class="fs-link"><span class="fs-num">02</span>Voice AI</a>
+      <a href="#how-it-works" class="fs-link"><span class="fs-num">03</span>How It Works</a>
+      <a href="#contact" class="fs-link"><span class="fs-num">04</span>Contact</a>
+      <a href="/login" class="fs-link fs-link-small">Sign In</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="hero-badge">24/7 AI Phone Answering</div>
+      <h1>Your Business Calls, Answered by <em>AI That Sounds Human.</em></h1>
+      <p>Never miss a call again. Our AI receptionist picks up, chats naturally, takes messages, books appointments, and transfers calls. Your customers won't know the difference.</p>
+      <div class="hero-buttons">
+        <a href="#contact" class="btn-primary magnetic-btn">
+          Get a Demo
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a href="#how-it-works" class="btn-secondary magnetic-btn">
+          See How It Works
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROOF STRIP -->
+  <div class="proof-strip">
+    <div class="container">
+      <div class="proof-items">
+        <div class="proof-item">
+          <span class="proof-number">24/7</span>
+          <span class="proof-label">Availability</span>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-item">
+          <span class="proof-number">&lt;1s</span>
+          <span class="proof-label">Answer Time</span>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-item">
+          <span class="proof-number">10+</span>
+          <span class="proof-label">Voice Options</span>
+        </div>
+        <div class="proof-divider"></div>
+        <div class="proof-item">
+          <span class="proof-number">Human</span>
+          <span class="proof-label">Sounding</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" class="section-reveal">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">How It Works</span>
+        <h2 class="section-title">Three Steps. <em>Always On.</em></h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step fade-in">
+          <div class="step-number">1</div>
+          <h3>Set Up</h3>
+          <p>Tell us about your business — name, services, hours, FAQs. Pick a voice. We give you a phone number.</p>
+        </div>
+        <div class="step fade-in">
+          <div class="step-number">2</div>
+          <h3>Forward Calls</h3>
+          <p>Forward your business line to the number, or use it directly. Takes two minutes.</p>
+        </div>
+        <div class="step fade-in">
+          <div class="step-number">3</div>
+          <h3>AI Answers</h3>
+          <p>Every call gets picked up instantly. The AI chats naturally, answers questions, takes messages, and books appointments.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="bg-gray section-reveal" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label">What It Does</span>
+        <h2 class="section-title">More Than Just <em>Answering.</em></h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card fade-in tilt-card spotlight-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <h3>Natural Conversation</h3>
+          <p>Powered by ElevenLabs voices and Claude AI. Sounds like a real person — warm, friendly, with natural pauses and reactions.</p>
+        </div>
+        <div class="feature-card fade-in tilt-card spotlight-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <h3>Takes Messages</h3>
+          <p>When someone needs to leave a message, the AI writes it down and sends you an SMS instantly. Never miss a lead.</p>
+        </div>
+        <div class="feature-card fade-in tilt-card spotlight-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+          </div>
+          <h3>Books Appointments</h3>
+          <p>Callers can schedule right on the call. The AI confirms the details and logs it for you.</p>
+        </div>
+        <div class="feature-card fade-in tilt-card spotlight-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>
+          </div>
+          <h3>Transfers Calls</h3>
+          <p>If the caller needs a real person, the AI transfers them directly to you or your team. One seamless handoff.</p>
+        </div>
+        <div class="feature-card fade-in tilt-card spotlight-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h3>24/7 Coverage</h3>
+          <p>Nights, weekends, holidays. Every call gets answered. The AI knows your hours and adjusts accordingly.</p>
+        </div>
+        <div class="feature-card fade-in tilt-card spotlight-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </div>
+          <h3>Fully Custom</h3>
+          <p>Your business name, your services, your FAQs. The AI is trained on your business so it answers like someone who actually works there.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY FORGE AI -->
+  <section class="section-dark section-reveal" id="why">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-label section-label-dark">Why Forge AI</span>
+        <h2 class="section-title section-title-dark">Not a <em>Robot Voicemail.</em></h2>
+        <p class="section-subtitle section-subtitle-dark">Most "AI phone" services sound like a GPS reading a script. This one doesn't.</p>
+      </div>
+      <div class="trust-grid" style="grid-template-columns: repeat(3, 1fr)">
+        <div class="trust-item fade-in">
+          <div class="trust-icon-dark icon-draw">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <h3>Actually Sounds Human</h3>
+          <p>ElevenLabs voices with emotional range. Laughs, reacts, pauses naturally. Your callers won't know.</p>
+        </div>
+        <div class="trust-item fade-in">
+          <div class="trust-icon-dark icon-draw">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <h3>Instant Setup</h3>
+          <p>No hardware, no phone system changes. Just a phone number and your business info. Live in minutes.</p>
+        </div>
+        <div class="trust-item fade-in">
+          <div class="trust-icon-dark icon-draw">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <h3>One Point of Contact</h3>
+          <p>Questions, changes, issues — you talk to Leif directly. No support tickets, no waiting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="section-reveal">
+    <div class="container">
+      <div class="contact-wrap">
+        <div class="contact-header">
+          <img src="/founder.jpg" alt="Leif" class="contact-avatar" width="56" height="56">
+          <div>
+            <span class="section-label">Get Started</span>
+            <h2 class="section-title">Let's Set Up <em>Your AI.</em></h2>
+          </div>
+        </div>
+        <p class="section-subtitle">Tell me about your business. I'll set up the voice AI, pick the right voice, and have it answering calls within 24 hours.</p>
+
+        <form class="contact-form" id="contactForm">
+          <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+            <label for="website">Website (leave blank)</label>
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" placeholder="John Smith" required>
+          </div>
+          <div class="form-group">
+            <label for="business">Business Name</label>
+            <input type="text" id="business" name="business" placeholder="Smith's Auto Repair" required>
+          </div>
+          <div class="form-group">
+            <label for="type">What does your business do?</label>
+            <input type="text" id="type" name="type" placeholder="Auto repair shop, dental office, restaurant, etc." required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="john@example.com" required>
+          </div>
+          <button type="submit" class="form-submit">Get AI Voice Receptionist</button>
+        </form>
+        <p class="contact-response">You'll hear back from Leif directly, usually within a few hours.</p>
+        <p class="contact-email">Or email directly: <a href="mailto:leif@forgeaiagent.com">leif@forgeaiagent.com</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="nav-logo">Forge <span>AI</span></div>
+          <p class="footer-tagline">AI-powered tools for local businesses.</p>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-heading">Services</h4>
+          <ul class="footer-links">
+            <li><a href="/">Cold Email Outreach</a></li>
+            <li><a href="/voice">AI Voice Receptionist</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-heading">Contact</h4>
+          <ul class="footer-links">
+            <li><a href="mailto:leif@forgeaiagent.com">leif@forgeaiagent.com</a></li>
+            <li><a href="#contact">Get Started</a></li>
+            <li><a href="/login">Sign In</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Forge AI. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/main.js"></script>
+  <script src="/animations.js"></script>
+</body>
+</html>

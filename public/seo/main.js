@@ -1,28 +1,45 @@
-// ── MOBILE MENU ─────────────────────────────────────────────────────────
+// ── MENU (supports both inline nav + fullscreen menu) ───────────────────
 const hamburger = document.getElementById('hamburger');
+const fsMenu = document.getElementById('fsMenu');
 const navLinks = document.getElementById('navLinks');
 
-hamburger.addEventListener('click', () => {
-  hamburger.classList.toggle('active');
-  navLinks.classList.toggle('open');
-});
+if (hamburger) {
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    if (fsMenu) {
+      fsMenu.classList.toggle('open');
+      document.body.style.overflow = fsMenu.classList.contains('open') ? 'hidden' : '';
+    }
+    if (navLinks) {
+      navLinks.classList.toggle('open');
+    }
+  });
+}
 
-// ── IN-PAGE NAV LINKS ───────────────────────────────────────────────────
-document.querySelectorAll('a[href^="#"]').forEach(link => {
+// Close menu on link click + smooth scroll for hash links
+document.querySelectorAll('.fs-link, .nav-cta, .nav-links a').forEach(link => {
   link.addEventListener('click', (e) => {
     const href = link.getAttribute('href');
-    const id = href.slice(1);
-    e.preventDefault();
-    hamburger.classList.remove('active');
-    navLinks.classList.remove('open');
-    const target = id ? document.getElementById(id) : null;
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Close menus
+    if (hamburger) hamburger.classList.remove('active');
+    if (fsMenu) { fsMenu.classList.remove('open'); document.body.style.overflow = ''; }
+    if (navLinks) navLinks.classList.remove('open');
+
+    // Handle hash links (same-page scroll)
+    if (href && href.startsWith('#')) {
+      e.preventDefault();
+      const id = href.slice(1);
+      const target = id ? document.getElementById(id) : null;
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   });
 });
+
 if (window.location.hash) {
   const target = document.getElementById(window.location.hash.slice(1));
   if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 50);
