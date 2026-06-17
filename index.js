@@ -472,6 +472,8 @@ app.use((req, res, next) => {
   // Public: auth/logout routes, static assets (so landing page CSS/JS/images load), tracking pixel
   if (req.path === '/login' || req.path === '/logout') return next();
   if (/\.(css|js|jpg|jpeg|png|webp|svg|ico|xml|txt|woff|woff2|gif|mp4|webm|ogg)$/.test(req.path)) return next();
+  // Voice webhooks from Twilio must bypass auth
+  if (req.path === '/api/voice/incoming' || req.path === '/api/voice/status') return next();
   if (req.session.auth) return next();
   // Unauthenticated API calls get JSON error instead of redirect
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
