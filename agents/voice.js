@@ -429,28 +429,83 @@ class VoiceSession {
     this.speaking = true;
 
     try {
+      const elKey = process.env.ELEVENLABS_API_KEY;
       const dgKey = process.env.DEEPGRAM_API_KEY;
-      if (!dgKey) return;
 
-      const voiceId = this.profile.voiceId || 'asteria';
-      const url = `https://api.deepgram.com/v1/speak?model=aura-${voiceId}-en&encoding=mulaw&sample_rate=8000&container=none`;
+      // ElevenLabs voice ID mapping
+      const EL_VOICES = {
+        jessica: 'cgSgspJ2msm6NPK8DoW3',
+        chris: 'iP95p4xoKVk5WlEJsC3b',
+        laura: 'FGY2WhTYpPnrIDTdsKH5',
+        sarah: 'EXAVITQu4vr4xnSDxMaL',
+        bella: 'hpp4J3VqNfWA8Nl7ISQR',
+        alice: 'Xb7hH8MSUJpSbSDYk0k2',
+        charlie: 'IKne3meq5aSn9XLyUdCD',
+        liam: 'TX3LPaxmHKxFYj78xc5E',
+        roger: 'CwhRBWXzGAHq8TQ4Fs17',
+        matilda: 'XrExE9yKIg1WjnnlVkGX'
+      };
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${dgKey}`,
-          'Content-Type': 'text/plain'
-        },
-        body: text
-      });
+      let audioBuffer;
+      const voiceId = this.profile.voiceId || 'jessica';
 
-      if (!response.ok) {
-        console.error(`[voice] TTS error: ${response.status}`);
+      if (elKey) {
+        // Use ElevenLabs for expressive, emotional voice
+        const elVoiceId = EL_VOICES[voiceId] || EL_VOICES.jessica || voiceId;
+        const url = `https://api.elevenlabs.io/v1/text-to-speech/${elVoiceId}`;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': elKey,
+            'Content-Type': 'application/json',
+            'Accept': 'audio/mpeg'
+          },
+          body: JSON.stringify({
+            text,
+            model_id: 'eleven_turbo_v2_5',
+            voice_settings: {
+              stability: 0.35,
+              similarity_boost: 0.8,
+              style: 0.6,
+              use_speaker_boost: true
+            },
+            output_format: 'ulaw_8000'
+          })
+        });
+
+        if (!response.ok) {
+          console.error(`[voice] ElevenLabs TTS error: ${response.status} ${await response.text()}`);
+          this.speaking = false;
+          return;
+        }
+
+        audioBuffer = Buffer.from(await response.arrayBuffer());
+      } else if (dgKey) {
+        // Fallback to Deepgram Aura
+        const dgVoice = voiceId || 'asteria';
+        const url = `https://api.deepgram.com/v1/speak?model=aura-${dgVoice}-en&encoding=mulaw&sample_rate=8000&container=none`;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${dgKey}`,
+            'Content-Type': 'text/plain'
+          },
+          body: text
+        });
+
+        if (!response.ok) {
+          console.error(`[voice] Deepgram TTS error: ${response.status}`);
+          this.speaking = false;
+          return;
+        }
+
+        audioBuffer = Buffer.from(await response.arrayBuffer());
+      } else {
         this.speaking = false;
         return;
       }
-
-      const audioBuffer = Buffer.from(await response.arrayBuffer());
 
       // Stream audio to Twilio in 160-byte chunks (20ms at 8kHz mulaw)
       const CHUNK_SIZE = 160;
@@ -557,15 +612,16 @@ class VoiceSession {
     const durationMin = this.getDuration() / 60;
     const twilioIn = durationMin * 0.0085;
     const deepgramStt = (this.sttSeconds / 60) * 0.0043;
-    // Deepgram TTS: ~$0.015 per 1000 chars
-    const deepgramTts = (this.ttsChars / 1000) * 0.015;
-    // Claude Haiku: input ~$0.25/MTok, output ~$1.25/MTok
-    const claude = (this.inputTokens * 0.00000025) + (this.outputTokens * 0.00000125);
-    const total = twilioIn + deepgramStt + deepgramTts + claude;
+    // TTS cost: ElevenLabs ~$0.30/1K chars, Deepgram ~$0.015/1K chars
+    const ttsRate = process.env.ELEVENLABS_API_KEY ? 0.0003 : 0.000015;
+    const ttsCost = this.ttsChars * ttsRate;
+    // Claude Sonnet: input ~$3/MTok, output ~$15/MTok
+    const claude = (this.inputTokens * 0.000003) + (this.outputTokens * 0.000015);
+    const total = twilioIn + deepgramStt + ttsCost + claude;
     return {
       twilio: Math.round(twilioIn * 1000) / 1000,
       deepgramStt: Math.round(deepgramStt * 1000) / 1000,
-      deepgramTts: Math.round(deepgramTts * 1000) / 1000,
+      tts: Math.round(ttsCost * 1000) / 1000,
       claude: Math.round(claude * 1000) / 1000,
       total: Math.round(total * 1000) / 1000
     };
