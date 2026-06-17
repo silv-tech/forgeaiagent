@@ -277,6 +277,19 @@
         btn.style.transform = 'translate(0, 0) scale(1)';
       });
     });
+
+    // Spotlight cursor tracking on buttons and nav CTA
+    document.querySelectorAll('.btn-primary, .btn-secondary, .nav-cta').forEach(btn => {
+      btn.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        btn.style.setProperty('--btn-x', x + 'px');
+        btn.style.setProperty('--btn-y', y + 'px');
+        btn.style.setProperty('--cta-x', x + 'px');
+        btn.style.setProperty('--cta-y', y + 'px');
+      });
+    });
   }
 
   // ── CARD SPOTLIGHT (cursor radial glow) ──────────────────────────────

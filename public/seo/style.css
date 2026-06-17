@@ -498,12 +498,47 @@ button { font-family: inherit; cursor: pointer; border: none; }
   background: rgba(20, 20, 20, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: 60px;
   padding: 0 8px;
   height: 56px;
   width: auto;
   max-width: calc(100% - 32px);
+}
+
+/* ── NAV SNAKE BORDER ────────────────────────────────────────────────── */
+.nav::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--snake-angle, 0deg) at 50% 50%,
+    transparent 0%,
+    transparent 70%,
+    rgba(201,226,101,0.6) 78%,
+    var(--accent) 84%,
+    rgba(201,226,101,0.6) 90%,
+    transparent 98%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: snakeOrbit 4s linear infinite;
+  pointer-events: none;
+}
+
+@property --snake-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes snakeOrbit {
+  to { --snake-angle: 360deg; }
 }
 
 .nav .container {
@@ -551,18 +586,45 @@ button { font-family: inherit; cursor: pointer; border: none; }
   align-items: center;
   gap: 6px;
   padding: 9px 20px;
-  background: var(--accent);
-  color: #0a0a0a !important;
+  background: rgba(201,226,101,0.12);
+  border: 1px solid rgba(201,226,101,0.3);
+  color: var(--accent) !important;
   font-size: 13px;
   font-weight: 700;
   border-radius: 40px;
-  transition: background 0.2s, transform 0.15s;
+  transition: background 0.3s, transform 0.15s, box-shadow 0.3s, border-color 0.3s;
   letter-spacing: -0.01em;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Spotlight radial glow follows cursor */
+.nav-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    120px circle at var(--cta-x, 50%) var(--cta-y, 50%),
+    rgba(201,226,101,0.5) 0%,
+    rgba(201,226,101,0.15) 40%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: -1;
 }
 
 .nav-cta:hover {
-  background: var(--accent-hover);
+  background: rgba(201,226,101,0.18);
+  border-color: rgba(201,226,101,0.5);
+  box-shadow: 0 0 24px rgba(201,226,101,0.15), 0 0 60px rgba(201,226,101,0.06);
   transform: translateY(-1px);
+}
+
+.nav-cta:hover::before {
+  opacity: 1;
 }
 
 .nav-signin {
@@ -841,19 +903,45 @@ section {
   align-items: center;
   gap: 8px;
   padding: 15px 32px;
-  background: var(--accent);
-  color: #0a0a0a;
+  background: rgba(201,226,101,0.1);
+  border: 1px solid rgba(201,226,101,0.3);
+  color: var(--accent);
   font-size: 15px;
   font-weight: 700;
   border-radius: 50px;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  transition: background 0.3s, transform 0.15s, box-shadow 0.3s, border-color 0.3s;
   letter-spacing: -0.01em;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Spotlight glow follows cursor */
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    160px circle at var(--btn-x, 50%) var(--btn-y, 50%),
+    rgba(201,226,101,0.55) 0%,
+    rgba(201,226,101,0.15) 40%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: -1;
 }
 
 .btn-primary:hover {
-  background: var(--accent-hover);
+  background: rgba(201,226,101,0.15);
+  border-color: rgba(201,226,101,0.5);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px var(--accent-glow);
+  box-shadow: 0 8px 30px rgba(201,226,101,0.18), 0 0 60px rgba(201,226,101,0.06);
+}
+
+.btn-primary:hover::before {
+  opacity: 1;
 }
 
 .btn-secondary {
@@ -867,7 +955,26 @@ section {
   font-weight: 600;
   border-radius: 50px;
   border: 1px solid var(--border2);
-  transition: border-color 0.2s, transform 0.15s;
+  transition: border-color 0.3s, transform 0.15s, background 0.3s, box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.btn-secondary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    140px circle at var(--btn-x, 50%) var(--btn-y, 50%),
+    rgba(201,226,101,0.12) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .btn-secondary::before {
@@ -881,8 +988,13 @@ section {
 }
 
 .btn-secondary:hover {
-  border-color: var(--accent);
+  border-color: rgba(201,226,101,0.4);
   transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(201,226,101,0.08);
+}
+
+.btn-secondary:hover::after {
+  opacity: 1;
 }
 
 /* ── INBOX MOCKUP ────────────────────────────────────────────────────── */
@@ -894,11 +1006,48 @@ section {
 
 .inbox-card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: 16px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   position: relative;
+}
+
+/* Snake border on inbox card */
+.inbox-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--snake-angle, 0deg) at 50% 50%,
+    transparent 0%,
+    transparent 65%,
+    rgba(201,226,101,0.4) 75%,
+    var(--accent) 82%,
+    rgba(201,226,101,0.4) 89%,
+    transparent 96%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: snakeOrbit 6s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.inbox-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Clip inner content */
+.inbox-card .inbox-tabs,
+.inbox-card .inbox-emails {
+  overflow: hidden;
 }
 
 .inbox-tabs {
@@ -2644,12 +2793,7 @@ html.smooth-scroll {
   position: relative;
 }
 
-/* ── CTA SHIMMER ─────────────────────────────────────────────────────── */
-.btn-primary {
-  position: relative;
-  overflow: hidden;
-}
-
+/* ── CTA SHIMMER (on btn-primary ::after) ────────────────────────────── */
 .btn-primary::after {
   content: '';
   position: absolute;
@@ -2657,8 +2801,10 @@ html.smooth-scroll {
   left: -100%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  animation: btnShimmer 3s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(201,226,101,0.15), transparent);
+  animation: btnShimmer 4s ease-in-out infinite;
+  z-index: -1;
+  pointer-events: none;
 }
 
 @keyframes btnShimmer {
@@ -2666,22 +2812,7 @@ html.smooth-scroll {
   50% { left: 150%; }
 }
 
-/* ── NAV CTA PULSE ───────────────────────────────────────────────────── */
-.nav-cta {
-  position: relative;
-}
-
-.nav-cta::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: var(--accent);
-  z-index: -1;
-  opacity: 0;
-  animation: ctaPulse 3s ease-in-out infinite;
-}
-
+/* (nav-cta pulse removed — replaced by spotlight hover + snake border) */
 @keyframes ctaPulse {
   0%, 100% { opacity: 0; transform: scale(1); }
   50% { opacity: 0.2; transform: scale(1.05); }
