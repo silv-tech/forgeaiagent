@@ -358,38 +358,44 @@ RULES:
 function buildVoiceOutreachPrompt(lead, type) {
   const hasRating = lead.rating && lead.rating !== 'N/A';
   const reviews = parseInt(lead.reviews) || 0;
+  const ownerName = lead.ownerName || '';
+  const greeting = ownerName ? `Hey ${ownerName},` : `Hey there,`;
 
-  return `You generate cold outreach emails for Forge AI. Output a single plain-text email. Nothing else, no explanation, just the subject line and email body.
+  return `You personalize cold outreach emails for Forge AI. You MUST follow the EXACT template below. Do not change the structure, tone, or flow. Only personalize the bracketed parts based on the business data.
 
-CONTEXT:
+BUSINESS DATA:
 - Business name: ${lead.name}
 - Business type: ${type}
 - Address: ${lead.address}
 - Rating: ${hasRating ? lead.rating : 'no rating'}
-- Number of reviews: ${reviews}
+- Reviews: ${reviews}
+- Owner name: ${ownerName || 'unknown'}
 
-WHAT WE OFFER:
-An AI Voice Receptionist that answers their business phone 24/7. It sounds like a real human, not a robot. It answers customer questions about their business, takes messages, books appointments, and transfers calls when needed. It is trained on their specific business info, services, hours, and FAQs. Customers will not be able to tell it is AI.
+SUBJECT LINE:
+Generate a 2-5 word lowercase subject referencing their business or missed calls. Examples: "your phone after hours", "${lead.name} missing calls?", "${reviews} reviews but who answers?"
 
-INSTRUCTIONS:
-Goal: Get a reply by pointing out missed calls are costing them money and offering a free AI receptionist setup.
+EMAIL BODY - follow this EXACT structure, paragraph by paragraph:
 
-- Subject: 2-5 words maximum. Reference something specific about their business or the problem of missed calls. Use lowercase except for business name. Examples: "${lead.name} missing calls?", "${reviews} reviews but who answers?", "your phone after hours", "missed calls cost you". Make it feel like a personal observation.
-- Paragraph 1: acknowledge their rating or reviews in one sentence. Make it feel like you actually looked them up.
-- Paragraph 2: the problem. When they are busy with a customer, driving to a job, or closed for the night, every unanswered call is a customer who calls the next business on Google instead. One sentence.
-- Paragraph 3: the offer. You built an AI receptionist that picks up every call, sounds like a real person, answers questions about their business, takes messages, and books appointments. Available 24/7, never misses a call. One to two sentences max.
-- Paragraph 4: make it clear you will set it up completely free. You just need their business info, services, and hours. It can be live within a day. Keep it casual and genuine.
-- Paragraph 5: end with one short soft question. Examples: "Worth trying?", "Want to hear it first?", "Sound useful?". Must be under 8 words.
-- Sign off: MUST end with Leif on its own line, then Forge AI on the next line.
-- Max length: 120 words
+${greeting}
+
+[One sentence acknowledging their reviews/rating. Make it feel personal, like you actually looked them up. If no rating, mention their business reputation in the area instead.]
+
+But here's the thing, when you're busy with a customer or closed for the night, every call that goes to voicemail is someone who just calls the next ${type} on Google instead.
+
+I built an AI receptionist that picks up every call for you, 24/7. It sounds like a real person, answers questions about your business, takes messages, and books appointments. Your customers won't know the difference.
+
+I'll set the whole thing up for free. Just need your business info, services, and hours. It can be live by tomorrow.
+
+Want to hear it first?
+
+Leif
+Forge AI
 
 RULES:
-- Plain text only, no bullet points, bold, headers, or HTML
-- No "I hope this email finds you well" or "I came across your business"
-- No corporate words, no leverage, synergy, solutions, or optimize
-- Write like a real person emailing one specific business, not a mass campaign
-- Every sentence must earn its place, cut anything that doesn't add value
-- NEVER use em dashes or double dashes. Use commas or periods instead.
+- The ONLY part you personalize is the subject line and the first paragraph (the review/rating acknowledgment). Everything else stays EXACTLY as written above, word for word.
+- Plain text only. No bullet points, bold, headers, or HTML.
+- NEVER use em dashes or double dashes. Use commas or periods.
+- Max 120 words.
 
 Return ONLY valid JSON with no extra text:
 {"subject":"...","body":"..."}`;
