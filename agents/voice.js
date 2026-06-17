@@ -417,6 +417,10 @@ class VoiceSession {
   async _speak(text) {
     if (this.ended || !text) return;
 
+    // Fix common TTS pronunciation issues
+    text = text.replace(/ForgeAI/gi, 'Forge A.I.');
+    text = text.replace(/forgeai/gi, 'Forge A.I.');
+
     this.ttsChars += text.length;
     this.speaking = true;
 
