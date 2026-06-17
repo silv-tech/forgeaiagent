@@ -818,6 +818,13 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       </div>
       <div id="o-lead-info" style="display:none;font-size:10.5px;padding:10px 12px;border:1px solid var(--b1);border-radius:9px;background:var(--s2);margin-bottom:10px;line-height:1.8"></div>
       <div id="o-outreach-type-badge" style="display:none;font-size:11.5px;font-weight:700;padding:11px 14px;border-radius:9px;margin-bottom:4px;line-height:1.5"></div>
+      <div id="o-offer-wrap" style="display:none;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Offer Type</div>
+        <select id="o-offer-type" onchange="oOfferChg()" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:var(--s2);color:var(--t1);outline:none">
+          <option value="auto">Auto-detect (default)</option>
+          <option value="ai_voice">AI Voice Receptionist</option>
+        </select>
+      </div>
     </div>
 
     <div class="ss">
@@ -1814,10 +1821,23 @@ function pickLead(id){
 }
 const AGENCY_TYPES=new Set(['marketing_agency','digital_agency','creative_agency','advertising_agency','social_media_agency','seo_agency','pr_agency','web_design_agency','video_production_agency','branding_agency','content_marketing_agency','email_marketing_agency','media_buying_agency']);
 function getOutreachType(){
+  const offer=document.getElementById('o-offer-type')?.value;
+  if(offer && offer !== 'auto') return offer;
   const id=document.getElementById('o-lead').value;
   const lead=leads.find(l=>l.id===id);
   if(AGENCY_TYPES.has(lead?.type)) return 'agency';
   return lead?.website ? 'has_website' : 'no_website';
+}
+function oOfferChg(){
+  const offer=document.getElementById('o-offer-type').value;
+  const badge=document.getElementById('o-outreach-type-badge');
+  if(offer==='ai_voice'){
+    badge.style.display='block';
+    badge.innerHTML='<div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:3px;font-weight:600">Email Strategy</div><div style="font-size:12.5px;font-weight:800">AI Voice Receptionist</div><div style="font-size:10px;opacity:.7;margin-top:3px;font-weight:400">Offers 24/7 AI phone answering for their business</div>';
+    badge.style.color='var(--violet2)';
+    badge.style.background='rgba(168,85,247,.07)';
+    badge.style.border='1px solid rgba(168,85,247,.25)';
+  } else { oChg(); }
 }
 function oChg(){
   document.getElementById('o-prev-box').style.display='none';
@@ -1846,6 +1866,7 @@ function oChg(){
       badge.style.border='1px solid rgba(0,255,136,.25)';
     }
   } else { badge.style.display='none'; }
+  document.getElementById('o-offer-wrap').style.display=lead?'block':'none';
   const info=document.getElementById('o-lead-info');
   if(lead){
     const ratingStr=lead.rating&&lead.rating!=='N/A'?'<span style="color:var(--amber)">★ '+x(String(lead.rating))+'</span> <span style="color:var(--t3)">('+x(String(lead.reviews||''))+')</span>':'<span style="color:var(--t4)">No rating</span>';

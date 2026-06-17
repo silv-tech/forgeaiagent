@@ -354,6 +354,47 @@ RULES:
 - Return ONLY valid JSON: {"subject":"...","body":"..."}`;
 }
 
+// ── AI VOICE OUTREACH PROMPT ─────────────────────────────────────────────
+function buildVoiceOutreachPrompt(lead, type) {
+  const hasRating = lead.rating && lead.rating !== 'N/A';
+  const reviews = parseInt(lead.reviews) || 0;
+
+  return `You generate cold outreach emails for Forge AI. Output a single plain-text email. Nothing else, no explanation, just the subject line and email body.
+
+CONTEXT:
+- Business name: ${lead.name}
+- Business type: ${type}
+- Address: ${lead.address}
+- Rating: ${hasRating ? lead.rating : 'no rating'}
+- Number of reviews: ${reviews}
+
+WHAT WE OFFER:
+An AI Voice Receptionist that answers their business phone 24/7. It sounds like a real human, not a robot. It answers customer questions about their business, takes messages, books appointments, and transfers calls when needed. It is trained on their specific business info, services, hours, and FAQs. Customers will not be able to tell it is AI.
+
+INSTRUCTIONS:
+Goal: Get a reply by pointing out missed calls are costing them money and offering a free AI receptionist setup.
+
+- Subject: 2-5 words maximum. Reference something specific about their business or the problem of missed calls. Use lowercase except for business name. Examples: "${lead.name} missing calls?", "${reviews} reviews but who answers?", "your phone after hours", "missed calls cost you". Make it feel like a personal observation.
+- Paragraph 1: acknowledge their rating or reviews in one sentence. Make it feel like you actually looked them up.
+- Paragraph 2: the problem. When they are busy with a customer, driving to a job, or closed for the night, every unanswered call is a customer who calls the next business on Google instead. One sentence.
+- Paragraph 3: the offer. You built an AI receptionist that picks up every call, sounds like a real person, answers questions about their business, takes messages, and books appointments. Available 24/7, never misses a call. One to two sentences max.
+- Paragraph 4: make it clear you will set it up completely free. You just need their business info, services, and hours. It can be live within a day. Keep it casual and genuine.
+- Paragraph 5: end with one short soft question. Examples: "Worth trying?", "Want to hear it first?", "Sound useful?". Must be under 8 words.
+- Sign off: MUST end with Leif on its own line, then Forge AI on the next line.
+- Max length: 120 words
+
+RULES:
+- Plain text only, no bullet points, bold, headers, or HTML
+- No "I hope this email finds you well" or "I came across your business"
+- No corporate words, no leverage, synergy, solutions, or optimize
+- Write like a real person emailing one specific business, not a mass campaign
+- Every sentence must earn its place, cut anything that doesn't add value
+- NEVER use em dashes or double dashes. Use commas or periods instead.
+
+Return ONLY valid JSON with no extra text:
+{"subject":"...","body":"..."}`;
+}
+
 // ── EMAIL SENDING ─────────────────────────────────────────────────────────
 async function callAnthropicWithTimeout(client, params, timeoutMs = 60000) {
   const controller = new AbortController();
@@ -405,7 +446,9 @@ async function sendViaBrevo(emailOpts) {
 async function generateEmailCopy(lead, previewUrl, outreachType) {
   const client = getClient();
   const type = (lead.type || 'business').replace(/_/g, ' ');
-  const prompt = outreachType === 'agency'
+  const prompt = outreachType === 'ai_voice'
+    ? buildVoiceOutreachPrompt(lead, type)
+    : outreachType === 'agency'
     ? buildAgencyOutreachPrompt(lead, type)
     : outreachType === 'has_website'
     ? buildWebsiteOutreachPrompt(lead, type)
