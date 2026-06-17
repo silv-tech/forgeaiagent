@@ -17,6 +17,8 @@ const { runScout }              = require('./agents/scout');
 // const { buildDemoSite }         = require('./agents/builder');
 // const { deployDemoSite: cfDeploy, isConfigured: cfConfigured } = require('./agents/cloudflare');
 const { sendOutreach, generateEmailPreview, generateFollowUpEmail, hasValidDemoUrl } = require('./agents/outreach');
+const { VoiceSession } = require('./agents/voice');
+const WebSocketServer = require('ws').Server;
 
 // Daily send counter (resets every 24h). Lives here because it used to be
 // in agents/outreach.js and was accidentally dropped; restoring it as a
@@ -207,6 +209,8 @@ const SEQ_F = path.join(DATA,'sequences.json');
 const SCH_F = path.join(DATA,'scheduled.json');
 const TF = path.join(DATA,'tracking.json');
 const USF = path.join(DATA,'unsubscribed.json');
+const VPF = path.join(DATA,'voice-profiles.json');
+const CLF = path.join(DATA,'call-logs.json');
 const load = f => { try { return fs.existsSync(f)?JSON.parse(fs.readFileSync(f)):[] } catch { return [] } };
 const save = (f,d) => {
   const tmp = f + '.tmp';
@@ -238,6 +242,8 @@ process.on('SIGTERM', () => { _flushPending(); process.exit(0); });
 let leads = load(LF), outreach = load(OF), replies = load(RF);
 let sequences = load(SEQ_F), scheduled = load(SCH_F), tracking = load(TF);
 let unsubscribed = load(USF); // array of lowercase email strings
+let voiceProfiles = load(VPF);
+let callLogs = load(CLF);
 let unsubscribedSet = new Set(unsubscribed); // O(1) lookup
 const isUnsubscribed = email => unsubscribedSet.has((email||'').toLowerCase());
 const addUnsubscribed = email => {
@@ -1475,6 +1481,190 @@ app.delete('/api/unsubscribed/:email', (req,res) => {
   res.json({ ok: true });
 });
 
+// ── VOICE AI ─────────────────────────────────────────────────────────────
+// Active voice sessions keyed by Twilio streamSid
+const activeCalls = new Map();
+
+// Twilio incoming call webhook — returns TwiML with <Stream>
+app.post('/api/voice/incoming', (req, res) => {
+  const callerNumber = req.body.From || 'Unknown';
+  const calledNumber = req.body.To || '';
+  const callSid = req.body.CallSid || '';
+
+  console.log(`[voice] Incoming call from ${callerNumber} to ${calledNumber} (${callSid})`);
+
+  // Find matching voice profile by Twilio phone number
+  const profile = voiceProfiles.find(p => p.active && p.twilioPhoneNumber === calledNumber);
+  if (!profile) {
+    console.log(`[voice] No active profile for ${calledNumber}`);
+    res.type('text/xml');
+    res.send('<Response><Say>Sorry, this number is not currently configured. Goodbye.</Say><Hangup/></Response>');
+    return;
+  }
+
+  // Return TwiML that starts a Media Stream WebSocket
+  const wsUrl = `wss://${req.headers.host}/api/voice/ws`;
+  res.type('text/xml');
+  res.send(`<Response>
+  <Connect>
+    <Stream url="${wsUrl}">
+      <Parameter name="profileId" value="${profile.id}"/>
+      <Parameter name="callerNumber" value="${callerNumber}"/>
+      <Parameter name="callSid" value="${callSid}"/>
+    </Stream>
+  </Connect>
+</Response>`);
+});
+
+// Twilio call status callback
+app.post('/api/voice/status', (req, res) => {
+  const { CallSid, CallStatus } = req.body;
+  console.log(`[voice] Status update: ${CallSid} → ${CallStatus}`);
+  if (CallStatus === 'completed' || CallStatus === 'failed' || CallStatus === 'busy' || CallStatus === 'no-answer') {
+    // Find and end any active session for this call
+    for (const [sid, session] of activeCalls) {
+      if (session.callSid === CallSid) {
+        session.end(CallStatus);
+        activeCalls.delete(sid);
+        break;
+      }
+    }
+  }
+  res.sendStatus(200);
+});
+
+// Voice profile CRUD
+app.get('/api/voice/profiles', (req, res) => {
+  res.json(voiceProfiles);
+});
+
+app.post('/api/voice/profiles', (req, res) => {
+  const profile = {
+    id: randomUUID(),
+    leadId: req.body.leadId || null,
+    businessName: req.body.businessName || 'Untitled Business',
+    twilioPhoneNumber: req.body.twilioPhoneNumber || process.env.TWILIO_PHONE_NUMBER || '',
+    greeting: req.body.greeting || '',
+    businessHours: req.body.businessHours || { timezone: 'America/Los_Angeles', schedule: {} },
+    services: req.body.services || [],
+    faqs: req.body.faqs || [],
+    customInstructions: req.body.customInstructions || '',
+    ownerPhone: req.body.ownerPhone || '',
+    ownerName: req.body.ownerName || '',
+    voiceId: req.body.voiceId || 'asteria',
+    active: req.body.active !== false,
+    createdAt: new Date().toISOString(),
+    stats: { totalCalls: 0, totalMinutes: 0, totalCost: 0, messagessTaken: 0, appointmentsBooked: 0, callsTransferred: 0 }
+  };
+  voiceProfiles.push(profile);
+  save(VPF, voiceProfiles);
+  res.json(profile);
+});
+
+app.put('/api/voice/profiles/:id', (req, res) => {
+  const idx = voiceProfiles.findIndex(p => p.id === req.params.id);
+  if (idx < 0) return res.status(404).json({ error: 'Profile not found' });
+  const allowed = ['businessName','twilioPhoneNumber','greeting','businessHours','services','faqs','customInstructions','ownerPhone','ownerName','voiceId','active','leadId'];
+  for (const k of allowed) {
+    if (req.body[k] !== undefined) voiceProfiles[idx][k] = req.body[k];
+  }
+  save(VPF, voiceProfiles);
+  res.json(voiceProfiles[idx]);
+});
+
+app.delete('/api/voice/profiles/:id', (req, res) => {
+  voiceProfiles = voiceProfiles.filter(p => p.id !== req.params.id);
+  save(VPF, voiceProfiles);
+  res.json({ ok: true });
+});
+
+// Call log endpoints
+app.get('/api/voice/calls', (req, res) => {
+  let logs = callLogs;
+  if (req.query.profileId) logs = logs.filter(c => c.profileId === req.query.profileId);
+  // Return newest first, with pagination
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 50;
+  const sorted = logs.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+  const start = (page - 1) * limit;
+  res.json({ calls: sorted.slice(start, start + limit), total: sorted.length, page, limit });
+});
+
+app.get('/api/voice/calls/:id', (req, res) => {
+  const call = callLogs.find(c => c.id === req.params.id);
+  if (!call) return res.status(404).json({ error: 'Call not found' });
+  res.json(call);
+});
+
+// Active calls
+app.get('/api/voice/active', (req, res) => {
+  const active = [];
+  for (const [, session] of activeCalls) {
+    active.push(session.getStatus());
+  }
+  res.json(active);
+});
+
+// Analytics
+app.get('/api/voice/analytics', (req, res) => {
+  const totalCalls = callLogs.length;
+  const totalSeconds = callLogs.reduce((s, c) => s + (c.durationSeconds || 0), 0);
+  const totalCost = callLogs.reduce((s, c) => s + (c.cost?.total || 0), 0);
+  const messagesTaken = callLogs.reduce((s, c) => s + (c.actions?.filter(a => a.type === 'take_message').length || 0), 0);
+  const appointmentsBooked = callLogs.reduce((s, c) => s + (c.actions?.filter(a => a.type === 'book_appointment').length || 0), 0);
+  const callsTransferred = callLogs.reduce((s, c) => s + (c.actions?.filter(a => a.type === 'transfer_call').length || 0), 0);
+  const sentiments = { positive: 0, neutral: 0, negative: 0 };
+  callLogs.forEach(c => { if (c.sentiment) sentiments[c.sentiment] = (sentiments[c.sentiment] || 0) + 1; });
+
+  // Daily breakdown (last 30 days)
+  const daily = {};
+  const now = Date.now();
+  callLogs.forEach(c => {
+    const d = (c.startedAt || '').slice(0, 10);
+    if (!d) return;
+    if (!daily[d]) daily[d] = { calls: 0, minutes: 0, cost: 0 };
+    daily[d].calls++;
+    daily[d].minutes += (c.durationSeconds || 0) / 60;
+    daily[d].cost += c.cost?.total || 0;
+  });
+
+  res.json({
+    totalCalls, totalMinutes: Math.round(totalSeconds / 60 * 10) / 10,
+    totalCost: Math.round(totalCost * 1000) / 1000,
+    messagesTaken, appointmentsBooked, callsTransferred,
+    sentiments, daily, activeCalls: activeCalls.size
+  });
+});
+
+// Extend settings with voice config
+app.get('/api/voice/config', (req, res) => {
+  res.json({
+    hasTwilio: !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN),
+    hasDeepgram: !!process.env.DEEPGRAM_API_KEY,
+    twilioPhone: process.env.TWILIO_PHONE_NUMBER || '',
+    profileCount: voiceProfiles.length,
+    activeProfiles: voiceProfiles.filter(p => p.active).length
+  });
+});
+
+app.post('/api/voice/config', (req, res) => {
+  const { twilioSid, twilioToken, twilioPhone, deepgramKey } = req.body;
+  const ep = fs.existsSync(path.join(DATA_ROOT,'leads')) ? path.join(DATA_ROOT,'leads','.env') : path.join(__dirname,'.env');
+  let env = fs.existsSync(ep)?fs.readFileSync(ep,'utf8'):'';
+  const set = (k,v) => {
+    if (!v) return;
+    v = v.toString().replace(/[\r\n]/g,'').trim();
+    env = env.match(new RegExp(`^${k}=`,'m')) ? env.replace(new RegExp(`^${k}=.*`,'m'),`${k}=${v}`) : env+`\n${k}=${v}`;
+    process.env[k]=v;
+  };
+  set('TWILIO_ACCOUNT_SID', twilioSid);
+  set('TWILIO_AUTH_TOKEN', twilioToken);
+  set('TWILIO_PHONE_NUMBER', twilioPhone);
+  set('DEEPGRAM_API_KEY', deepgramKey);
+  fs.writeFileSync(ep, env.trim());
+  res.json({ ok: true });
+});
+
 // ── CRASH SAFETY ─────────────────────────────────────────────────────────
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err.message);
@@ -1485,7 +1675,7 @@ process.on('unhandledRejection', (reason) => {
   if (reason instanceof Error) console.error(reason.stack);
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`\n  ╔══════════════════════════════════╗`);
   console.log(`  ║   ForgeAI → localhost:${PORT}   ║`);
   console.log(`  ╚══════════════════════════════════╝\n`);
@@ -1495,9 +1685,116 @@ app.listen(PORT, () => {
   console.log(`  Resend Email  : ${process.env.RESEND_API_KEY&&process.env.RESEND_FROM?'✓ Ready ('+process.env.RESEND_FROM+'), 100/day':'✗ Add in Settings'}`);
   console.log(`  Brevo Fallback: ${process.env.BREVO_API_KEY?'✓ Ready, 300/day, kicks in after Resend limit':'✗ Not configured, add via Settings page'}`);
   console.log(`  SMTP Fallback : ${process.env.SMTP_HOST&&process.env.SMTP_USER?'✓ Ready ('+process.env.SMTP_USER+'), last resort':'✗ Not configured'}`);
-  console.log(`  Cloudflare    : ${process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN?'✓ Ready, sites deploy to pages.dev':'✗ Add in Settings (required for permanent URLs)'}\n`);
+  console.log(`  Cloudflare    : ${process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN?'✓ Ready, sites deploy to pages.dev':'✗ Add in Settings (required for permanent URLs)'}`);
+  console.log(`  Twilio Voice  : ${process.env.TWILIO_ACCOUNT_SID&&process.env.TWILIO_AUTH_TOKEN?'✓ Ready ('+process.env.TWILIO_PHONE_NUMBER+')':'✗ Add in Voice Settings'}`);
+  console.log(`  Deepgram STT  : ${process.env.DEEPGRAM_API_KEY?'✓ Ready':'✗ Add in Voice Settings'}\n`);
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM) {
     console.log(`  ⚠️  WARNING: Resend not configured, outreach emails will fail!`);
     console.log(`     Set RESEND_API_KEY and RESEND_FROM in .env or via Settings.\n`);
   }
+});
+
+// ── VOICE WEBSOCKET ──────────────────────────────────────────────────────
+const voiceWss = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (request, socket, head) => {
+  const url = new URL(request.url, `http://${request.headers.host}`);
+  if (url.pathname === '/api/voice/ws') {
+    voiceWss.handleUpgrade(request, socket, head, (ws) => {
+      voiceWss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+voiceWss.on('connection', (ws) => {
+  let session = null;
+  let streamSid = null;
+
+  ws.on('message', async (data) => {
+    try {
+      const msg = JSON.parse(data.toString());
+
+      if (msg.event === 'connected') {
+        console.log('[voice] Twilio WebSocket connected');
+      } else if (msg.event === 'start') {
+        // Start event contains stream metadata and custom parameters
+        streamSid = msg.start.streamSid;
+        const params = msg.start.customParameters || {};
+        const profileId = params.profileId;
+        const callerNumber = params.callerNumber || 'Unknown';
+        const callSid = params.callSid || '';
+
+        const profile = voiceProfiles.find(p => p.id === profileId);
+        if (!profile) {
+          console.error(`[voice] Profile ${profileId} not found`);
+          ws.close();
+          return;
+        }
+
+        console.log(`[voice] Starting session for ${profile.businessName} (caller: ${callerNumber})`);
+
+        session = new VoiceSession({
+          profile,
+          callSid,
+          callerNumber,
+          streamSid,
+          twilioWs: ws,
+          onAction: (action) => {
+            console.log(`[voice] Action: ${action.type}`, action.data);
+            // Update profile stats
+            const pi = voiceProfiles.findIndex(p => p.id === profile.id);
+            if (pi >= 0) {
+              if (action.type === 'take_message') voiceProfiles[pi].stats.messagessTaken = (voiceProfiles[pi].stats.messagessTaken || 0) + 1;
+              if (action.type === 'book_appointment') voiceProfiles[pi].stats.appointmentsBooked = (voiceProfiles[pi].stats.appointmentsBooked || 0) + 1;
+              if (action.type === 'transfer_call') voiceProfiles[pi].stats.callsTransferred = (voiceProfiles[pi].stats.callsTransferred || 0) + 1;
+              save(VPF, voiceProfiles);
+            }
+          },
+          onEnd: (callLog) => {
+            callLogs.push(callLog);
+            save(CLF, callLogs);
+            // Update profile stats
+            const pi = voiceProfiles.findIndex(p => p.id === profile.id);
+            if (pi >= 0) {
+              voiceProfiles[pi].stats.totalCalls = (voiceProfiles[pi].stats.totalCalls || 0) + 1;
+              voiceProfiles[pi].stats.totalMinutes = (voiceProfiles[pi].stats.totalMinutes || 0) + (callLog.durationSeconds / 60);
+              voiceProfiles[pi].stats.totalCost = (voiceProfiles[pi].stats.totalCost || 0) + (callLog.cost?.total || 0);
+              save(VPF, voiceProfiles);
+            }
+            activeCalls.delete(streamSid);
+          }
+        });
+
+        activeCalls.set(streamSid, session);
+        await session.start();
+
+      } else if (msg.event === 'media') {
+        // Audio data from Twilio
+        if (session && msg.media && msg.media.payload) {
+          session.processAudio(msg.media.payload);
+        }
+      } else if (msg.event === 'stop') {
+        console.log(`[voice] Stream stopped: ${streamSid}`);
+        if (session) {
+          await session.end('hangup');
+          activeCalls.delete(streamSid);
+        }
+      }
+    } catch (err) {
+      console.error('[voice] WebSocket message error:', err.message);
+    }
+  });
+
+  ws.on('close', async () => {
+    if (session && !session.ended) {
+      await session.end('ws_close');
+      activeCalls.delete(streamSid);
+    }
+  });
+
+  ws.on('error', (err) => {
+    console.error('[voice] WebSocket error:', err.message);
+  });
 });

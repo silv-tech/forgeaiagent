@@ -406,6 +406,34 @@ tr:hover td{background:rgba(0,229,255,.03)}
 .ibox a:hover{text-decoration:underline}
 .ibox strong{color:var(--t2)}
 
+/* ── VOICE ── */
+.v-nav{display:flex;flex-direction:column;gap:2px;padding:0 8px}
+.v-tab{padding:8px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--t3);transition:all .15s}
+.v-tab:hover{background:var(--s2);color:var(--t2)}
+.v-tab.on{background:var(--s3);color:var(--cyan)}
+.v-view{display:none}
+.v-view.on{display:block}
+.v-profile-card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:16px 18px;margin-bottom:10px;position:relative;transition:all .2s}
+.v-profile-card:hover{border-color:var(--b2)}
+.v-profile-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--violet));border-radius:10px 10px 0 0;opacity:.5}
+.v-call-row{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:12px 16px;margin-bottom:6px;cursor:pointer;transition:all .15s}
+.v-call-row:hover{border-color:var(--b2);background:var(--s2)}
+.v-transcript{display:none;margin-top:10px;padding:12px;background:rgba(0,0,0,.3);border-radius:6px;font-size:11px;line-height:1.8}
+.v-transcript.on{display:block}
+.v-msg-ai{color:var(--cyan);margin-bottom:4px}
+.v-msg-caller{color:var(--t2);margin-bottom:4px}
+.v-stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.v-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+.v-stat-label{font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.v-stat-value{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--cyan);text-shadow:0 0 15px rgba(0,229,255,.3)}
+.v-faq-row{display:flex;gap:6px;margin-bottom:6px;align-items:start}
+.v-faq-row input{flex:1;background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:6px 8px;color:var(--t1);font-family:var(--font);font-size:11px}
+.v-bar{height:20px;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;margin-bottom:4px;min-width:40px}
+.v-badge{font-size:9px;padding:2px 8px;border-radius:20px;border:1px solid;font-family:var(--mono);display:inline-block}
+.v-badge.pos{border-color:rgba(0,255,136,.4);color:var(--green);background:rgba(0,255,136,.08)}
+.v-badge.neu{border-color:var(--b2);color:var(--t3);background:var(--s2)}
+.v-badge.neg{border-color:rgba(255,77,109,.4);color:var(--red);background:rgba(255,77,109,.08)}
+
 /* ── ANALYTICS ── */
 .aw{flex:1;overflow-y:auto;padding:20px}
 .ag{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
@@ -525,6 +553,8 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
   <div class="tab"     onclick="go('closer')">⬢ Closer</div>
   <div class="tab"     onclick="go('pipeline')">▥ Pipeline</div>
   <div class="tab"     onclick="go('analytics')">▤ Analytics</div>
+  <!-- HIDDEN: Voice AI tab — not yet live -->
+  <!-- <div class="tab"     onclick="go('voice')">🎙 Voice</div> -->
   <div class="tab"     onclick="go('settings')">⚙ Settings</div>
   <div class="nav-right">
     <div class="pulse"></div>
@@ -994,6 +1024,153 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
   </div>
 </div>
 
+<!-- ══════════ VOICE AI ══════════ -->
+<div class="page" id="pg-voice">
+  <div style="display:flex;height:100%;overflow:hidden">
+    <!-- Voice sidebar -->
+    <div class="sb" style="width:220px">
+      <div style="padding:14px 16px 10px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--t3)">Voice AI</div>
+      <div class="v-nav">
+        <div class="v-tab on" onclick="voiceView('profiles')" id="vt-profiles">🎙 Profiles</div>
+        <div class="v-tab" onclick="voiceView('calls')" id="vt-calls">📞 Call Log</div>
+        <div class="v-tab" onclick="voiceView('dashboard')" id="vt-dashboard">📊 Dashboard</div>
+        <div class="v-tab" onclick="voiceView('vconfig')" id="vt-vconfig">⚙ Settings</div>
+      </div>
+      <!-- Live active calls -->
+      <div style="padding:12px 16px;border-top:1px solid var(--b1);margin-top:auto">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">Active Calls</div>
+        <div id="v-active-list" style="font-size:11px;color:var(--t3)">None</div>
+      </div>
+    </div>
+    <!-- Voice main content -->
+    <div style="flex:1;overflow-y:auto;padding:24px 24px 48px">
+
+      <!-- PROFILES VIEW -->
+      <div class="v-view on" id="vv-profiles">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <h2 style="font-size:16px;font-weight:800;margin:0">Voice Profiles</h2>
+          <button class="sbtn" onclick="showProfileForm()" style="margin:0;padding:6px 14px;font-size:11px">+ New Profile</button>
+        </div>
+        <!-- Profile form (hidden by default) -->
+        <div id="v-profile-form" style="display:none;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:20px;margin-bottom:20px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:14px" id="v-pf-title">New Voice Profile</div>
+          <input type="hidden" id="vp-id">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="f"><span>Business Name *</span><input id="vp-name" placeholder="La Boucherie"></div>
+            <div class="f"><span>Twilio Phone #</span><input id="vp-phone" placeholder="+18005551234"></div>
+            <div class="f"><span>Owner Name</span><input id="vp-owner" placeholder="Marie"></div>
+            <div class="f"><span>Owner Phone</span><input id="vp-owner-phone" placeholder="+12135551111"></div>
+            <div class="f" style="grid-column:span 2"><span>Greeting</span><input id="vp-greeting" placeholder="Thank you for calling La Boucherie..."></div>
+            <div class="f" style="grid-column:span 2"><span>Services (comma-separated)</span><input id="vp-services" placeholder="Dine-in, Takeout, Catering"></div>
+            <div class="f" style="grid-column:span 2"><span>Custom Instructions</span><textarea id="vp-instructions" rows="2" placeholder="Always mention Thursday wine tasting..." style="width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:8px 10px;color:var(--t1);font-family:var(--font);font-size:12px;resize:vertical"></textarea></div>
+            <div class="f"><span>Voice</span>
+              <select id="vp-voice" style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:8px 10px;color:var(--t1);font-family:var(--font);font-size:12px;width:100%">
+                <option value="asteria">Asteria (Female)</option>
+                <option value="luna">Luna (Female)</option>
+                <option value="stella">Stella (Female)</option>
+                <option value="athena">Athena (Female)</option>
+                <option value="hera">Hera (Female)</option>
+                <option value="orion">Orion (Male)</option>
+                <option value="arcas">Arcas (Male)</option>
+                <option value="perseus">Perseus (Male)</option>
+                <option value="angus">Angus (Male)</option>
+                <option value="orpheus">Orpheus (Male)</option>
+                <option value="helios">Helios (Male)</option>
+                <option value="zeus">Zeus (Male)</option>
+              </select>
+            </div>
+            <div class="f"><span>Status</span>
+              <select id="vp-active" style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:8px 10px;color:var(--t1);font-family:var(--font);font-size:12px;width:100%">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+          <!-- FAQs -->
+          <div style="margin-top:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:8px">FAQs <button class="sbtn" onclick="addFaqRow()" style="margin:0;padding:3px 10px;font-size:10px;float:right">+ Add</button></div>
+            <div id="vp-faqs"></div>
+          </div>
+          <!-- Hours -->
+          <div style="margin-top:14px">
+            <div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:8px">Business Hours</div>
+            <div style="font-size:10px;color:var(--t4);margin-bottom:6px">
+              <div class="f" style="margin-bottom:4px"><span>Timezone</span><input id="vp-tz" value="America/Los_Angeles" style="max-width:200px"></div>
+            </div>
+            <div id="vp-hours" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button class="sbtn" onclick="saveProfile()" style="margin:0">Save Profile</button>
+            <button class="sbtn" onclick="hideProfileForm()" style="margin:0;background:var(--s3);color:var(--t2);box-shadow:none">Cancel</button>
+          </div>
+        </div>
+        <!-- Profile list -->
+        <div id="v-profiles-list"></div>
+      </div>
+
+      <!-- CALL LOG VIEW -->
+      <div class="v-view" id="vv-calls">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <h2 style="font-size:16px;font-weight:800;margin:0">Call Log</h2>
+          <select id="v-call-filter" onchange="loadCallLog()" style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:6px 10px;color:var(--t1);font-family:var(--font);font-size:11px">
+            <option value="">All Profiles</option>
+          </select>
+        </div>
+        <div id="v-calls-list"></div>
+      </div>
+
+      <!-- DASHBOARD VIEW -->
+      <div class="v-view" id="vv-dashboard">
+        <h2 style="font-size:16px;font-weight:800;margin:0 0 20px">Voice Dashboard</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px" id="v-stats-cards"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:16px">
+            <div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:10px">Sentiment Breakdown</div>
+            <div id="v-sentiment"></div>
+          </div>
+          <div style="background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:16px">
+            <div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:10px">Actions Taken</div>
+            <div id="v-actions"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOICE SETTINGS VIEW -->
+      <div class="v-view" id="vv-vconfig">
+        <h2 style="font-size:16px;font-weight:800;margin:0 0 20px">Voice Settings</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px">
+          <div class="scard">
+            <div class="scard-t">📞 Twilio <span class="ss-badge off" id="ss-twilio">Not Set</span></div>
+            <div class="f"><span>Account SID</span><input type="text" id="set-twilio-sid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"></div>
+            <div class="f"><span>Auth Token</span><input type="password" id="set-twilio-token" placeholder="your_auth_token"></div>
+            <div class="f"><span>Phone Number</span><input type="text" id="set-twilio-phone" placeholder="+18005551234"></div>
+            <div class="ibox">
+              1. Sign up at <a href="https://www.twilio.com" target="_blank">twilio.com</a><br>
+              2. Buy a phone number ($1/month)<br>
+              3. Copy Account SID and Auth Token from Console<br>
+              4. Set the Voice webhook URL to: <strong style="color:var(--cyan)">https://your-domain/api/voice/incoming</strong><br>
+              5. Set Status callback to: <strong style="color:var(--cyan)">https://your-domain/api/voice/status</strong>
+            </div>
+            <button class="sbtn" onclick="saveVoiceConfig('twilio')" style="width:100%">Save Twilio Config</button>
+          </div>
+          <div class="scard">
+            <div class="scard-t">🎤 Deepgram <span class="ss-badge off" id="ss-deepgram">Not Set</span></div>
+            <div class="f"><span>API Key</span><input type="password" id="set-deepgram" placeholder="your_deepgram_api_key"></div>
+            <div class="ibox">
+              1. Sign up at <a href="https://deepgram.com" target="_blank">deepgram.com</a> ($200 free credit)<br>
+              2. Go to API Keys → Create a Key<br>
+              3. Paste the key above<br><br>
+              <strong>Cost:</strong> Nova-2 STT ~$0.0043/min, Aura TTS ~$0.015/1K chars
+            </div>
+            <button class="sbtn" onclick="saveVoiceConfig('deepgram')" style="width:100%">Save Deepgram Key</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ══════════ SETTINGS ══════════ -->
 <div class="page" id="pg-settings">
   <div class="set-grid">
@@ -1323,13 +1500,14 @@ function go(name){
   const pg=document.getElementById('pg-'+name);
   if(!pg)return;
   pg.classList.add('on');
-  const icons={scout:'⬡ Scout',finder:'◈ Email Finder',outreach:'◎ Outreach',closer:'⬢ Closer',pipeline:'▥ Pipeline',analytics:'▤ Analytics',settings:'⚙ Settings'};
+  const icons={scout:'⬡ Scout',finder:'◈ Email Finder',outreach:'◎ Outreach',closer:'⬢ Closer',pipeline:'▥ Pipeline',analytics:'▤ Analytics',voice:'🎙 Voice',settings:'⚙ Settings'};
   document.querySelectorAll('.tab').forEach(t=>{if(t.textContent.trim()===icons[name])t.classList.add('on');});
   if(name==='finder')drawEF();
   if(name==='outreach'){loadTracking().then(()=>drawOut());fillSels();}
   if(name==='closer')fillSels();
   if(name==='pipeline')drawPipeline();
   if(name==='analytics')loadAnal();
+  if(name==='voice')initVoice();
 }
 
 // ── SSE ───────────────────────────────────────────────────────────────────
@@ -1994,6 +2172,313 @@ const onSearchLeadDrop= debounce(()=>{
   if(list) list.style.display='block';
   renderLeadDrop(q);
 }, 120);
+
+// ── VOICE AI ──────────────────────────────────────────────────────────────
+let vProfiles=[], vCalls=[], vAnalytics=null, vInitDone=false;
+
+async function initVoice(){
+  await Promise.all([loadVoiceProfiles(), loadVoiceConfig()]);
+  if(!vInitDone){ loadCallLog(); loadVoiceDashboard(); vInitDone=true; }
+  refreshActiveCalls();
+}
+
+function voiceView(name){
+  document.querySelectorAll('.v-view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.v-tab').forEach(t=>t.classList.remove('on'));
+  const vv=document.getElementById('vv-'+name);
+  const vt=document.getElementById('vt-'+name);
+  if(vv)vv.classList.add('on');
+  if(vt)vt.classList.add('on');
+  if(name==='calls')loadCallLog();
+  if(name==='dashboard')loadVoiceDashboard();
+  if(name==='vconfig')loadVoiceConfig();
+}
+
+// ── Profiles ──
+async function loadVoiceProfiles(){
+  try{
+    vProfiles=await(await fetch('/api/voice/profiles')).json();
+  }catch{ vProfiles=[]; }
+  drawVoiceProfiles();
+  // Populate call log filter
+  const sel=document.getElementById('v-call-filter');
+  if(sel){
+    const val=sel.value;
+    sel.innerHTML='<option value="">All Profiles</option>'+vProfiles.map(p=>`<option value="${p.id}">${x(p.businessName)}</option>`).join('');
+    sel.value=val;
+  }
+}
+
+function drawVoiceProfiles(){
+  const el=document.getElementById('v-profiles-list');
+  if(!el)return;
+  if(!vProfiles.length){ el.innerHTML='<div style="color:var(--t4);font-size:12px;padding:20px;text-align:center">No voice profiles yet. Click "+ New Profile" to create one.</div>'; return; }
+  el.innerHTML=vProfiles.map(p=>{
+    const active=p.active?'<span class="v-badge pos">Active</span>':'<span class="v-badge neg">Inactive</span>';
+    return `<div class="v-profile-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700">${x(p.businessName)}</div>
+        ${active}
+        <div style="margin-left:auto;display:flex;gap:6px">
+          <button class="sbtn" onclick="editProfile('${p.id}')" style="margin:0;padding:4px 10px;font-size:10px">Edit</button>
+          <button class="sbtn" onclick="deleteProfile('${p.id}')" style="margin:0;padding:4px 10px;font-size:10px;background:var(--s3);color:var(--red);box-shadow:none">Delete</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;font-size:10.5px;color:var(--t3);flex-wrap:wrap">
+        <span>📞 ${x(p.twilioPhoneNumber||'No number')}</span>
+        <span>🎙 ${x(p.voiceId||'asteria')}</span>
+        <span>📊 ${p.stats?.totalCalls||0} calls</span>
+        <span>⏱ ${(p.stats?.totalMinutes||0).toFixed(1)} min</span>
+        <span>💰 $${(p.stats?.totalCost||0).toFixed(3)}</span>
+      </div>
+      ${p.greeting?`<div style="font-size:10px;color:var(--t4);margin-top:6px;font-style:italic">"${x(p.greeting.slice(0,80))}${p.greeting.length>80?'...':''}"</div>`:''}
+      ${p.services?.length?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${p.services.map(s=>`<span style="font-size:9px;padding:2px 6px;background:var(--s3);border-radius:4px;color:var(--t3)">${x(s)}</span>`).join('')}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function showProfileForm(profileId){
+  document.getElementById('v-profile-form').style.display='block';
+  document.getElementById('v-pf-title').textContent=profileId?'Edit Voice Profile':'New Voice Profile';
+  // Init hours rows
+  const hc=document.getElementById('vp-hours');
+  const days=['mon','tue','wed','thu','fri','sat','sun'];
+  const dayLabels={mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'};
+  if(profileId){
+    const p=vProfiles.find(pr=>pr.id===profileId);
+    if(!p)return;
+    document.getElementById('vp-id').value=p.id;
+    document.getElementById('vp-name').value=p.businessName||'';
+    document.getElementById('vp-phone').value=p.twilioPhoneNumber||'';
+    document.getElementById('vp-owner').value=p.ownerName||'';
+    document.getElementById('vp-owner-phone').value=p.ownerPhone||'';
+    document.getElementById('vp-greeting').value=p.greeting||'';
+    document.getElementById('vp-services').value=(p.services||[]).join(', ');
+    document.getElementById('vp-instructions').value=p.customInstructions||'';
+    document.getElementById('vp-voice').value=p.voiceId||'asteria';
+    document.getElementById('vp-active').value=p.active?'true':'false';
+    document.getElementById('vp-tz').value=p.businessHours?.timezone||'America/Los_Angeles';
+    // FAQs
+    const fc=document.getElementById('vp-faqs');
+    fc.innerHTML='';
+    (p.faqs||[]).forEach(f=>addFaqRow(f.q,f.a));
+    // Hours
+    hc.innerHTML=days.map(d=>{
+      const h=p.businessHours?.schedule?.[d];
+      return `<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t3)">
+        <span style="width:30px">${d}</span>
+        <input id="vh-${d}-open" value="${h&&!h.closed?h.open:''}" placeholder="09:00" style="width:60px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:3px 5px;color:var(--t1);font-size:10px">
+        <span>-</span>
+        <input id="vh-${d}-close" value="${h&&!h.closed?h.close:''}" placeholder="17:00" style="width:60px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:3px 5px;color:var(--t1);font-size:10px">
+      </div>`;
+    }).join('');
+  } else {
+    document.getElementById('vp-id').value='';
+    document.getElementById('vp-name').value='';
+    document.getElementById('vp-phone').value='';
+    document.getElementById('vp-owner').value='';
+    document.getElementById('vp-owner-phone').value='';
+    document.getElementById('vp-greeting').value='';
+    document.getElementById('vp-services').value='';
+    document.getElementById('vp-instructions').value='';
+    document.getElementById('vp-voice').value='asteria';
+    document.getElementById('vp-active').value='true';
+    document.getElementById('vp-tz').value='America/Los_Angeles';
+    document.getElementById('vp-faqs').innerHTML='';
+    hc.innerHTML=days.map(d=>`<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t3)">
+      <span style="width:30px">${d}</span>
+      <input id="vh-${d}-open" placeholder="09:00" style="width:60px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:3px 5px;color:var(--t1);font-size:10px">
+      <span>-</span>
+      <input id="vh-${d}-close" placeholder="17:00" style="width:60px;background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:3px 5px;color:var(--t1);font-size:10px">
+    </div>`).join('');
+  }
+}
+
+function hideProfileForm(){ document.getElementById('v-profile-form').style.display='none'; }
+function editProfile(id){ showProfileForm(id); }
+
+function addFaqRow(q,a){
+  const c=document.getElementById('vp-faqs');
+  const row=document.createElement('div');
+  row.className='v-faq-row';
+  row.innerHTML=`<input class="vf-q" placeholder="Question" value="${x(q||'')}"><input class="vf-a" placeholder="Answer" value="${x(a||'')}"><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px">✕</button>`;
+  c.appendChild(row);
+}
+
+async function saveProfile(){
+  const id=document.getElementById('vp-id').value;
+  const days=['mon','tue','wed','thu','fri','sat','sun'];
+  const schedule={};
+  days.forEach(d=>{
+    const open=document.getElementById('vh-'+d+'-open').value.trim();
+    const close=document.getElementById('vh-'+d+'-close').value.trim();
+    if(open&&close) schedule[d]={open,close};
+    else schedule[d]={closed:true};
+  });
+  const faqRows=document.querySelectorAll('#vp-faqs .v-faq-row');
+  const faqs=[];
+  faqRows.forEach(r=>{
+    const q=r.querySelector('.vf-q').value.trim();
+    const a=r.querySelector('.vf-a').value.trim();
+    if(q&&a)faqs.push({q,a});
+  });
+  const body={
+    businessName:document.getElementById('vp-name').value.trim(),
+    twilioPhoneNumber:document.getElementById('vp-phone').value.trim(),
+    ownerName:document.getElementById('vp-owner').value.trim(),
+    ownerPhone:document.getElementById('vp-owner-phone').value.trim(),
+    greeting:document.getElementById('vp-greeting').value.trim(),
+    services:document.getElementById('vp-services').value.split(',').map(s=>s.trim()).filter(Boolean),
+    customInstructions:document.getElementById('vp-instructions').value.trim(),
+    voiceId:document.getElementById('vp-voice').value,
+    active:document.getElementById('vp-active').value==='true',
+    businessHours:{timezone:document.getElementById('vp-tz').value.trim(),schedule},
+    faqs
+  };
+  if(!body.businessName){alert('Business name is required');return;}
+  const url=id?'/api/voice/profiles/'+id:'/api/voice/profiles';
+  const method=id?'PUT':'POST';
+  await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  hideProfileForm();
+  await loadVoiceProfiles();
+}
+
+async function deleteProfile(id){
+  if(!confirm('Delete this voice profile?'))return;
+  await fetch('/api/voice/profiles/'+id,{method:'DELETE'});
+  await loadVoiceProfiles();
+}
+
+// ── Call Log ──
+async function loadCallLog(){
+  const profileId=document.getElementById('v-call-filter')?.value||'';
+  try{
+    const q=profileId?`?profileId=${profileId}`:'';
+    const data=await(await fetch('/api/voice/calls'+q)).json();
+    vCalls=data.calls||[];
+  }catch{ vCalls=[]; }
+  drawCallLog();
+}
+
+function drawCallLog(){
+  const el=document.getElementById('v-calls-list');
+  if(!el)return;
+  if(!vCalls.length){ el.innerHTML='<div style="color:var(--t4);font-size:12px;padding:20px;text-align:center">No calls recorded yet.</div>'; return; }
+  el.innerHTML=vCalls.map(c=>{
+    const profile=vProfiles.find(p=>p.id===c.profileId);
+    const dur=c.durationSeconds||0;
+    const min=Math.floor(dur/60);
+    const sec=dur%60;
+    const sentCls=c.sentiment==='positive'?'pos':c.sentiment==='negative'?'neg':'neu';
+    const date=new Date(c.startedAt).toLocaleString();
+    const actionBadges=(c.actions||[]).map(a=>{
+      const icons={take_message:'💬',book_appointment:'📅',transfer_call:'📞'};
+      return `<span style="font-size:9px;padding:1px 5px;background:var(--s3);border-radius:4px;color:var(--t3)">${icons[a.type]||'•'} ${a.type.replace(/_/g,' ')}</span>`;
+    }).join(' ');
+    return `<div class="v-call-row" onclick="toggleTranscript('${c.id}')">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600">${x(c.callerNumber||'Unknown')}</span>
+        <span style="font-size:10px;color:var(--t4)">${date}</span>
+        <span style="font-size:10px;color:var(--t3)">${min}m ${sec}s</span>
+        <span class="v-badge ${sentCls}">${c.sentiment||'neutral'}</span>
+        ${profile?`<span style="font-size:10px;color:var(--t4)">→ ${x(profile.businessName)}</span>`:''}
+        ${actionBadges}
+        <span style="margin-left:auto;font-size:10px;color:var(--t4)">$${(c.cost?.total||0).toFixed(3)}</span>
+      </div>
+      ${c.summary?`<div style="font-size:10.5px;color:var(--t3);margin-top:4px">${x(c.summary)}</div>`:''}
+      <div class="v-transcript" id="vt-${c.id}">
+        ${(c.transcript||[]).map(t=>`<div class="v-msg-${t.role==='ai'?'ai':'caller'}"><strong>${t.role==='ai'?'AI':'Caller'}:</strong> ${x(t.text)}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTranscript(id){
+  const el=document.getElementById('vt-'+id);
+  if(el)el.classList.toggle('on');
+}
+
+// ── Dashboard ──
+async function loadVoiceDashboard(){
+  try{
+    vAnalytics=await(await fetch('/api/voice/analytics')).json();
+  }catch{ vAnalytics={totalCalls:0,totalMinutes:0,totalCost:0,messagesTaken:0,appointmentsBooked:0,callsTransferred:0,sentiments:{},activeCalls:0}; }
+  drawVoiceDashboard();
+}
+
+function drawVoiceDashboard(){
+  if(!vAnalytics)return;
+  const a=vAnalytics;
+  const cards=document.getElementById('v-stats-cards');
+  if(cards){
+    cards.innerHTML=[
+      {l:'Total Calls',v:a.totalCalls,c:'var(--cyan)'},
+      {l:'Total Minutes',v:a.totalMinutes.toFixed(1),c:'var(--violet2)'},
+      {l:'Total Cost',v:'$'+a.totalCost.toFixed(2),c:'var(--green)'},
+      {l:'Messages Taken',v:a.messagesTaken,c:'var(--amber)'},
+      {l:'Appointments',v:a.appointmentsBooked,c:'var(--cyan)'},
+      {l:'Transfers',v:a.callsTransferred,c:'var(--violet2)'},
+      {l:'Active Now',v:a.activeCalls,c:a.activeCalls>0?'var(--green)':'var(--t4)'}
+    ].map(c=>`<div class="v-stat-card"><div class="v-stat-label">${c.l}</div><div class="v-stat-value" style="color:${c.c}">${c.v}</div></div>`).join('');
+  }
+  // Sentiment
+  const se=document.getElementById('v-sentiment');
+  if(se){
+    const s=a.sentiments||{};
+    const total=Math.max((s.positive||0)+(s.neutral||0)+(s.negative||0),1);
+    se.innerHTML=[
+      {l:'Positive',v:s.positive||0,c:'var(--green)',pct:((s.positive||0)/total*100).toFixed(0)},
+      {l:'Neutral',v:s.neutral||0,c:'var(--t3)',pct:((s.neutral||0)/total*100).toFixed(0)},
+      {l:'Negative',v:s.negative||0,c:'var(--red)',pct:((s.negative||0)/total*100).toFixed(0)}
+    ].map(i=>`<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:2px"><span>${i.l}</span><span>${i.v} (${i.pct}%)</span></div><div class="v-bar" style="width:${Math.max(i.pct,5)}%;background:${i.c};opacity:.7">&nbsp;</div></div>`).join('');
+  }
+  // Actions
+  const ac=document.getElementById('v-actions');
+  if(ac){
+    ac.innerHTML=[
+      {l:'Messages Taken',v:a.messagesTaken,icon:'💬'},
+      {l:'Appointments Booked',v:a.appointmentsBooked,icon:'📅'},
+      {l:'Calls Transferred',v:a.callsTransferred,icon:'📞'}
+    ].map(i=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--b1);font-size:11px"><span>${i.icon}</span><span style="color:var(--t2)">${i.l}</span><span style="margin-left:auto;font-family:var(--mono);font-weight:700;color:var(--cyan)">${i.v}</span></div>`).join('');
+  }
+}
+
+// ── Active calls poll ──
+async function refreshActiveCalls(){
+  try{
+    const active=await(await fetch('/api/voice/active')).json();
+    const el=document.getElementById('v-active-list');
+    if(!el)return;
+    if(!active.length){ el.innerHTML='<div style="font-size:10px;color:var(--t4)">None</div>'; return; }
+    el.innerHTML=active.map(c=>`<div style="padding:4px 0;border-bottom:1px solid var(--b1)"><div style="font-size:11px;font-weight:600;color:var(--green)">${x(c.businessName)}</div><div style="font-size:9px;color:var(--t4)">${x(c.callerNumber)} · ${c.duration}s</div></div>`).join('');
+  }catch{}
+}
+
+// ── Voice settings ──
+async function loadVoiceConfig(){
+  try{
+    const cfg=await(await fetch('/api/voice/config')).json();
+    setSS('ss-twilio',cfg.hasTwilio);
+    setSS('ss-deepgram',cfg.hasDeepgram);
+  }catch{}
+}
+
+async function saveVoiceConfig(type){
+  const body={};
+  if(type==='twilio'){
+    body.twilioSid=document.getElementById('set-twilio-sid').value.trim();
+    body.twilioToken=document.getElementById('set-twilio-token').value.trim();
+    body.twilioPhone=document.getElementById('set-twilio-phone').value.trim();
+    if(!body.twilioSid||!body.twilioToken){alert('Enter Account SID and Auth Token');return;}
+  }
+  if(type==='deepgram'){
+    body.deepgramKey=document.getElementById('set-deepgram').value.trim();
+    if(!body.deepgramKey){alert('Enter Deepgram API key');return;}
+  }
+  await post('/api/voice/config',body);
+  await loadVoiceConfig();
+  alert('Saved ✓');
+}
 
 if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", boot); } else { boot(); }
 </script>
