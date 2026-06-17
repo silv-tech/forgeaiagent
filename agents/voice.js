@@ -434,14 +434,14 @@ class VoiceSession {
 
       // ElevenLabs voice ID mapping
       const EL_VOICES = {
-        jessica: 'cgSgspJ2msm6NPK8DoW3',
-        chris: 'iP95p4xoKVk5WlEJsC3b',
+        jessica: 'cgSgspJ2msm6clMCkdW9',
+        chris: 'iP95p4xoKVk53GoZ742B',
         laura: 'FGY2WhTYpPnrIDTdsKH5',
         sarah: 'EXAVITQu4vr4xnSDxMaL',
-        bella: 'hpp4J3VqNfWA8Nl7ISQR',
+        bella: 'hpp4J3VqNfWAUOO0d1Us',
         alice: 'Xb7hH8MSUJpSbSDYk0k2',
         charlie: 'IKne3meq5aSn9XLyUdCD',
-        liam: 'TX3LPaxmHKxFYj78xc5E',
+        liam: 'TX3LPaxmHKxFdv7VOQHJ',
         roger: 'CwhRBWXzGAHq8TQ4Fs17',
         matilda: 'XrExE9yKIg1WjnnlVkGX'
       };
@@ -452,14 +452,13 @@ class VoiceSession {
       if (elKey) {
         // Use ElevenLabs for expressive, emotional voice
         const elVoiceId = EL_VOICES[voiceId] || EL_VOICES.jessica || voiceId;
-        const url = `https://api.elevenlabs.io/v1/text-to-speech/${elVoiceId}`;
+        const url = `https://api.elevenlabs.io/v1/text-to-speech/${elVoiceId}?output_format=ulaw_8000`;
 
         const response = await fetch(url, {
           method: 'POST',
           headers: {
             'xi-api-key': elKey,
-            'Content-Type': 'application/json',
-            'Accept': 'audio/mpeg'
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             text,
@@ -469,8 +468,7 @@ class VoiceSession {
               similarity_boost: 0.8,
               style: 0.6,
               use_speaker_boost: true
-            },
-            output_format: 'ulaw_8000'
+            }
           })
         });
 
