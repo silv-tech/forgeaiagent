@@ -25,6 +25,8 @@
     initTextHighlights();
     initParallaxOrbs();
     initSmoothCounters();
+    initServiceCardSpotlight();
+    initServiceCardEntrance();
   }
 
   // ── HERO WORD-BY-WORD REVEAL ─────────────────────────────────────────
@@ -512,6 +514,60 @@
     }, { threshold: 0.5 });
 
     counters.forEach(c => obs.observe(c));
+  }
+
+  // ── SERVICE CARD INNER SPOTLIGHT (follows cursor) ──────────────────────
+  function initServiceCardSpotlight() {
+    document.querySelectorAll('.service-card').forEach(card => {
+      const spotlight = card.querySelector('.card-spotlight');
+      if (!spotlight) return;
+
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        spotlight.style.background = `radial-gradient(
+          500px circle at ${x}px ${y}px,
+          rgba(201,226,101,0.07) 0%,
+          transparent 55%
+        )`;
+        card.style.setProperty('--mouse-x', x + 'px');
+        card.style.setProperty('--mouse-y', y + 'px');
+      });
+
+      card.addEventListener('mouseenter', () => {
+        spotlight.style.opacity = '1';
+      });
+
+      card.addEventListener('mouseleave', () => {
+        spotlight.style.opacity = '0';
+      });
+    });
+  }
+
+  // ── SERVICE CARD STAGGERED ENTRANCE ────────────────────────────────────
+  function initServiceCardEntrance() {
+    const cards = document.querySelectorAll('.services-grid .service-card');
+    if (!cards.length) return;
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          // Find index among siblings
+          const allCards = Array.from(entry.target.parentElement.children).filter(
+            c => c.classList.contains('service-card')
+          );
+          const idx = allCards.indexOf(entry.target);
+          const delay = idx * 120;
+
+          entry.target.style.transitionDelay = delay + 'ms';
+          entry.target.classList.add('visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+
+    cards.forEach(card => obs.observe(card));
   }
 
 })();
