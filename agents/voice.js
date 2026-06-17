@@ -309,7 +309,7 @@ class VoiceSession {
     // Clear any pending respond timer
     if (this._respondTimer) clearTimeout(this._respondTimer);
 
-    // Only respond after silence — wait 1.8s with no new speech
+    // Only respond after silence — wait 2.2s with no new speech
     this._respondTimer = setTimeout(() => {
       if (!this._speechBuffer || this._speechBuffer.length === 0) return;
 
@@ -323,7 +323,7 @@ class VoiceSession {
       this._addTranscript('caller', fullText);
       this.messages.push({ role: 'user', content: fullText });
       this._respond();
-    }, 1800);
+    }, 2200);
   }
 
   _bargeIn() {
@@ -558,21 +558,21 @@ class VoiceSession {
     if (this.silenceTimer) clearTimeout(this.silenceTimer);
     if (this.promptTimer) clearTimeout(this.promptTimer);
 
-    // 15s silence → "Are you still there?"
+    // 45s silence → gentle check-in
     this.promptTimer = setTimeout(async () => {
       if (!this.ended && !this.speaking) {
-        await this._speak("Are you still there?");
+        await this._speak("Hey, you still with me?");
       }
-    }, 15000);
+    }, 45000);
 
-    // 30s total silence → end
+    // 75s total silence → end call
     this.silenceTimer = setTimeout(() => {
       if (!this.ended) {
-        this._speak("It seems like you may have disconnected. Thank you for calling, goodbye!").then(() => {
+        this._speak("Alright, looks like we got disconnected. Thanks for calling, have a great day!").then(() => {
           this.end('silence_timeout');
         });
       }
-    }, 30000);
+    }, 75000);
   }
 
   _sendSmsNotification(messageData) {
