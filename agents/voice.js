@@ -238,8 +238,8 @@ class VoiceSession {
       channels: '1',
       punctuate: 'true',
       interim_results: 'true',
-      endpointing: '300',
-      utterance_end_ms: '1500',
+      endpointing: '800',
+      utterance_end_ms: '2500',
       vad_events: 'true'
     }).toString();
 
@@ -285,8 +285,8 @@ class VoiceSession {
     const isFinal = msg.is_final;
 
     if (!isFinal) {
-      // Interim result — barge-in detection
-      if (this.speaking && text.split(' ').length >= 2) {
+      // Interim result — barge-in detection (need 4+ words to interrupt)
+      if (this.speaking && text.split(' ').length >= 4) {
         this._bargeIn();
       }
       return;
@@ -305,8 +305,12 @@ class VoiceSession {
     this._addTranscript('caller', text);
     this.messages.push({ role: 'user', content: text });
 
-    // Get AI response
-    this._respond();
+    // Debounce: wait 1.2s after last speech before responding,
+    // in case the caller is still talking (just paused to think)
+    if (this._respondTimer) clearTimeout(this._respondTimer);
+    this._respondTimer = setTimeout(() => {
+      this._respond();
+    }, 1200);
   }
 
   _bargeIn() {
