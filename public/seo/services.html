@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Forge AI services: Cold Email Outreach, AI Voice Receptionist, AI Chatbots, Custom Websites, and Business Automation. Everything your business needs to grow.">
+  <title>Services | Forge AI</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- PARTICLE CANVAS -->
+  <canvas id="particleCanvas"></canvas>
+  <div class="cursor-glow" id="cursorGlow"></div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="container">
+      <a href="/" class="nav-logo">Forge <span>AI</span></a>
+      <a href="#contact" class="nav-cta">Get Started <span>&rarr;</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="fs-menu" id="fsMenu">
+    <div class="fs-menu-links">
+      <a href="/services" class="fs-link"><span class="fs-num">01</span>Services</a>
+      <a href="#about" class="fs-link"><span class="fs-num">02</span>About</a>
+      <a href="#contact" class="fs-link"><span class="fs-num">03</span>Contact</a>
+      <a href="/login" class="fs-link fs-link-small">Sign In</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" id="hero" style="padding-bottom:80px">
+    <div class="container" style="text-align:center;max-width:700px;margin:0 auto">
+      <div class="hero-badge">What We Build</div>
+      <h1 style="text-align:center">Everything Your Business Needs to <em>Grow.</em></h1>
+      <p style="margin:0 auto 40px;text-align:center">From cold outreach to AI-powered phone answering, custom websites to chatbots. We build the tools that bring you customers and keep them coming back.</p>
+    </div>
+  </section>
+
+  <!-- SERVICES GRID -->
+  <section style="padding-top:0">
+    <div class="container">
+      <div class="services-grid">
+
+        <!-- Cold Email Outreach -->
+        <a href="/" class="service-card fade-in tilt-card spotlight-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          </div>
+          <div class="service-label">Outreach</div>
+          <h3>Cold Email <em>Outreach</em></h3>
+          <p>AI finds leads, writes personalized cold emails, and sends them to primary inboxes. Auto follow-ups until they reply.</p>
+          <div class="service-tags">
+            <span>Lead Scouting</span>
+            <span>AI-Written Emails</span>
+            <span>Auto Follow-Ups</span>
+            <span>Primary Inbox</span>
+          </div>
+          <div class="service-arrow">&rarr;</div>
+        </a>
+
+        <!-- AI Voice Receptionist -->
+        <a href="/voice" class="service-card fade-in tilt-card spotlight-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </div>
+          <div class="service-label">Voice</div>
+          <h3>AI Voice <em>Receptionist</em></h3>
+          <p>Your business calls answered 24/7 by AI that sounds human. Takes messages, books appointments, transfers calls.</p>
+          <div class="service-tags">
+            <span>24/7 Answering</span>
+            <span>Human-Sounding</span>
+            <span>Message Taking</span>
+            <span>Call Transfer</span>
+          </div>
+          <div class="service-arrow">&rarr;</div>
+        </a>
+
+        <!-- AI Chatbot -->
+        <div class="service-card fade-in tilt-card spotlight-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/></svg>
+          </div>
+          <div class="service-label">Chat</div>
+          <h3>AI <em>Chatbot</em></h3>
+          <p>Trained on your business — services, pricing, hours, FAQs. Lives on your website and answers customers instantly, even at 2am.</p>
+          <div class="service-tags">
+            <span>Custom Trained</span>
+            <span>24/7 Support</span>
+            <span>Lead Capture</span>
+            <span>Website Widget</span>
+          </div>
+          <div class="service-cta">Coming Soon</div>
+        </div>
+
+        <!-- Custom Websites -->
+        <div class="service-card fade-in tilt-card spotlight-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+          </div>
+          <div class="service-label">Web</div>
+          <h3>Custom <em>Websites</em></h3>
+          <p>Built for your brand, not a template. Fast, mobile-ready, designed to turn visitors into customers. Fully done-for-you.</p>
+          <div class="service-tags">
+            <span>Custom Design</span>
+            <span>Mobile-First</span>
+            <span>SEO Optimized</span>
+            <span>Fast Hosting</span>
+          </div>
+          <div class="service-cta">Coming Soon</div>
+        </div>
+
+        <!-- Automation -->
+        <div class="service-card fade-in tilt-card spotlight-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="service-label">Automate</div>
+          <h3>Business <em>Automation</em></h3>
+          <p>Automate the boring stuff — booking confirmations, review requests, invoice reminders, social posting. Set it and forget it.</p>
+          <div class="service-tags">
+            <span>Workflow Automation</span>
+            <span>Scheduling</span>
+            <span>Notifications</span>
+            <span>Integrations</span>
+          </div>
+          <div class="service-cta">Coming Soon</div>
+        </div>
+
+        <!-- Mobile App -->
+        <div class="service-card fade-in tilt-card spotlight-card">
+          <div class="service-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+          </div>
+          <div class="service-label">Mobile</div>
+          <h3>Mobile <em>App</em></h3>
+          <p>A branded iOS and Android app for your business. Customers book, browse, and contact you directly from their phone.</p>
+          <div class="service-tags">
+            <span>iOS &amp; Android</span>
+            <span>Branded</span>
+            <span>Push Notifications</span>
+            <span>Booking</span>
+          </div>
+          <div class="service-cta">Coming Soon</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="bg-gray" id="about">
+    <div class="container">
+      <div class="founder-section fade-in">
+        <div class="founder-photo">
+          <img src="/founder.jpg" alt="Leif, founder of Forge AI" width="320" height="320" loading="lazy" decoding="async">
+        </div>
+        <div class="founder-content">
+          <span class="section-label">About</span>
+          <h2 class="section-title">Built by <em>Leif.</em></h2>
+          <p>Every tool on this platform was built from scratch by one person. No outside investors, no bloated team. Just software that works, built by someone who actually understands the problems small businesses face.</p>
+          <p>When you reach out, you talk to me directly. Questions get answered the same day.</p>
+          <div class="founder-links">
+            <a href="mailto:leif@forgeaiagent.com" class="founder-link">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              leif@forgeaiagent.com
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="container">
+      <div class="contact-wrap">
+        <div class="contact-header">
+          <img src="/founder.jpg" alt="Leif" class="contact-avatar" width="56" height="56">
+          <div>
+            <span class="section-label">Get Started</span>
+            <h2 class="section-title">Let's Build <em>Something.</em></h2>
+          </div>
+        </div>
+        <p class="section-subtitle">Tell me what you need. I'll put together a plan and get back to you within a few hours.</p>
+        <form class="contact-form" id="contactForm">
+          <div style="position:absolute;left:-9999px" aria-hidden="true">
+            <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" placeholder="John Smith" required>
+          </div>
+          <div class="form-group">
+            <label for="business">Business Name</label>
+            <input type="text" id="business" name="business" placeholder="Smith's Auto Repair" required>
+          </div>
+          <div class="form-group">
+            <label for="type">What do you need?</label>
+            <input type="text" id="type" name="type" placeholder="Voice AI, cold email, website, chatbot..." required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="john@example.com" required>
+          </div>
+          <button type="submit" class="form-submit">Send Message</button>
+        </form>
+        <p class="contact-response">You'll hear back from Leif directly, usually within a few hours.</p>
+        <p class="contact-email">Or email directly: <a href="mailto:leif@forgeaiagent.com">leif@forgeaiagent.com</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="nav-logo">Forge <span>AI</span></div>
+          <p class="footer-tagline">AI-powered tools for local businesses.</p>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-heading">Services</h4>
+          <ul class="footer-links">
+            <li><a href="/">Cold Email Outreach</a></li>
+            <li><a href="/voice">AI Voice Receptionist</a></li>
+            <li><a href="/services">All Services</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-heading">Contact</h4>
+          <ul class="footer-links">
+            <li><a href="mailto:leif@forgeaiagent.com">leif@forgeaiagent.com</a></li>
+            <li><a href="#contact">Get Started</a></li>
+            <li><a href="/login">Sign In</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Forge AI. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/main.js"></script>
+  <script src="/animations.js"></script>
+</body>
+</html>
