@@ -283,6 +283,7 @@ class VoiceSession {
     if (!text || text.trim() === '') return;
 
     const isFinal = msg.is_final;
+    const speechFinal = msg.speech_final;
 
     if (!isFinal) {
       // Interim result — barge-in detection (need 4+ words to interrupt)
@@ -292,25 +293,37 @@ class VoiceSession {
       return;
     }
 
-    // Final transcript
+    // Final transcript fragment — buffer it, don't respond yet
     this.lastAudioTime = Date.now();
     this._resetSilenceTimer();
 
-    // Track STT duration
     if (msg.duration) {
       this.sttSeconds += msg.duration;
     }
 
-    console.log(`[voice] Caller: "${text}"`);
-    this._addTranscript('caller', text);
-    this.messages.push({ role: 'user', content: text });
+    // Accumulate text fragments into a buffer
+    if (!this._speechBuffer) this._speechBuffer = [];
+    this._speechBuffer.push(text);
+    console.log(`[voice] Caller fragment: "${text}"`);
 
-    // Debounce: wait 1.2s after last speech before responding,
-    // in case the caller is still talking (just paused to think)
+    // Clear any pending respond timer
     if (this._respondTimer) clearTimeout(this._respondTimer);
+
+    // Only respond after silence — wait 1.8s with no new speech
     this._respondTimer = setTimeout(() => {
+      if (!this._speechBuffer || this._speechBuffer.length === 0) return;
+
+      // Combine all buffered fragments into one message
+      const fullText = this._speechBuffer.join(' ').trim();
+      this._speechBuffer = [];
+
+      if (!fullText) return;
+
+      console.log(`[voice] Caller (full): "${fullText}"`);
+      this._addTranscript('caller', fullText);
+      this.messages.push({ role: 'user', content: fullText });
       this._respond();
-    }, 1200);
+    }, 1800);
   }
 
   _bargeIn() {
