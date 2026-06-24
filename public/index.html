@@ -745,19 +745,46 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
   </div>
 </div>
 
-<!-- ══════════ BUILDER (HIDDEN — email-only refocus) ══════════ -->
-<!--
+<!-- ══════════ BUILDER ══════════ -->
 <div class="page" id="pg-builder">
   <div class="sb">
     <div class="ss">
       <div class="lbl">Demo Site Builder</div>
       <p style="font-size:10.5px;color:var(--t2);line-height:1.7;margin-bottom:14px">Claude Sonnet builds a stunning custom website per lead. Uses the latest Sonnet model for high-quality output.</p>
       <div style="font-size:10.5px;color:var(--cyan);font-weight:600;margin-bottom:8px" id="b-sel-txt">0 selected</div>
-      <button class="btn btn-main" id="b-btn" onclick="buildSel()">▶ Build Selected</button>
+      <button class="btn btn-main" id="b-btn" onclick="buildSel()">Build Selected</button>
       <button class="btn btn-sec" onclick="bSelAll()">Select All Without Site</button>
       <button class="btn btn-sec" onclick="bClear()">Clear Selection</button>
-      <button class="btn btn-red" onclick="delSel()">✕ Delete Selected</button>
+      <button class="btn btn-red" onclick="delSel()">Delete Selected</button>
     </div>
+
+    <!-- Screenshot Upload Section -->
+    <div class="ss" style="margin-top:2px">
+      <div class="lbl">Screenshot Builder</div>
+      <p style="font-size:10.5px;color:var(--t2);line-height:1.7;margin-bottom:10px">Upload a Facebook profile screenshot of a fitness business. Claude Vision extracts brand details and builds a tailored site.</p>
+      <!-- Lead selector -->
+      <div style="position:relative;margin-bottom:10px" id="ss-lead-wrap">
+        <input type="text" id="ss-lead-search" placeholder="Search leads..." autocomplete="off" oninput="onSearchSSLeadDrop()" onfocus="openSSLeadDrop()" style="width:100%;padding:8px 12px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;box-sizing:border-box" onfocusin="this.style.borderColor='var(--cyan)'" onfocusout="setTimeout(()=>{closeSSLeadDrop()},180)">
+        <div id="ss-lead-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--s1);border:1px solid rgba(255,255,255,.12);border-top:none;border-radius:0 0 8px 8px;z-index:50"></div>
+        <input type="hidden" id="ss-lead" value="">
+      </div>
+      <div id="ss-lead-info" style="display:none;font-size:10px;padding:8px 10px;border:1px solid var(--b1);border-radius:8px;background:var(--s2);margin-bottom:10px;line-height:1.7;color:var(--t2)"></div>
+      <!-- Drop zone -->
+      <div id="ss-dropzone" onclick="document.getElementById('ss-file').click()" style="border:2px dashed rgba(255,255,255,.12);border-radius:10px;padding:20px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:10px;background:rgba(255,255,255,.02)">
+        <div style="font-size:22px;margin-bottom:6px;opacity:.5">📸</div>
+        <div style="font-size:11px;color:var(--t2);font-weight:600">Drop screenshot here or click to browse</div>
+        <div style="font-size:9.5px;color:var(--t4);margin-top:4px">PNG, JPG, WebP — max 10MB</div>
+        <input type="file" id="ss-file" accept="image/*" style="display:none" onchange="onSSFileSelect(this)">
+      </div>
+      <!-- Preview thumbnail -->
+      <div id="ss-preview" style="display:none;margin-bottom:10px;position:relative">
+        <img id="ss-thumb" src="" style="width:100%;border-radius:8px;border:1px solid var(--b1)">
+        <div id="ss-fname" style="font-size:9.5px;color:var(--t3);margin-top:4px"></div>
+        <button onclick="clearSSFile()" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:none;color:#fff;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">x</button>
+      </div>
+      <button class="btn btn-main" id="ss-build-btn" onclick="uploadScreenshot()" style="background:linear-gradient(135deg,#f97316,#dc2626)">Build from Screenshot</button>
+    </div>
+
     <div class="sg">
       <div class="sc"><div class="sl">Total Leads</div><div class="sv" id="b-tot">0</div></div>
       <div class="sc"><div class="sl">Sites Built</div><div class="sv dim" id="b-built">0</div></div>
@@ -774,7 +801,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <div class="cnt" id="b-badge">0 leads</div>
       <div class="acts">
         <button class="ab" onclick="bSelAll()">Select All</button>
-        <button class="ab v" onclick="go('outreach')">→ Outreach</button>
+        <button class="ab v" onclick="go('outreach')">-> Outreach</button>
       </div>
     </div>
     <div style="padding:8px 18px 14px;display:flex;align-items:center;gap:8px">
@@ -796,7 +823,6 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     </div>
   </div>
 </div>
--->
 
 
 
@@ -1254,8 +1280,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 
 </div><!-- .app -->
 
-<!-- SITE PREVIEW MODAL (HIDDEN — email-only refocus) -->
-<!--
+<!-- SITE PREVIEW MODAL -->
 <div class="ov" id="site-ov">
   <div class="modal" style="width:800px">
     <div class="modal-t">Site Preview</div>
@@ -1264,13 +1289,12 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <iframe class="sframe" id="sframe" src=""></iframe>
     <div style="display:flex;gap:8px;margin-top:12px">
       <a id="site-link" href="#" target="_blank" style="flex:1;text-decoration:none">
-        <button class="btn btn-sec" style="width:100%;margin:0">Open in New Tab ↗</button>
+        <button class="btn btn-sec" style="width:100%;margin:0">Open in New Tab</button>
       </a>
-      <button class="btn btn-main" style="flex:1" onclick="goOutreach()">Send Outreach →</button>
+      <button class="btn btn-main" style="flex:1" onclick="goOutreach()">Send Outreach</button>
     </div>
   </div>
 </div>
--->
 
 <!-- REPLY MODAL -->
 <div class="ov" id="reply-ov">
@@ -1766,6 +1790,76 @@ async function buildSel(){
   btn('b-btn','Building...',true);
   log('b-feed',`Building ${bSel.size} site(s)...`,'hi');
   await post('/api/builder/build-batch',{ids:[...bSel],sessionId:sid});
+}
+
+// ── Screenshot Builder ───────────────────────────────────────────────
+let ssFile=null;
+function openSSLeadDrop(){
+  const list=document.getElementById('ss-lead-list');
+  const q=(document.getElementById('ss-lead-search').value||'').toLowerCase();
+  const filtered=leads.filter(l=>!q||l.name.toLowerCase().includes(q)||(l.type||'').toLowerCase().includes(q));
+  list.innerHTML=filtered.slice(0,50).map(l=>`<div style="padding:7px 12px;font-size:11px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);color:var(--t1);transition:background .15s" onmouseover="this.style.background='rgba(0,229,255,.08)'" onmouseout="this.style.background=''" onclick="pickSSLead('${l.id}')">${x(l.name)} <span style="color:var(--t4);font-size:9.5px">${x((l.type||'').replace(/_/g,' '))}</span></div>`).join('');
+  if(!filtered.length)list.innerHTML='<div style="padding:10px;font-size:10.5px;color:var(--t4);text-align:center">No leads found</div>';
+  list.style.display='block';
+}
+function closeSSLeadDrop(){document.getElementById('ss-lead-list').style.display='none';}
+function onSearchSSLeadDrop(){openSSLeadDrop();}
+function pickSSLead(id){
+  const l=leads.find(x=>x.id===id);if(!l)return;
+  document.getElementById('ss-lead').value=id;
+  document.getElementById('ss-lead-search').value=l.name;
+  document.getElementById('ss-lead-info').style.display='block';
+  document.getElementById('ss-lead-info').innerHTML=`<strong>${x(l.name)}</strong><br>${x(l.address||'No address')}<br>${x(l.phone||'No phone')}`;
+  closeSSLeadDrop();
+}
+function onSSFileSelect(input){
+  const file=input.files[0];if(!file)return;
+  if(!file.type.startsWith('image/')){log('b-feed','Only image files allowed','er');return;}
+  if(file.size>10*1024*1024){log('b-feed','File too large (max 10MB)','er');return;}
+  ssFile=file;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    document.getElementById('ss-thumb').src=e.target.result;
+    document.getElementById('ss-fname').textContent=file.name+' ('+Math.round(file.size/1024)+'KB)';
+    document.getElementById('ss-preview').style.display='block';
+    document.getElementById('ss-dropzone').style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+function clearSSFile(){
+  ssFile=null;
+  document.getElementById('ss-file').value='';
+  document.getElementById('ss-preview').style.display='none';
+  document.getElementById('ss-dropzone').style.display='block';
+}
+// Drag and drop
+document.addEventListener('DOMContentLoaded',()=>{
+  const dz=document.getElementById('ss-dropzone');
+  if(!dz)return;
+  ['dragenter','dragover'].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.style.borderColor='var(--cyan)';dz.style.background='rgba(0,229,255,.06)';}));
+  ['dragleave','drop'].forEach(e=>dz.addEventListener(e,ev=>{ev.preventDefault();dz.style.borderColor='rgba(255,255,255,.12)';dz.style.background='rgba(255,255,255,.02)';}));
+  dz.addEventListener('drop',ev=>{
+    const file=ev.dataTransfer.files[0];
+    if(file){const dt=new DataTransfer();dt.items.add(file);document.getElementById('ss-file').files=dt.files;onSSFileSelect(document.getElementById('ss-file'));}
+  });
+});
+async function uploadScreenshot(){
+  const leadId=document.getElementById('ss-lead').value;
+  if(!leadId){log('b-feed','Select a lead first','er');return;}
+  if(!ssFile){log('b-feed','Upload a screenshot first','er');return;}
+  const bbtn=document.getElementById('ss-build-btn');
+  bbtn.disabled=true;bbtn.textContent='Building...';bbtn.style.opacity='.6';
+  log('b-feed','Uploading screenshot and building fitness site...','hi');
+  try{
+    const fd=new FormData();
+    fd.append('screenshot',ssFile);
+    fd.append('id',leadId);
+    fd.append('sessionId',sid);
+    const r=await fetch('/api/builder/build-screenshot',{method:'POST',body:fd,credentials:'include'});
+    const j=await r.json();
+    if(j.error){log('b-feed','Error: '+j.error,'er');}
+  }catch(e){log('b-feed','Upload failed: '+e.message,'er');}
+  bbtn.disabled=false;bbtn.textContent='Build from Screenshot';bbtn.style.opacity='1';
 }
 function prevSite(id){
   siteLead=id;const l=leads.find(x=>x.id===id);if(!l)return;

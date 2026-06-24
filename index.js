@@ -12,10 +12,14 @@ const cors = require('cors');
 const compression = require('compression');
 const session = require('express-session');
 
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) cb(null, true);
+  else cb(new Error('Only image files are allowed'));
+}});
+
 const { runScout }              = require('./agents/scout');
-// HIDDEN: Builder + Cloudflare disabled during email-only refocus
-// const { buildDemoSite }         = require('./agents/builder');
-// const { deployDemoSite: cfDeploy, isConfigured: cfConfigured } = require('./agents/cloudflare');
+const { buildDemoSite, buildFitnessSite } = require('./agents/builder');
 const { sendOutreach, generateEmailPreview, generateFollowUpEmail, hasValidDemoUrl } = require('./agents/outreach');
 const { VoiceSession } = require('./agents/voice');
 const WebSocketServer = require('ws').Server;
@@ -672,9 +676,7 @@ app.get('/api/emailfinder/credits', async (req,res) => {
   } catch(e) { res.status(500).json({ error:e.message }); }
 });
 
-// ── BUILDER (DISABLED — email-only refocus) ──────────────────────────────
-// Builder routes commented out. Code preserved in archive/site-builder branch.
-/*
+// ── BUILDER ──────────────────────────────────────────────────────────────
 app.post('/api/builder/build', async (req,res) => {
   const { id, sessionId } = req.body;
   const f = findLead(id);
@@ -683,15 +685,8 @@ app.post('/api/builder/build', async (req,res) => {
   res.json({ status:'started' });
   emit(sessionId, { type:'builder', status:'start', message:'Starting build for '+lead.name+'...' });
   try {
-    const { filename, html } = await buildDemoSite(lead, p => emit(sessionId,{ type:'builder',...p }));
+    const { filename } = await buildDemoSite(lead, p => emit(sessionId,{ type:'builder',...p }));
     let previewUrl = getBase()+'/sites/'+filename;
-    if (cfConfigured()) {
-      try {
-        previewUrl = await cfDeploy(lead.name, html, p => emit(sessionId,{ type:'builder',...p }));
-      } catch(cfErr) {
-        emit(sessionId, { type:'builder', status:'warn', message:'Cloudflare deploy failed: '+cfErr.message+', using local URL' });
-      }
-    }
     leads[index] = { ...leads[index], siteFile:filename, previewUrl, status:'Site Built' };
     save(LF,leads);
     emit(sessionId, { type:'builder', status:'done', message:lead.name+', site live! '+previewUrl });
@@ -714,15 +709,8 @@ app.post('/api/builder/build-batch', async (req,res) => {
     const { lead, index } = f;
     emit(sessionId, { type:'builder', status:'building', message:'['+(i+1)+'/'+ids.length+'] Building: '+lead.name+'...' });
     try {
-      const { filename, html } = await buildDemoSite(lead, p => emit(sessionId,{ type:'builder',...p }));
+      const { filename } = await buildDemoSite(lead, p => emit(sessionId,{ type:'builder',...p }));
       let previewUrl = getBase()+'/sites/'+filename;
-      if (cfConfigured()) {
-        try {
-          previewUrl = await cfDeploy(lead.name, html, p => emit(sessionId,{ type:'builder',...p }));
-        } catch(cfErr) {
-          emit(sessionId, { type:'builder', status:'warn', message:'Cloudflare deploy failed: '+cfErr.message+', using local URL' });
-        }
-      }
       leads[index] = { ...leads[index], siteFile:filename, previewUrl, status:'Site Built' };
       save(LF,leads);
       built++;
@@ -736,7 +724,29 @@ app.post('/api/builder/build-batch', async (req,res) => {
   emit(sessionId, { type:'builder_batch_done', built, total:ids.length });
   emit(sessionId, { type:'builder', status:'complete', message:'Done, '+built+'/'+ids.length+' sites built' });
 });
-*/
+
+// Screenshot-to-fitness-site builder
+app.post('/api/builder/build-screenshot', upload.single('screenshot'), async (req,res) => {
+  const { id, sessionId } = req.body;
+  if (!req.file) return res.status(400).json({ error:'No screenshot uploaded' });
+  const f = findLead(id);
+  if (!f) return res.status(404).json({ error:'Lead not found' });
+  const { lead, index } = f;
+  res.json({ status:'started' });
+  emit(sessionId, { type:'builder', status:'start', message:'Starting fitness site build from screenshot for '+lead.name+'...' });
+  try {
+    const screenshotData = { buffer: req.file.buffer, mimeType: req.file.mimetype };
+    const { filename } = await buildFitnessSite(lead, screenshotData, p => emit(sessionId,{ type:'builder',...p }));
+    let previewUrl = getBase()+'/sites/'+filename;
+    leads[index] = { ...leads[index], siteFile:filename, previewUrl, status:'Site Built' };
+    save(LF,leads);
+    emit(sessionId, { type:'builder', status:'done', message:lead.name+', fitness site live! '+previewUrl });
+    emit(sessionId, { type:'builder_done', leadId:id, filename, previewUrl });
+  } catch(e) {
+    emit(sessionId, { type:'builder', status:'error', message:'Failed: '+e.message });
+    emit(sessionId, { type:'error', agent:'builder', message:e.message });
+  }
+});
 
 // ── OUTREACH ──────────────────────────────────────────────────────────────
 app.post('/api/outreach/preview', async (req,res) => {
