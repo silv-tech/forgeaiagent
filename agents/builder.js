@@ -244,8 +244,9 @@ REQUIREMENTS:
 - html { scroll-behavior: smooth }
 - ALL text must be readable — white text ONLY on dark overlays, dark text on light sections
 - Buttons and cards need hover transitions
-- Mobile responsive
-- Fixed "Book Now" button bottom-right, primary color bg, white text, rounded-full, shadow-lg, z-50`;
+- Mobile responsive (test: hamburger menu, stacked columns on mobile, readable font sizes)
+- Fixed "Book Now" button bottom-right, primary color bg, white text, rounded-full, shadow-lg, z-50
+- CRITICAL: You MUST complete ALL 6 sections including Contact and Footer. Do NOT stop early. Keep CSS minimal — use Tailwind classes, avoid long custom CSS blocks. Be concise with HTML to stay within token limits.`;
 
   // Step 3: Generate site
   let html = '';
@@ -254,7 +255,7 @@ REQUIREMENTS:
       onProgress({ status:'building', message:`Calling Claude Sonnet (attempt ${attempt}/2)... ~2-4 minutes` });
       const msg = await client.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 10000,
+        max_tokens: 12000,
         messages: [{ role:'user', content: prompt }],
       }, { timeout: 300000 });
       onProgress({ status:'building', message:'Response received, validating HTML...' });
