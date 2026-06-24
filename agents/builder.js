@@ -251,12 +251,12 @@ REQUIREMENTS:
   let html = '';
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      onProgress({ status:'building', message:`Calling Claude Sonnet (attempt ${attempt}/2)... ~30-45 seconds` });
+      onProgress({ status:'building', message:`Calling Claude Sonnet (attempt ${attempt}/2)... ~2-4 minutes` });
       const msg = await client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 10000,
         messages: [{ role:'user', content: prompt }],
-      }, { timeout: 90000 });
+      }, { timeout: 300000 });
       onProgress({ status:'building', message:'Response received, validating HTML...' });
       html = msg.content[0].text.trim().replace(/^```html?\n?/i,'').replace(/\n?```$/,'').trim();
       // Auto-fix missing closing tags
