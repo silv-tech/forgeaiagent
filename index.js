@@ -477,6 +477,16 @@ app.get('/services', (req, res) => {
   res.sendFile(path.join(__dirname,'public','seo','services.html'));
 });
 
+// ── PUBLIC SITES (before auth — demo sites must be publicly accessible) ──
+const SITES_DIR = path.join(DATA_ROOT,'sites');
+fs.mkdirSync(SITES_DIR,{recursive:true});
+app.use('/sites', express.static(SITES_DIR, {
+  etag: true,
+  setHeaders: (res, p) => {
+    if (p.endsWith('.html')) res.setHeader('Cache-Control','public, max-age=300');
+  }
+}));
+
 // ── AUTH MIDDLEWARE ───────────────────────────────────────────────────────
 app.use((req, res, next) => {
   // Public: auth/logout routes, static assets (so landing page CSS/JS/images load), tracking pixel
@@ -506,15 +516,6 @@ app.use(express.static(path.join(__dirname,'public'), {
 app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname,'public','index.html'));
 });
-const SITES_DIR = path.join(DATA_ROOT,'sites');
-fs.mkdirSync(SITES_DIR,{recursive:true});
-app.use('/sites', express.static(SITES_DIR, {
-  etag: true,
-  setHeaders: (res, p) => {
-    if (p.endsWith('.html')) res.setHeader('Cache-Control','public, max-age=300');
-  }
-}));
-
 // ── SSE ───────────────────────────────────────────────────────────────────
 const sessions = {};
 app.get('/api/stream/:id', (req,res) => {
