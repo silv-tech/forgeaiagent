@@ -725,23 +725,39 @@ app.post('/api/builder/build-batch', async (req,res) => {
   emit(sessionId, { type:'builder', status:'complete', message:'Done, '+built+'/'+ids.length+' sites built' });
 });
 
-// Screenshot-to-fitness-site builder
+// Screenshot-to-fitness-site builder (lead optional — auto-creates if not provided)
 app.post('/api/builder/build-screenshot', upload.single('screenshot'), async (req,res) => {
   const { id, sessionId } = req.body;
   if (!req.file) return res.status(400).json({ error:'No screenshot uploaded' });
-  const f = findLead(id);
-  if (!f) return res.status(404).json({ error:'Lead not found' });
-  const { lead, index } = f;
-  res.json({ status:'started' });
-  emit(sessionId, { type:'builder', status:'start', message:'Starting fitness site build from screenshot for '+lead.name+'...' });
+  let lead, index;
+  if (id) {
+    const f = findLead(id);
+    if (!f) return res.status(404).json({ error:'Lead not found' });
+    lead = f.lead; index = f.index;
+  } else {
+    // Auto-create a placeholder lead — vision will fill in the name
+    const newId = randomUUID();
+    lead = { id: newId, name: 'Screenshot Lead', type: 'fitness', address: '', phone: 'N/A', rating: 'N/A', reviews: '0', status: 'New', addedAt: new Date().toISOString() };
+    leads.push(lead);
+    index = leads.length - 1;
+    save(LF, leads);
+  }
+  const leadId = lead.id;
+  res.json({ status:'started', leadId });
+  emit(sessionId, { type:'builder', status:'start', message:'Starting fitness site build from screenshot...' });
   try {
     const screenshotData = { buffer: req.file.buffer, mimeType: req.file.mimetype };
-    const { filename } = await buildFitnessSite(lead, screenshotData, p => emit(sessionId,{ type:'builder',...p }));
+    const { filename, brand } = await buildFitnessSite(lead, screenshotData, p => emit(sessionId,{ type:'builder',...p }));
+    // Update lead with extracted brand name if it was auto-created
+    if (!id && brand?.businessName) {
+      leads[index].name = brand.businessName;
+    }
     let previewUrl = getBase()+'/sites/'+filename;
     leads[index] = { ...leads[index], siteFile:filename, previewUrl, status:'Site Built' };
     save(LF,leads);
-    emit(sessionId, { type:'builder', status:'done', message:lead.name+', fitness site live! '+previewUrl });
-    emit(sessionId, { type:'builder_done', leadId:id, filename, previewUrl });
+    emit(sessionId, { type:'builder', status:'done', message:(leads[index].name)+', fitness site live! '+previewUrl });
+    emit(sessionId, { type:'builder_done', leadId, filename, previewUrl });
+    emit(sessionId, { type:'leads_changed' });
   } catch(e) {
     emit(sessionId, { type:'builder', status:'error', message:'Failed: '+e.message });
     emit(sessionId, { type:'error', agent:'builder', message:e.message });

@@ -761,10 +761,10 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <!-- Screenshot Upload Section -->
     <div class="ss" style="margin-top:2px">
       <div class="lbl">Screenshot Builder</div>
-      <p style="font-size:10.5px;color:var(--t2);line-height:1.7;margin-bottom:10px">Upload a Facebook profile screenshot of a fitness business. Claude Vision extracts brand details and builds a tailored site.</p>
-      <!-- Lead selector -->
+      <p style="font-size:10.5px;color:var(--t2);line-height:1.7;margin-bottom:10px">Upload a Facebook profile screenshot of a fitness business. Claude Vision extracts brand details and builds a tailored site. Lead is optional — one will be auto-created from the screenshot.</p>
+      <!-- Lead selector (optional) -->
       <div style="position:relative;margin-bottom:10px" id="ss-lead-wrap">
-        <input type="text" id="ss-lead-search" placeholder="Search leads..." autocomplete="off" oninput="onSearchSSLeadDrop()" onfocus="openSSLeadDrop()" style="width:100%;padding:8px 12px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;box-sizing:border-box" onfocusin="this.style.borderColor='var(--cyan)'" onfocusout="setTimeout(()=>{closeSSLeadDrop()},180)">
+        <input type="text" id="ss-lead-search" placeholder="Link to lead (optional)..." autocomplete="off" oninput="onSearchSSLeadDrop()" onfocus="openSSLeadDrop()" style="width:100%;padding:8px 12px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;box-sizing:border-box" onfocusin="this.style.borderColor='var(--cyan)'" onfocusout="setTimeout(()=>{closeSSLeadDrop()},180)">
         <div id="ss-lead-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:180px;overflow-y:auto;background:var(--s1);border:1px solid rgba(255,255,255,.12);border-top:none;border-radius:0 0 8px 8px;z-index:50"></div>
         <input type="hidden" id="ss-lead" value="">
       </div>
@@ -1559,7 +1559,8 @@ function onSSE(d){
   if(d.type==='emailfinder_batch_done'){log('ef-feed',`✓ Done, ${d.found}/${d.total} emails found`,'gr');btn('ef-btn','▶ Find Emails',false);bar('ef-pb',0);loadCreds();}
   if(d.type==='builder')log('b-feed',d.message,d.status==='done'?'gr':d.status==='retry'?'wn':d.status==='error'?'er':'');
   if(d.type==='builder_done'){if(d.leadId){const l=findLeadLocal(d.leadId);if(l){l.siteFile=d.filename;l.previewUrl=d.previewUrl;l.status='Site Built';}drawB();updStats();}}
-  if(d.type==='builder_batch_done'){btn('b-btn','▶ Build Selected',false);bar('b-pb',100);setTimeout(()=>bar('b-pb',0),2000);log('b-feed','✓ All builds complete','gr');}
+  if(d.type==='builder_batch_done'){btn('b-btn','Build Selected',false);bar('b-pb',100);setTimeout(()=>bar('b-pb',0),2000);log('b-feed','All builds complete','gr');}
+  if(d.type==='leads_changed'){loadLeads().then(()=>{drawB();drawScout();updStats();});}
   if(d.type==='outreach')log('o-feed',d.message,d.status==='sent'?'gr':d.status==='error'?'er':'');
   if(d.type==='outreach_done'){btn('o-send-btn','▶ Send Outreach',false);btn('o-force-btn','⚡ Force Resend (skip duplicate check)',false);const ol=findLeadLocal(d.leadId);if(ol&&d.result){ol.outreachEmail=d.result.sentTo;ol.outreachSentAt=d.result.sentAt;ol.status='Outreach Sent';}oChg();drawOut();}
   if(d.type==='outreach_batch'){
@@ -1845,15 +1846,14 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 async function uploadScreenshot(){
   const leadId=document.getElementById('ss-lead').value;
-  if(!leadId){log('b-feed','Select a lead first','er');return;}
   if(!ssFile){log('b-feed','Upload a screenshot first','er');return;}
   const bbtn=document.getElementById('ss-build-btn');
   bbtn.disabled=true;bbtn.textContent='Building...';bbtn.style.opacity='.6';
-  log('b-feed','Uploading screenshot and building fitness site...','hi');
+  log('b-feed',leadId?'Uploading screenshot and building fitness site...':'Uploading screenshot (auto-creating lead)...','hi');
   try{
     const fd=new FormData();
     fd.append('screenshot',ssFile);
-    fd.append('id',leadId);
+    if(leadId)fd.append('id',leadId);
     fd.append('sessionId',sid);
     const r=await fetch('/api/builder/build-screenshot',{method:'POST',body:fd,credentials:'include'});
     const j=await r.json();

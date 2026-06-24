@@ -325,7 +325,7 @@ Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>. No m
 
   const size = Math.round(html.length/1024);
   onProgress({ status:'done', message:`Site saved! ${size}KB — ${filename}`, filename });
-  return { html, filename };
+  return { html, filename, brand };
 }
 
 module.exports = { buildDemoSite, analyzeScreenshot, buildFitnessSite };
