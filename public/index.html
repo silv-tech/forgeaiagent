@@ -1893,7 +1893,7 @@ async function prevEmail(){
   const outreachType=getOutreachType();
   try{
     const r=await fetch('/api/outreach/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,outreachType})});
-    if(!r.ok){const e=await r.json().catch(()=>({}));alert('Error: '+(e.error||'Server error ('+r.status+')'));document.getElementById('o-prev-btn').textContent='◈ Preview Email Copy';return;}
+    if(!r.ok){const e=await r.json().catch(()=>({}));log('o-feed','✗ '+(e.error||'Server error ('+r.status+')'),'er');document.getElementById('o-prev-btn').textContent='◈ Preview Email Copy';return;}
     const d=await r.json();
     if(d.ok){
       document.getElementById('o-subj').value=d.copy.subject;
@@ -1901,8 +1901,8 @@ async function prevEmail(){
       document.getElementById('o-prev-box').style.display='block';
       if(d.copy.samples){document.getElementById('o-samples-box').style.display='block';document.getElementById('o-s1').textContent=d.copy.samples.instagram_post||'';document.getElementById('o-s2').textContent=d.copy.samples.review_response||'';document.getElementById('o-s3').textContent=d.copy.samples.followup_message||'';}
     }
-    else alert('Error: '+(d.error||'Unknown error. Check your Anthropic API key in Settings.'));
-  }catch(e){alert('Failed: '+e.message+'. Is your Anthropic key saved in Settings?');}
+    else log('o-feed','✗ '+(d.error||'Unknown error. Check your Anthropic API key in Settings.'),'er');
+  }catch(e){log('o-feed','✗ '+(e.message||'Network error')+'. Is your Anthropic key saved in Settings?','er');}
   document.getElementById('o-prev-btn').textContent='◈ Preview Email Copy';
 }
 async function sendOut(force){

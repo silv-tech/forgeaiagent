@@ -410,6 +410,18 @@ async function callAnthropicWithTimeout(client, params, timeoutMs = 60000) {
     return msg;
   } catch(e) {
     if (e.name === 'AbortError' || e.message?.includes('abort')) throw new Error('Anthropic API timed out after ' + Math.round(timeoutMs/1000) + 's. Try again.');
+    // Map common Anthropic API errors to user-friendly messages
+    const status = e.status || e.statusCode;
+    if (status === 400 && e.message?.includes('credit balance'))
+      throw new Error('Anthropic API credits are empty. Add credits at console.anthropic.com to continue.');
+    if (status === 401)
+      throw new Error('Anthropic API key is invalid. Check your key in Settings.');
+    if (status === 429)
+      throw new Error('Anthropic API rate limit hit. Wait a moment and try again.');
+    if (status === 500 || status === 502 || status === 503)
+      throw new Error('Anthropic API is temporarily down. Try again in a few minutes.');
+    if (status)
+      throw new Error('Anthropic API error (' + status + '). Check your API key and credits.');
     throw e;
   } finally {
     clearTimeout(timer);
