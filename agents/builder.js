@@ -255,7 +255,7 @@ REQUIREMENTS:
       onProgress({ status:'building', message:`Calling Claude Sonnet (attempt ${attempt}/2)... ~2-4 minutes` });
       const msg = await client.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 12000,
+        max_tokens: 16000,
         messages: [{ role:'user', content: prompt }],
       }, { timeout: 300000 });
       onProgress({ status:'building', message:'Response received, validating HTML...' });
