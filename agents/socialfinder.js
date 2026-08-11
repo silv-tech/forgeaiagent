@@ -1,6 +1,27 @@
 const https = require('https');
 const http = require('http');
 
+// SSRF protection: reject URLs pointing at internal/private networks
+function isSafeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '[::1]') return false;
+    const ipMatch = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+    if (ipMatch) {
+      const [, a, b] = ipMatch.map(Number);
+      if (a === 127) return false;
+      if (a === 10) return false;
+      if (a === 172 && b >= 16 && b <= 31) return false;
+      if (a === 192 && b === 168) return false;
+      if (a === 169 && b === 254) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getPlacesKey() {
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) throw new Error('Google Places API key not set.');
@@ -102,6 +123,7 @@ async function findSocialMedia(lead, onProgress) {
   if (websiteUrl) {
     onProgress({ status: 'searching', message: `🔍 Scanning ${websiteUrl} for social links...` });
     try {
+      if (!isSafeUrl(websiteUrl)) throw new Error('URL points to internal network');
       const html = await fetchPage(websiteUrl);
       socials = extractSocialLinks(html);
       const foundNames = Object.entries(socials).filter(([,v]) => v).map(([k]) => k);
@@ -120,6 +142,7 @@ async function findSocialMedia(lead, onProgress) {
     if (lead.google_maps_url) {
       onProgress({ status: 'searching', message: `🔍 Checking Google Maps listing...` });
       try {
+        if (!isSafeUrl(lead.google_maps_url)) throw new Error('URL points to internal network');
         const html = await fetchPage(lead.google_maps_url);
         const fallback = extractSocialLinks(html);
         Object.entries(fallback).forEach(([k, v]) => {

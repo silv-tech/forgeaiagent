@@ -526,7 +526,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 </div>
 
 <!-- RESEND WARNING BANNER -->
-<div id="resend-warn" style="display:none;position:fixed;top:52px;left:0;right:0;z-index:99;
+<div id="resend-warn" style="display:none;position:fixed;top:92px;left:0;right:0;z-index:99;
   background:linear-gradient(90deg,rgba(255,179,0,.95),rgba(200,140,0,.95));
   padding:10px 20px;align-items:center;gap:12px;
   border-bottom:1px solid rgba(255,179,0,.5);backdrop-filter:blur(8px)">
@@ -1357,17 +1357,17 @@ function rebuildTrackingMap(){trackingMap=new Map();for(const t of trackingData)
 const MAX_VISIBLE=200;
 let sSel=new Set(), efSel=new Set(), bSel=new Set();
 let collapsedCities=new Set();
-let sid='af_'+Math.random().toString(36).substr(2,9);
+let sid='af_'+(crypto.randomUUID?crypto.randomUUID().slice(0,12):Math.random().toString(36).substr(2,9));
 let sse=null;
 
 // ── PERF UTILS ────────────────────────────────────────────────────────────
 // Coalesce rapid-fire calls to heavy render functions into one per frame.
 function rafBatch(fn){
   let pending=false;
-  return function(){
+  return function(...args){
     if(pending)return;
     pending=true;
-    requestAnimationFrame(()=>{ pending=false; try{fn.apply(this,arguments);}catch(e){console.error(e);} });
+    requestAnimationFrame(()=>{ pending=false; try{fn.apply(this,args);}catch(e){console.error(e);} });
   };
 }
 function debounce(fn,ms){
@@ -1419,8 +1419,8 @@ function cityHeaderRow(city,count,cols,selSet,items){
   const col=collapsedCities.has(city);
   const ids=items?items.map(i=>i.lead.id):[];
   const allChecked=selSet&&ids.length&&ids.every(id=>selSet.has(id));
-  const cbHtml=selSet?`<input type="checkbox" ${allChecked?'checked':''} onclick="event.stopPropagation();toggleCitySel('${city.replace(/'/g,"\\'")}',this.checked)" style="width:auto;margin:0 8px 0 0;padding:0;accent-color:var(--cyan);vertical-align:middle">`:'';
-  return `<tr class="city-hdr" onclick="toggleCity('${city.replace(/'/g,"\\'")}')">
+  const cbHtml=selSet?`<input type="checkbox" ${allChecked?'checked':''} onclick="event.stopPropagation();toggleCitySel(this.parentElement.parentElement.parentElement.dataset.city,this.checked)" style="width:auto;margin:0 8px 0 0;padding:0;accent-color:var(--cyan);vertical-align:middle">`:'';
+  return `<tr class="city-hdr" data-city="${x(city)}" onclick="toggleCity(this.dataset.city)">
     <td colspan="${cols}"><span class="city-lbl">${cbHtml}${x(city)} <span class="city-cnt">${count}</span><span class="city-arr${col?' collapsed':''}">▼</span></span></td>
   </tr>`;
 }
@@ -1515,7 +1515,7 @@ async function checkCfg(){
     if(s.hasBrevo){
       setSavedPlaceholder('set-brevo', true, saved);
     }
-  }catch{}
+  }catch(e){console.warn('Failed to load settings:',e);}
 }
 function setChip(id,ok,lbl){const e=document.getElementById(id);if(!e)return;e.className=`chip ${ok?'on':'off'}`;e.textContent=ok?`${lbl} ✓`:lbl;}
 function setSS(id,ok){const e=document.getElementById(id);e.className=`ss-badge ${ok?'on':'off'}`;e.textContent=ok?'Connected ✓':'Not Set';}
@@ -1574,7 +1574,7 @@ function go(name){
   const pg=document.getElementById('pg-'+name);
   if(!pg)return;
   pg.classList.add('on');
-  const icons={scout:'⬡ Scout',finder:'◈ Email Finder',outreach:'◎ Outreach',closer:'⬢ Closer',pipeline:'▥ Pipeline',analytics:'▤ Analytics',voice:'🎙 Voice',settings:'⚙ Settings'};
+  const icons={scout:'⬡ Scout',finder:'◈ Email Finder',builder:'◉ Builder',outreach:'◎ Outreach',closer:'⬢ Closer',pipeline:'▥ Pipeline',analytics:'▤ Analytics',voice:'🎙 Voice',settings:'⚙ Settings'};
   document.querySelectorAll('.tab').forEach(t=>{if(t.textContent.trim()===icons[name])t.classList.add('on');});
   if(name==='finder')drawEF();
   if(name==='outreach'){loadTracking().then(()=>drawOut());fillSels();}
@@ -1812,7 +1812,7 @@ function updStats(){
   document.getElementById('b-badge').textContent=t+' leads';
 }
 
-async function delLead(id){await fetch(`/api/leads/${id}`,{method:'DELETE'});leads=leads.filter(l=>l.id!==id);sSel.delete(id);efSel.delete(id);bSel.delete(id);drawScout();drawEF();drawB();updStats();}
+async function delLead(id){try{const r=await fetch(`/api/leads/${id}`,{method:'DELETE'});if(!r.ok)throw new Error('Delete failed');leads=leads.filter(l=>l.id!==id);sSel.delete(id);efSel.delete(id);bSel.delete(id);drawScout();drawEF();drawB();updStats();}catch(e){alert('Failed to delete lead');loadLeads();}}
 async function delSel(){
   if(!bSel.size){log('b-feed','Select leads to delete first','er');return;}
   if(!confirm(`Delete ${bSel.size} selected lead(s)? This cannot be undone.`))return;
@@ -1824,8 +1824,8 @@ async function delSel(){
   log('b-feed',`✓ Deleted ${ids.length} lead(s)`,'gr');
 }
 async function exportCSV(){window.open('/api/leads/export/csv','_blank');}
-async function clearLeads(){if(!confirm('Clear all leads?'))return;leads=[];sSel.clear();efSel.clear();bSel.clear();await fetch('/api/leads',{method:'DELETE'});drawScout();updStats();}
-async function loadLeads(){try{const d=await(await fetch('/api/leads')).json();leads=d.leads||[];drawScout();updStats();}catch{}}
+async function clearLeads(){if(!confirm('Clear all leads? This cannot be undone.'))return;try{const r=await fetch('/api/leads',{method:'DELETE'});if(!r.ok)throw new Error('Failed');leads=[];sSel.clear();efSel.clear();bSel.clear();drawScout();drawEF();drawB();updStats();}catch(e){alert('Failed to clear leads');loadLeads();}}
+async function loadLeads(){try{const d=await(await fetch('/api/leads')).json();leads=d.leads||[];drawScout();updStats();}catch(e){console.warn('Failed to load leads:',e);}}
 async function loadTracking(){try{const d=await(await fetch('/api/tracking')).json();trackingData=d.tracking||[];}catch{trackingData=[];}rebuildTrackingMap();}
 
 // ── EMAIL FINDER ──────────────────────────────────────────────────────────
@@ -2028,7 +2028,8 @@ async function uploadScreenshot(){
 function prevSite(id){
   siteLead=id;const l=leads.find(x=>x.id===id);if(!l)return;
   const localUrl=l.siteFile?`/sites/${l.siteFile}`:'';
-  const publicUrl=l.previewUrl&&!l.previewUrl.includes('ngrok')&&!l.previewUrl.includes('localhost')?l.previewUrl:'';
+  const safePreview=l.previewUrl&&!l.previewUrl.match(/^javascript:/i)?l.previewUrl:'';
+  const publicUrl=safePreview&&!safePreview.includes('ngrok')&&!safePreview.includes('localhost')?safePreview:'';
   const iframeSrc=publicUrl||localUrl;
   document.getElementById('site-name').textContent=l.name+', '+(publicUrl.includes('pages.dev')?`☁️ ${publicUrl}`:l.address);
   document.getElementById('sframe').src=iframeSrc;
@@ -2257,7 +2258,7 @@ function drawOut(){
     <td style="color:var(--t4);font-family:var(--mono);font-size:9.5px">${i+1}</td>
     <td><div class="ln">${x(l.name)}</div><div class="la">${x(l.address)}</div></td>
     <td style="font-family:var(--mono);font-size:10.5px;color:var(--t2)">${x(l.outreachEmail||'')}</td>
-    <td>${l.previewUrl?`<a href="${l.previewUrl}" target="_blank" class="ab" style="text-decoration:none;display:inline-block">View ↗</a>`:'-'}</td>
+    <td>${l.previewUrl?`<a href="${l.previewUrl && !l.previewUrl.match(/^javascript:/i) ? x(l.previewUrl) : '#'}" target="_blank" class="ab" style="text-decoration:none;display:inline-block">View ↗</a>`:'-'}</td>
     <td style="font-family:var(--mono);font-size:9.5px;color:var(--t3)">${l.outreachSentAt?new Date(l.outreachSentAt).toLocaleString():''}</td>
     <td>${trackHtml}</td>
     <td>${tr.followUps?`<span style="background:rgba(251,191,36,.15);color:#fbbf24;font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600">${tr.followUps}x sent</span>`:'<span style="color:var(--t4);font-size:9px">-</span>'}</td>
@@ -2268,7 +2269,7 @@ function drawOut(){
 // ── OUTREACH SELECTION & BATCH FOLLOW-UP ──────────────────────────────────
 let oSel=new Set();
 function oTogAll(checked){document.querySelectorAll('.o-cb').forEach(c=>{c.checked=checked;if(checked)oSel.add(c.value);else oSel.delete(c.value);});oSelUpd();}
-function oSelUpd(){oSel=new Set([...document.querySelectorAll('.o-cb:checked')].map(c=>c.value));const b=document.getElementById('o-fu-btn');b.textContent=oSel.size?`🔄 Follow-Up Selected (${oSel.size})`:'🔄 Follow-Up Selected';}
+function oSelUpd(){const checked=new Set([...document.querySelectorAll('.o-cb:checked')].map(c=>c.value));const unchecked=[...document.querySelectorAll('.o-cb:not(:checked)')].map(c=>c.value);checked.forEach(id=>oSel.add(id));unchecked.forEach(id=>oSel.delete(id));const b=document.getElementById('o-fu-btn');b.textContent=oSel.size?`🔄 Follow-Up Selected (${oSel.size})`:'🔄 Follow-Up Selected';}
 function oSelectVisible(){document.querySelectorAll('.o-cb').forEach(c=>{c.checked=true;oSel.add(c.value);});oSelUpd();}
 async function batchFollowUp(){
   if(!oSel.size){alert('Select leads from the outreach log first');return;}
@@ -2365,7 +2366,7 @@ async function loadAnal(){
     }
     const cEl=document.getElementById('a-cities');
     if(cEl&&d.cities){
-      cEl.innerHTML=Object.entries(d.cities).map(([city,c])=>`<div class="pr"><div class="pl">${city}</div><div class="pt"><div class="pf" style="width:${(c.total/max)*100}%"></div></div><div class="pn">${c.total}</div></div>`).join('')||'<div style="color:var(--t4);font-size:11px">No data</div>';
+      cEl.innerHTML=Object.entries(d.cities).map(([city,c])=>`<div class="pr"><div class="pl">${x(city)}</div><div class="pt"><div class="pf" style="width:${(c.total/max)*100}%"></div></div><div class="pn">${c.total}</div></div>`).join('')||'<div style="color:var(--t4);font-size:11px">No data</div>';
     }
   }catch(e){console.error('Analytics load error:',e);}
 }
@@ -2420,7 +2421,7 @@ async function scoreAll(){
   try{const r=await fetch('/api/leads/score',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
   if(!r.ok){log('s-feed','Scoring failed ('+r.status+')','er');return;}
   const d=await r.json();
-  if(d.ok){leads=d.leads;drawScout();if(document.getElementById('pg-pipeline').classList.contains('on'))drawPipeline();log('s-feed','✓ All leads scored','gr');}}catch(e){log('s-feed','Scoring failed: '+e.message,'er');}
+  if(d.ok&&d.leads){d.leads.forEach(sl=>{const ex=leads.find(l=>l.id===sl.id);if(ex){ex.score=sl.score;ex.scoreBreakdown=sl.scoreBreakdown;}});drawScout();if(document.getElementById('pg-pipeline').classList.contains('on'))drawPipeline();log('s-feed','✓ All leads scored','gr');}}catch(e){log('s-feed','Scoring failed: '+e.message,'er');}
 }
 
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
@@ -2450,7 +2451,7 @@ function sb(s){
   const m={'New':'b-new','Site Built':'b-built','Outreach Sent':'b-sent','Replied':'b-rep','Hot Lead 🔥':'b-hot'};
   return`<span class="badge ${m[s]||'b-new'}">${x(s)}</span>`;
 }
-function x(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function x(s){return(s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function btn(id,lbl,dis){const b=document.getElementById(id);if(!b)return;if(lbl)b.textContent=lbl;b.disabled=dis;}
 async function post(url,body){
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -2657,15 +2658,21 @@ async function saveProfile(){
   if(!body.businessName){alert('Business name is required');return;}
   const url=id?'/api/voice/profiles/'+id:'/api/voice/profiles';
   const method=id?'PUT':'POST';
-  await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  hideProfileForm();
-  await loadVoiceProfiles();
+  try{
+    const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok)throw new Error('Save failed');
+    hideProfileForm();
+    await loadVoiceProfiles();
+  }catch(e){alert('Failed to save profile: '+e.message);}
 }
 
 async function deleteProfile(id){
   if(!confirm('Delete this voice profile?'))return;
-  await fetch('/api/voice/profiles/'+id,{method:'DELETE'});
-  await loadVoiceProfiles();
+  try{
+    const r=await fetch('/api/voice/profiles/'+id,{method:'DELETE'});
+    if(!r.ok)throw new Error('Delete failed');
+    await loadVoiceProfiles();
+  }catch(e){alert('Failed to delete profile: '+e.message);}
 }
 
 // ── Call Log ──

@@ -84,6 +84,10 @@ Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>. No m
       });
       onProgress({ status:'building', message:`📥 Response received, validating HTML...` });
       html = msg.content[0].text.trim().replace(/^```html?\n?/i,'').replace(/\n?```$/,'').trim();
+      // Sanitize: remove script tags and on* event handlers from AI-generated HTML
+      html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      html = html.replace(/\s+on\w+\s*=\s*(['"])[^'"]*\1/gi, '');
+      html = html.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
       // Auto-fix missing closing tags
       if (html.includes('<!DOCTYPE') && !html.includes('</html>') && html.length > 10000) {
         onProgress({ status:'building', message:'🔧 Auto-fixing incomplete HTML...' });
@@ -260,6 +264,10 @@ REQUIREMENTS:
       }, { timeout: 300000 });
       onProgress({ status:'building', message:'Response received, validating HTML...' });
       html = msg.content[0].text.trim().replace(/^```html?\n?/i,'').replace(/\n?```$/,'').trim();
+      // Sanitize: remove script tags and on* event handlers from AI-generated HTML
+      html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      html = html.replace(/\s+on\w+\s*=\s*(['"])[^'"]*\1/gi, '');
+      html = html.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
       // Auto-fix missing closing tags
       if (html.includes('<!DOCTYPE') && !html.includes('</html>') && html.length > 10000) {
         onProgress({ status:'building', message:'Auto-fixing incomplete HTML...' });

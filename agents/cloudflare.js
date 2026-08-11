@@ -1,7 +1,7 @@
 const crypto = require('crypto');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const { promisify } = require('util');
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
@@ -40,11 +40,16 @@ async function cfRequest(method, endpoint, body, contentType) {
   const headers = { 'Authorization': `Bearer ${token}` };
   if (contentType) headers['Content-Type'] = contentType;
   const res = await fetch(`https://api.cloudflare.com/client/v4${endpoint}`, { method, headers, body });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    try { return JSON.parse(text); } catch { return { success: false, errors: [{ message: `HTTP ${res.status}: ${text}` }] }; }
+  }
   return res.json();
 }
 
 async function deployDemoSite(businessName, htmlContent, onProgress) {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  if (!accountId) throw new Error('CLOUDFLARE_ACCOUNT_ID is not set.');
   const projectName = slugify(businessName);
   const tmpDir = path.join(os.tmpdir(), 'cf-' + crypto.randomBytes(4).toString('hex'));
 
@@ -57,8 +62,8 @@ async function deployDemoSite(businessName, htmlContent, onProgress) {
   fs.writeFileSync(path.join(tmpDir, 'index.html'), htmlContent, 'utf8');
 
   try {
-    const cmd = `npx --yes wrangler pages deploy "${tmpDir}" --project-name "${projectName}" --branch main`;
-    const { stdout, stderr } = await execAsync(cmd, {
+    const args = ['--yes', 'wrangler', 'pages', 'deploy', tmpDir, '--project-name', projectName, '--branch', 'main'];
+    const { stdout, stderr } = await execFileAsync('npx', args, {
       env: {
         ...process.env,
         CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,

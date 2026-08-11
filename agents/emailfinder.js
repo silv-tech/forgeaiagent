@@ -5,7 +5,43 @@ const puppeteer = require('puppeteer');
 // Social finder no longer needed, we use slug guessing + Puppeteer directly
 const HUNTER = 'https://api.hunter.io/v2';
 
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+
+// SSRF protection: reject URLs pointing at internal/private networks
+function isSafeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '[::1]') return false;
+    // Check for private/reserved IP ranges
+    const ipMatch = hostname.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+    if (ipMatch) {
+      const [, a, b] = ipMatch.map(Number);
+      if (a === 127) return false;                    // 127.x.x.x loopback
+      if (a === 10) return false;                     // 10.x.x.x private
+      if (a === 172 && b >= 16 && b <= 31) return false; // 172.16-31.x.x private
+      if (a === 192 && b === 168) return false;       // 192.168.x.x private
+      if (a === 169 && b === 254) return false;       // 169.254.x.x link-local
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Concurrency limiter for Puppeteer pages
+const MAX_PAGES = 3;
+let activePagesCount = 0;
+async function acquirePage() {
+  while (activePagesCount >= MAX_PAGES) await new Promise(r => setTimeout(r, 500));
+  activePagesCount++;
+  const browser = await getBrowser();
+  return browser.newPage();
+}
+function releasePage(page) {
+  activePagesCount--;
+  if (page) page.close().catch(() => {});
+}
 
 // Shared browser instance (reused across calls)
 let browserInstance = null;
@@ -48,7 +84,7 @@ function extractEmails(text) {
     'squarespace.com','wix.com','godaddy.com','wordpress.com','shopify.com'];
   return [...new Set(matches)].filter(e => {
     const domain = e.split('@')[1].toLowerCase();
-    return !blacklist.some(b => domain.includes(b)) && e.length < 60;
+    return !blacklist.some(b => domain === b || domain.endsWith('.' + b)) && e.length < 60;
   });
 }
 
@@ -58,7 +94,7 @@ function fetchPage(url, maxRedirects = 5) {
     if (maxRedirects <= 0) return reject(new Error('Too many redirects'));
     const timer = setTimeout(() => reject(new Error('Timeout')), 10000);
     const client = url.startsWith('https') ? https : http;
-    client.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' } }, res => {
+    client.get(url, { headers: { 'User-Agent': UA } }, res => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         clearTimeout(timer);
         return fetchPage(res.headers.location, maxRedirects - 1).then(resolve).catch(reject);
@@ -140,12 +176,11 @@ async function findEmailFromFacebook(lead, onProgress) {
     }
 
     onProgress && onProgress({ status:'searching', message:`📘 Trying ${slugs.length} Facebook URL guesses for ${lead.name}...` });
-    const browser = await getBrowser();
 
     for (const slug of slugs) {
       let page;
       try {
-        page = await browser.newPage();
+        page = await acquirePage();
         await page.setUserAgent(UA);
         const fbUrl = 'https://www.facebook.com/' + slug;
         await page.goto(fbUrl + '/about', { waitUntil: 'networkidle2', timeout: 15000 });
@@ -168,7 +203,7 @@ async function findEmailFromFacebook(lead, onProgress) {
 
           // We already have the about page text, check for email right here
           if (emails.length) {
-            await page.close();
+            releasePage(page); page = null;
             onProgress && onProgress({ status:'found', message:`✅ Found on Facebook: ${emails[0]}` });
             return { email: emails[0], confidence: 80, source: 'facebook' };
           }
@@ -179,7 +214,7 @@ async function findEmailFromFacebook(lead, onProgress) {
           await new Promise(r => setTimeout(r, 2000));
           const mainText = await page.evaluate(() => document.body.innerText);
           const mainEmails = extractEmails(mainText);
-          await page.close();
+          releasePage(page); page = null;
 
           if (mainEmails.length) {
             onProgress && onProgress({ status:'found', message:`✅ Found on Facebook: ${mainEmails[0]}` });
@@ -189,9 +224,9 @@ async function findEmailFromFacebook(lead, onProgress) {
           onProgress && onProgress({ status:'not_found', message:`No email on Facebook page` });
           return null;
         }
-        await page.close();
+        releasePage(page); page = null;
       } catch(e) {
-        if (page) await page.close().catch(() => {});
+        if (page) releasePage(page);
       }
     }
     onProgress && onProgress({ status:'not_found', message:`No Facebook page found for ${lead.name}` });
@@ -202,8 +237,7 @@ async function findEmailFromFacebook(lead, onProgress) {
   onProgress && onProgress({ status:'searching', message:`📘 Scraping Facebook: ${knownUrl}` });
   let page;
   try {
-    const browser = await getBrowser();
-    page = await browser.newPage();
+    page = await acquirePage();
     await page.setUserAgent(UA);
     const aboutUrl = knownUrl.replace(/\/$/, '') + '/about';
     await page.goto(aboutUrl, { waitUntil: 'networkidle2', timeout: 20000 });
@@ -218,7 +252,7 @@ async function findEmailFromFacebook(lead, onProgress) {
       const mainText = await page.evaluate(() => document.body.innerText);
       emails = extractEmails(mainText);
     }
-    await page.close();
+    releasePage(page); page = null;
 
     if (emails.length) {
       onProgress && onProgress({ status:'found', message:`✅ Found on Facebook: ${emails[0]}` });
@@ -226,7 +260,7 @@ async function findEmailFromFacebook(lead, onProgress) {
     }
     onProgress && onProgress({ status:'not_found', message:`No email on Facebook page` });
   } catch(e) {
-    if (page) await page.close().catch(() => {});
+    if (page) releasePage(page);
     onProgress && onProgress({ status:'error', message:`⚠ Facebook scrape failed: ${e.message}` });
   }
   return null;
@@ -246,8 +280,8 @@ async function ensureIgLogin(browser, onProgress) {
   onProgress && onProgress({ status:'searching', message:`📸 Logging into Instagram...` });
   let page;
   try {
-    page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    page = await acquirePage();
+    await page.setUserAgent(UA);
     await page.goto('https://www.instagram.com/accounts/login/', { waitUntil: 'networkidle2', timeout: 20000 });
     await new Promise(r => setTimeout(r, 2000));
 
@@ -265,7 +299,7 @@ async function ensureIgLogin(browser, onProgress) {
     const url = page.url();
     if (url.includes('login') || url.includes('challenge') || url.includes('checkpoint')) {
       onProgress && onProgress({ status:'error', message:`⚠ Instagram login blocked, check account for security prompts` });
-      await page.close();
+      releasePage(page); page = null;
       return false;
     }
 
@@ -284,10 +318,10 @@ async function ensureIgLogin(browser, onProgress) {
 
     igLoggedIn = true;
     onProgress && onProgress({ status:'found', message:`✅ Instagram login successful` });
-    await page.close();
+    releasePage(page); page = null;
     return true;
   } catch(e) {
-    if (page) await page.close().catch(() => {});
+    if (page) releasePage(page);
     onProgress && onProgress({ status:'error', message:`⚠ Instagram login failed: ${e.message}` });
     return false;
   }
@@ -317,7 +351,7 @@ async function findEmailFromInstagram(lead, onProgress) {
     for (const slug of slugs) {
       let page;
       try {
-        page = await browser.newPage();
+        page = await acquirePage();
         await page.setUserAgent(UA);
         const igUrl = 'https://www.instagram.com/' + slug + '/';
         await page.goto(igUrl, { waitUntil: 'networkidle2', timeout: 15000 });
@@ -332,7 +366,7 @@ async function findEmailFromInstagram(lead, onProgress) {
           const mailtos = Array.from(document.querySelectorAll('a[href^="mailto:"]')).map(a => a.href.replace('mailto:', '').split('?')[0]);
           return { text, exists, mailtos };
         });
-        await page.close();
+        releasePage(page); page = null;
 
         if (data.exists) {
           if (!lead.socials) lead.socials = {};
@@ -354,7 +388,7 @@ async function findEmailFromInstagram(lead, onProgress) {
           return null;
         }
       } catch(e) {
-        if (page) await page.close().catch(() => {});
+        if (page) releasePage(page);
       }
     }
     onProgress && onProgress({ status:'not_found', message:`No Instagram page found for ${lead.name}` });
@@ -365,7 +399,7 @@ async function findEmailFromInstagram(lead, onProgress) {
   onProgress && onProgress({ status:'searching', message:`📸 Scraping Instagram: ${knownUrl}` });
   let page;
   try {
-    page = await browser.newPage();
+    page = await acquirePage();
     await page.setUserAgent(UA);
     await page.goto(knownUrl, { waitUntil: 'networkidle2', timeout: 20000 });
     await new Promise(r => setTimeout(r, 2000));
@@ -375,7 +409,7 @@ async function findEmailFromInstagram(lead, onProgress) {
       const mailtos = Array.from(document.querySelectorAll('a[href^="mailto:"]')).map(a => a.href.replace('mailto:', '').split('?')[0]);
       return { text, mailtos };
     });
-    await page.close();
+    releasePage(page); page = null;
 
     if (data.mailtos.length) {
       onProgress && onProgress({ status:'found', message:`✅ Found on Instagram (email button): ${data.mailtos[0]}` });
@@ -388,7 +422,7 @@ async function findEmailFromInstagram(lead, onProgress) {
     }
     onProgress && onProgress({ status:'not_found', message:`No email on Instagram` });
   } catch(e) {
-    if (page) await page.close().catch(() => {});
+    if (page) releasePage(page);
     onProgress && onProgress({ status:'error', message:`⚠ Instagram scrape failed: ${e.message}` });
   }
   return null;
@@ -410,6 +444,7 @@ async function findEmailFromWebsite(lead, onProgress) {
   for (const path of subpages) {
     try {
       const url = path ? new URL(path, website).href : website;
+      if (!isSafeUrl(url)) continue;
       onProgress && onProgress({ status:'searching', message:`🌐 Checking ${url}` });
       const html = await fetchPage(url);
       const found = extractEmails(html);
@@ -431,8 +466,7 @@ async function findEmailViaGoogle(lead, onProgress) {
   onProgress && onProgress({ status:'searching', message:`🔎 Googling "${lead.name}" to find website...` });
   let page;
   try {
-    const browser = await getBrowser();
-    page = await browser.newPage();
+    page = await acquirePage();
     await page.setUserAgent(UA);
     const query = encodeURIComponent(`${lead.name} ${lead.address || ''} contact email`);
     await page.goto(`https://www.google.com/search?q=${query}`, { waitUntil: 'networkidle2', timeout: 15000 });
@@ -449,7 +483,7 @@ async function findEmailViaGoogle(lead, onProgress) {
       const text = document.body.innerText;
       return { links, text };
     });
-    await page.close();
+    releasePage(page); page = null;
 
     // Check if any emails visible directly in Google results
     const googleEmails = extractEmails(data.text);
@@ -461,6 +495,7 @@ async function findEmailViaGoogle(lead, onProgress) {
     // Try scraping the top result websites
     for (const url of data.links) {
       try {
+        if (!isSafeUrl(url)) continue;
         onProgress && onProgress({ status:'searching', message:`🌐 Checking ${new URL(url).hostname}...` });
         const html = await fetchPage(url);
         const emails = extractEmails(html);
@@ -475,7 +510,7 @@ async function findEmailViaGoogle(lead, onProgress) {
 
     onProgress && onProgress({ status:'not_found', message:`No email found via Google search` });
   } catch(e) {
-    if (page) await page.close().catch(() => {});
+    if (page) releasePage(page);
     onProgress && onProgress({ status:'error', message:`⚠ Google search failed: ${e.message}` });
   }
   return null;

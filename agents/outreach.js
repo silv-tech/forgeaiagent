@@ -526,8 +526,8 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
     ? { subject: subjectOverride, body: bodyOverride }
     : await generateEmailCopy(lead, previewUrl, outreachType);
 
-  const { RESEND_API_KEY, RESEND_FROM, BREVO_API_KEY, SMTP_HOST, SMTP_USER } = process.env;
-  if (!RESEND_API_KEY && !BREVO_API_KEY && !SMTP_HOST) throw new Error('No email provider configured. Set Resend, Brevo, or SMTP in Settings.');
+  const { RESEND_API_KEY, RESEND_FROM, BREVO_API_KEY, SMTP_USER } = process.env;
+  if (!RESEND_API_KEY && !BREVO_API_KEY) throw new Error('No email provider configured. Set Resend or Brevo API key in Settings.');
 
   const fromEmail = RESEND_FROM || SMTP_USER || 'leif@forgeaiagent.com';
   onProgress({ status: 'sending', message: `Sending to ${emailAddress}...` });

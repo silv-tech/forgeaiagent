@@ -1,6 +1,8 @@
 const path = require('path');
 const fs = require('fs');
 const { randomUUID } = require('crypto');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const AGENCY_TYPES = new Set(['marketing_agency','digital_agency','creative_agency','advertising_agency','social_media_agency','seo_agency','pr_agency','web_design_agency','video_production_agency','branding_agency','content_marketing_agency','email_marketing_agency','media_buying_agency']);
 // Persistent data directory, set DATA_DIR env var on Railway to your volume mount path (e.g. /data)
 const DATA_ROOT = process.env.DATA_DIR || __dirname;
@@ -80,7 +82,14 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(cors());
+// Security headers
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+// CORS — restrict to own domain + localhost dev
+const ALLOWED_ORIGINS = [process.env.PUBLIC_URL, 'https://forgeaiagent.com', 'https://www.forgeaiagent.com', 'http://localhost:3000'].filter(Boolean);
+app.use(cors({ origin: (origin, cb) => { if (!origin || ALLOWED_ORIGINS.includes(origin)) cb(null, true); else cb(null, false); }, credentials: true }));
+// Rate limiting
+app.use('/login', rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: { error: 'Too many login attempts, try again in 15 minutes' } }));
+app.use('/api/', rateLimit({ windowMs: 60 * 1000, max: 120, message: { error: 'Too many requests, slow down' } }));
 // Gzip responses. Skip SSE stream so progress events flush immediately.
 app.use(compression({
   filter: (req, res) => {
@@ -98,8 +107,10 @@ app.use(session({
 }));
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
-const LOGIN_USER = process.env.LOGIN_USER || 'leif';
-const LOGIN_PASS = process.env.LOGIN_PASS || 'forgeai2026';
+// Auth — require env vars, no hardcoded fallback
+const LOGIN_USER = process.env.LOGIN_USER;
+const LOGIN_PASS = process.env.LOGIN_PASS;
+if (!LOGIN_USER || !LOGIN_PASS) console.warn('[WARN] LOGIN_USER/LOGIN_PASS env vars not set — login disabled until configured');
 
 app.get('/login', (req, res) => {
   if (req.session.auth) return res.redirect('/app');
@@ -171,7 +182,11 @@ button:active{transform:translateY(0)}
 
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
-  if (username === LOGIN_USER && password === LOGIN_PASS) {
+  if (!LOGIN_USER || !LOGIN_PASS) return res.redirect('/login?err=1');
+  // Timing-safe comparison to prevent timing attacks
+  const userMatch = LOGIN_USER.length === (username||'').length && require('crypto').timingSafeEqual(Buffer.from(LOGIN_USER), Buffer.from(username||''));
+  const passMatch = LOGIN_PASS.length === (password||'').length && require('crypto').timingSafeEqual(Buffer.from(LOGIN_PASS), Buffer.from(password||''));
+  if (userMatch && passMatch) {
     req.session.auth = true;
     return res.redirect('/app');
   }
@@ -359,12 +374,14 @@ app.use(express.static(path.join(__dirname,'public','seo'), {
     }
   }
 }));
-app.get('/how-it-works', (req, res) => res.redirect(301, '/'));
 app.get('/blog', (req, res) => res.sendFile(path.join(__dirname,'public','seo','blog','index.html')));
 app.get('/blog/:slug', (req, res) => {
-  const file = path.join(__dirname,'public','seo','blog', req.params.slug + '.html');
-  if (fs.existsSync(file)) return res.sendFile(file);
-  res.redirect(301, '/blog');
+  // Sanitize slug to prevent path traversal
+  const slug = req.params.slug.replace(/[^a-zA-Z0-9_-]/g, '');
+  const file = path.join(__dirname,'public','seo','blog', slug + '.html');
+  const blogDir = path.join(__dirname,'public','seo','blog');
+  if (!file.startsWith(blogDir) || !fs.existsSync(file)) return res.redirect(301, '/blog');
+  res.sendFile(file);
 });
 
 // Landing-page contact form (public, no auth).
@@ -469,9 +486,7 @@ app.get('/api/public-stats', (req, res) => {
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname,'public','seo','landing.html'));
 });
-app.get('/how-it-works', (req, res) => {
-  res.sendFile(path.join(__dirname,'public','seo','landing.html'));
-});
+app.get('/how-it-works', (req, res) => res.redirect(301, '/'));
 app.get('/voice', (req, res) => {
   res.sendFile(path.join(__dirname,'public','seo','voice.html'));
 });
@@ -491,15 +506,25 @@ app.use('/sites', express.static(SITES_DIR, {
 
 // ── AUTH MIDDLEWARE ───────────────────────────────────────────────────────
 app.use((req, res, next) => {
-  // Public: auth/logout routes, static assets (so landing page CSS/JS/images load), tracking pixel
+  // Public: auth/logout routes, tracking pixel/click, unsubscribe
   if (req.path === '/login' || req.path === '/logout') return next();
-  if (/\.(css|js|jpg|jpeg|png|webp|svg|ico|xml|txt|woff|woff2|gif|mp4|webm|ogg)$/.test(req.path)) return next();
-  // Voice webhooks from Twilio must bypass auth
+  if (req.path.startsWith('/t/') || req.path.startsWith('/c/') || req.path === '/unsubscribe') return next();
+  // Static assets — only bypass if NOT an API route (prevents /api/leads.js bypass)
+  if (!req.path.startsWith('/api/') && /\.(css|js|jpg|jpeg|png|webp|svg|ico|xml|txt|woff|woff2|gif|mp4|webm|ogg)$/.test(req.path)) return next();
+  // Voice webhooks from Twilio must bypass auth (validated separately via Twilio signature)
   if (req.path === '/api/voice/incoming' || req.path === '/api/voice/status') return next();
   if (req.session.auth) return next();
   // Unauthenticated API calls get JSON error instead of redirect
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Unauthorized' });
   res.redirect('/login');
+});
+// Simple CSRF check via Origin header
+app.use((req, res, next) => {
+  if (['GET','HEAD','OPTIONS'].includes(req.method)) return next();
+  const origin = req.headers.origin;
+  if (!origin) return next(); // same-origin requests may not include Origin
+  if (ALLOWED_ORIGINS.includes(origin)) return next();
+  return res.status(403).json({ error: 'Forbidden: invalid origin' });
 });
 app.use(express.static(path.join(__dirname,'public'), {
   etag: true,
@@ -912,13 +937,13 @@ app.post('/api/outreach/batch', async (req,res) => {
       const result = await sendOutreach(lead, previewUrl, email, () => {}, null, null, trackingOpts, autoType);
       // Only create tracking record AFTER successful send
       tracking.push({ trackingId, leadId:lead.id, type:'outreach', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
-      save(TF, tracking);
+      saveDebounced(TF, tracking);
       outreach.push({ leadId:lead.id, lead:lead.name, ...result });
-      save(OF, outreach);
+      saveDebounced(OF, outreach);
       leads[index].status='Outreach Sent';
       leads[index].outreachEmail=email;
       leads[index].outreachSentAt=result.sentAt;
-      save(LF, leads);
+      saveDebounced(LF, leads);
       sent++;
       emit(sessionId, { type:'outreach_batch', status:'sent', message:`✅ [${sent}/${deduped.length}] ${lead.name} → ${email}` });
     } catch(e) {
@@ -1172,7 +1197,15 @@ app.post('/api/closer/handle', async (req,res) => {
 });
 
 // ── LEADS ─────────────────────────────────────────────────────────────────
-app.get('/api/leads', (req,res) => res.json({ leads, total:leads.length }));
+app.get('/api/leads', (req,res) => {
+  const page = parseInt(req.query.page) || 0;
+  const limit = parseInt(req.query.limit) || 0;
+  if (limit > 0) {
+    const start = page * limit;
+    return res.json({ leads: leads.slice(start, start + limit), total: leads.length, page, limit });
+  }
+  res.json({ leads, total: leads.length });
+});
 
 app.delete('/api/leads/:id', (req,res) => {
   const idx = leads.findIndex(l => l.id === req.params.id);
@@ -1521,6 +1554,17 @@ app.post('/api/settings', (req,res) => {
 // ── DATA RESTORE (import local data to server) ─────────────────────────
 app.post('/api/restore', (req,res) => {
   const { leads:ld, outreach:or, replies:rp, tracking:tr, sequences:sq, scheduled:sc } = req.body;
+  // Create backup before overwriting
+  const backupDir = path.join(DATA, 'backups');
+  try {
+    fs.mkdirSync(backupDir, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupFile = path.join(backupDir, `pre-restore-${ts}.json`);
+    fs.writeFileSync(backupFile, JSON.stringify({ leads, outreach, replies, tracking, sequences, scheduled }, null, 2));
+    // Keep only last 5 backups
+    const backups = fs.readdirSync(backupDir).filter(f => f.startsWith('pre-restore-')).sort();
+    while (backups.length > 5) { try { fs.unlinkSync(path.join(backupDir, backups.shift())); } catch {} }
+  } catch (e) { console.warn('[restore] Backup failed:', e.message); }
   // Mutate in place to preserve references held by running callbacks
   if (ld && Array.isArray(ld)) { leads.length = 0; leads.push(...ld); save(LF, leads); }
   if (or && Array.isArray(or)) { outreach.length = 0; outreach.push(...or); save(OF, outreach); }
@@ -1535,6 +1579,7 @@ app.post('/api/restore', (req,res) => {
 
 // ── VOLUME DIAGNOSTIC ───────────────────────────────────────────────────
 app.get('/api/debug/volume', (req,res) => {
+  if (process.env.NODE_ENV === 'production') return res.status(404).json({ error: 'Not found' });
   const scan = dir => { try { return fs.readdirSync(dir).map(f => { const fp=path.join(dir,f); const s=fs.statSync(fp); return { name:f, size:s.size, isDir:s.isDirectory() }; }); } catch { return []; } };
   res.json({ DATA_ROOT, DATA, files_at_root: scan(DATA_ROOT), files_at_data: scan(DATA), leads_count: leads.length });
 });
@@ -1567,7 +1612,23 @@ app.delete('/api/unsubscribed/:email', (req,res) => {
 const activeCalls = new Map();
 
 // Twilio incoming call webhook — returns TwiML with <Stream>
-app.post('/api/voice/incoming', (req, res) => {
+// Twilio signature validation middleware
+function validateTwilio(req, res, next) {
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  if (!authToken) return next(); // skip validation if no token configured
+  try {
+    const twilio = require('twilio');
+    const sig = req.headers['x-twilio-signature'];
+    const url = `${getBase()}${req.originalUrl}`;
+    if (!twilio.validateRequest(authToken, sig, url, req.body)) {
+      console.warn('[voice] Invalid Twilio signature');
+      return res.status(403).send('Forbidden');
+    }
+  } catch (e) { console.warn('[voice] Twilio validation error:', e.message); }
+  next();
+}
+
+app.post('/api/voice/incoming', validateTwilio, (req, res) => {
   const callerNumber = req.body.From || 'Unknown';
   const calledNumber = req.body.To || '';
   const callSid = req.body.CallSid || '';
@@ -1598,7 +1659,7 @@ app.post('/api/voice/incoming', (req, res) => {
 });
 
 // Twilio call status callback
-app.post('/api/voice/status', (req, res) => {
+app.post('/api/voice/status', validateTwilio, (req, res) => {
   const { CallSid, CallStatus } = req.body;
   console.log(`[voice] Status update: ${CallSid} → ${CallStatus}`);
   if (CallStatus === 'completed' || CallStatus === 'failed' || CallStatus === 'busy' || CallStatus === 'no-answer') {
@@ -1635,7 +1696,7 @@ app.post('/api/voice/profiles', (req, res) => {
     voiceId: req.body.voiceId || 'asteria',
     active: req.body.active !== false,
     createdAt: new Date().toISOString(),
-    stats: { totalCalls: 0, totalMinutes: 0, totalCost: 0, messagessTaken: 0, appointmentsBooked: 0, callsTransferred: 0 }
+    stats: { totalCalls: 0, totalMinutes: 0, totalCost: 0, messagesTaken: 0, appointmentsBooked: 0, callsTransferred: 0 }
   };
   voiceProfiles.push(profile);
   save(VPF, voiceProfiles);
@@ -1654,7 +1715,8 @@ app.put('/api/voice/profiles/:id', (req, res) => {
 });
 
 app.delete('/api/voice/profiles/:id', (req, res) => {
-  voiceProfiles = voiceProfiles.filter(p => p.id !== req.params.id);
+  const idx = voiceProfiles.findIndex(p => p.id === req.params.id);
+  if (idx >= 0) voiceProfiles.splice(idx, 1);
   save(VPF, voiceProfiles);
   res.json({ ok: true });
 });
@@ -1827,7 +1889,7 @@ voiceWss.on('connection', (ws) => {
             // Update profile stats
             const pi = voiceProfiles.findIndex(p => p.id === profile.id);
             if (pi >= 0) {
-              if (action.type === 'take_message') voiceProfiles[pi].stats.messagessTaken = (voiceProfiles[pi].stats.messagessTaken || 0) + 1;
+              if (action.type === 'take_message') voiceProfiles[pi].stats.messagesTaken = (voiceProfiles[pi].stats.messagesTaken || 0) + 1;
               if (action.type === 'book_appointment') voiceProfiles[pi].stats.appointmentsBooked = (voiceProfiles[pi].stats.appointmentsBooked || 0) + 1;
               if (action.type === 'transfer_call') voiceProfiles[pi].stats.callsTransferred = (voiceProfiles[pi].stats.callsTransferred || 0) + 1;
               save(VPF, voiceProfiles);

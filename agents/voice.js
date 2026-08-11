@@ -8,6 +8,9 @@ const { createClient } = require('@deepgram/sdk');
 const WebSocket = require('ws');
 const twilio = require('twilio');
 
+// Escape XML special characters to prevent TwiML injection
+function escapeXml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
+
 // ── MULAW ↔ LINEAR16 CONVERSION ─────────────────────────────────────────
 // Pre-computed lookup tables for fast audio conversion
 const MULAW_BIAS = 33, MULAW_MAX = 0x1FFF;
@@ -246,6 +249,10 @@ class VoiceSession {
   }
 
   async start() {
+    // Validate required API keys before starting the session
+    if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY is not set. Cannot start voice session without Claude API access.');
+    if (!process.env.DEEPGRAM_API_KEY) throw new Error('DEEPGRAM_API_KEY is not set. Cannot start voice session without speech-to-text access.');
+
     // Connect to Deepgram STT
     this._connectSTT();
 
@@ -257,6 +264,15 @@ class VoiceSession {
 
     // Start silence detection
     this._resetSilenceTimer();
+
+    // Max call duration: 30 minutes
+    this.maxCallTimer = setTimeout(() => {
+      if (!this.ended) {
+        this._speak("I appreciate the conversation, but I need to wrap up this call. Thank you for calling!").then(() => {
+          this.end('max_duration');
+        });
+      }
+    }, 30 * 60 * 1000);
   }
 
   _connectSTT() {
@@ -284,6 +300,7 @@ class VoiceSession {
 
     this.sttWs.on('open', () => {
       console.log(`[voice] STT connected for call ${this.callSid}`);
+      this._sttRetryCount = 0; // Reset backoff on successful connection
     });
 
     this.sttWs.on('message', (data) => {
@@ -299,9 +316,17 @@ class VoiceSession {
 
     this.sttWs.on('close', () => {
       console.log(`[voice] STT disconnected for call ${this.callSid}`);
-      // Reconnect if call is still active
+      // Reconnect with exponential backoff if call is still active
       if (!this.ended) {
-        setTimeout(() => this._connectSTT(), 1000);
+        if (!this._sttRetryCount) this._sttRetryCount = 0;
+        this._sttRetryCount++;
+        if (this._sttRetryCount > 10) {
+          console.error(`[voice] STT max retries (10) reached for call ${this.callSid}, giving up`);
+          return;
+        }
+        const delay = Math.min(1000 * Math.pow(2, this._sttRetryCount - 1), 30000);
+        console.log(`[voice] STT reconnecting in ${delay}ms (attempt ${this._sttRetryCount}/10)`);
+        setTimeout(() => this._connectSTT(), delay);
       }
     });
 
@@ -379,6 +404,12 @@ class VoiceSession {
 
   async _respond() {
     if (this.ended) return;
+
+    // Sliding window: keep conversation history bounded to avoid unbounded token growth.
+    // Keep the first 2 messages (initial system context/greeting) and the last 18 messages.
+    if (this.messages.length > 20) {
+      this.messages = [...this.messages.slice(0, 2), ...this.messages.slice(-18)];
+    }
 
     try {
       const response = await this.anthropic.messages.create({
@@ -630,7 +661,7 @@ class VoiceSession {
       if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) return;
       const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
       client.calls(this.callSid).update({
-        twiml: `<Response><Say>Transferring your call now.</Say><Dial>${this.profile.ownerPhone}</Dial></Response>`
+        twiml: `<Response><Say>Transferring your call now.</Say><Dial>${escapeXml(this.profile.ownerPhone)}</Dial></Response>`
       }).catch(e => console.error('[voice] Transfer error:', e.message));
     } catch (e) {
       console.error('[voice] Transfer error:', e.message);
@@ -715,6 +746,7 @@ class VoiceSession {
 
     if (this.silenceTimer) clearTimeout(this.silenceTimer);
     if (this.promptTimer) clearTimeout(this.promptTimer);
+    if (this.maxCallTimer) clearTimeout(this.maxCallTimer);
 
     // Close STT WebSocket
     if (this.sttWs) {
