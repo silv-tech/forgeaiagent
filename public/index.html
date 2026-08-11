@@ -906,6 +906,17 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     </div>
 
     <div class="ss">
+      <!-- Batch Send -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--cyan));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(0,255,136,.3)">⚡</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Batch Send</div>
+      </div>
+      <div style="font-size:10.5px;color:var(--t3);line-height:1.65;margin-bottom:11px">Send outreach to all leads that have emails but haven't been contacted yet. Only leads with found emails are included.</div>
+      <div id="batch-send-info" style="font-size:10.5px;color:var(--cyan);margin-bottom:8px"></div>
+      <button class="btn btn-main" id="o-batch-btn" onclick="sendBatchOutreach()" style="font-size:12.5px;padding:10px 12px;margin-bottom:4px">📨 Send Batch Outreach</button>
+    </div>
+
+    <div class="ss">
       <!-- Follow-Up -->
       <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
         <div style="width:22px;height:22px;border-radius:50%;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--amber);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">↩</div>
@@ -1591,7 +1602,7 @@ function onSSE(d){
     if(d.progress!=null){bar('batch-pb',d.progress);document.getElementById('batch-msg').textContent=d.message;}
     if(d.status==='sent'&&d.message){const m=d.message.match(/\] (.+?) →/);if(m){const ol=leads.find(l=>l.name===m[1]);if(ol)ol.status='Outreach Sent';}}
   }
-  if(d.type==='outreach_batch_done'){document.getElementById('batch-prog').style.display='none';bar('batch-pb',0);loadLeads();drawOut();log('o-feed','✓ Batch outreach complete','gr');}
+  if(d.type==='outreach_batch_done'){document.getElementById('batch-prog').style.display='none';bar('batch-pb',0);btn('o-batch-btn','📨 Send Batch Outreach',false);loadLeads().then(()=>{drawOut();updateBatchInfo();});log('o-feed','✓ Batch outreach complete','gr');}
   if(d.type==='followup_batch'){log('o-feed',d.message,d.status==='sent'?'gr':d.status==='error'?'er':'');if(d.progress!==undefined)bar('batch-pb',d.progress);}
   if(d.type==='followup_batch_done'){btn('o-fu-btn','🔄 Follow-Up Selected',false);document.getElementById('batch-prog').style.display='none';bar('batch-pb',0);oSel.clear();drawOut();loadLeads();}
   if(d.type==='closer')log('c-feed',d.message,d.status==='done'?'gr':'');
@@ -2113,12 +2124,35 @@ async function sendOut(force){
     if(!r.ok){const d=await r.json().catch(()=>({}));log('o-feed','✗ '+(d.error||'Send failed ('+r.status+')'),'er');btn(btnId,btnLabel,false);}
   }catch(e){log('o-feed','✗ Network error: '+e.message,'er');btn(btnId,btnLabel,false);}
 }
+async function sendBatchOutreach(){
+  const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);
+  if(!eligible.length){log('o-feed','No eligible leads — all leads either have no email or were already contacted','er');return;}
+  if(!confirm(`Send outreach to ${eligible.length} lead(s) with emails that haven't been contacted yet?`))return;
+  btn('o-batch-btn','Sending...',true);
+  document.getElementById('batch-prog').style.display='block';
+  document.getElementById('batch-msg').textContent='Starting batch outreach...';
+  bar('batch-pb',5);
+  log('o-feed',`📨 Batch sending to ${eligible.length} leads...`,'hi');
+  try{
+    const r=await post('/api/outreach/batch',{ids:eligible.map(l=>l.id),sessionId:sid});
+    if(!r.ok){const d=await r.json().catch(()=>({}));log('o-feed','✗ '+(d.error||'Batch failed'),'er');btn('o-batch-btn','📨 Send Batch Outreach',false);document.getElementById('batch-prog').style.display='none';}
+  }catch(e){log('o-feed','✗ Network error: '+e.message,'er');btn('o-batch-btn','📨 Send Batch Outreach',false);document.getElementById('batch-prog').style.display='none';}
+}
+function updateBatchInfo(){
+  const el=document.getElementById('batch-send-info');
+  if(!el)return;
+  const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail).length;
+  const withEmail=leads.filter(l=>l.foundEmail).length;
+  const sent=leads.filter(l=>l.outreachEmail).length;
+  el.textContent=eligible?`${eligible} leads ready (${withEmail} with email, ${sent} already sent)`:'No eligible leads — find emails first';
+}
 function getLeadTracking(id){
   const recs=trackingMap.get(id)||[];
   const followUps=recs.filter(t=>t.type==='followup').length;
   return {opens:recs.reduce((s,r)=>s+r.opens.length,0),clicks:recs.reduce((s,r)=>s+r.clicks.length,0),followUps};
 }
 function drawOut(){
+  updateBatchInfo();
   const allSent=leads.filter(l=>l.outreachEmail).sort((a,b)=>new Date(a.outreachSentAt||0)-new Date(b.outreachSentAt||0));
   const oq=(document.getElementById('o-search')?.value||'').trim().toLowerCase();
   const df=document.getElementById('o-date-filter')?.value||'';
