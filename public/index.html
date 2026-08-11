@@ -1844,7 +1844,7 @@ function drawEF(){
     <td><input type="checkbox" ${efSel.has(l.id)?'checked':''} onchange="efTog('${l.id}',this.checked)" style="width:auto;margin:0;padding:0;accent-color:var(--cyan)"></td>
     <td><div class="ln">${x(l.name)}</div></td>
     <td><div class="la">${x(l.address)}</div></td>
-    <td>${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span><button class="ib" onclick="efManual('${l.id}','${x(l.foundEmail||'')}')" title="Edit email" style="font-size:9px;margin-left:4px;opacity:.5">✏️</button>`:`<input type="email" id="ef-m-${l.id}" placeholder="Enter email..." style="font-size:10px;padding:3px 6px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;width:140px" onkeydown="if(event.key==='Enter')efSaveManual('${l.id}')"><button class="ab" onclick="efSaveManual('${l.id}')" style="font-size:8px;margin-left:3px">Save</button>`}</td>
+    <td id="ef-edit-${l.id}">${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span><button class="ib" onclick="efManual('${l.id}','${x(l.foundEmail||'').replace(/'/g,"\\'")}')" title="Edit email" style="font-size:9px;margin-left:4px;opacity:.5">✏️</button>`:`<input type="email" id="ef-m-${l.id}" placeholder="Enter email..." style="font-size:10px;padding:3px 6px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;width:140px" onkeydown="if(event.key==='Enter')efSaveManual('${l.id}')"><button class="ab" onclick="efSaveManual('${l.id}')" style="font-size:8px;margin-left:3px">Save</button>`}</td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--t3)">${l.emailConfidence?l.emailConfidence+'%':'-'}</td>
     <td><button class="ab" onclick="efOne('${l.id}')">Search</button> <button class="ab" onclick="efHunter('${l.id}')" style="font-size:8px;opacity:.7">Hunter</button></td>
     <td style="white-space:nowrap">
@@ -1872,10 +1872,17 @@ async function efSaveManual(id){
   else{log('ef-feed','✗ Failed to save email','er');}
 }
 function efManual(id,current){
-  const email=prompt('Edit email:',current);
-  if(email===null)return;
-  if(!email.trim()){/* clear email */const l=leads.find(x=>x.id===id);if(l){l.foundEmail='';l.emailConfidence=null;}fetch('/api/leads/'+id+'/email',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:''})});drawEF();return;}
-  efSaveManualDirect(id,email.trim());
+  const cell=document.querySelector(`#ef-edit-${id}`);
+  if(!cell)return;
+  cell.innerHTML=`<input type="email" id="ef-ei-${id}" value="${x(current||'')}" style="font-size:10px;padding:3px 6px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;width:140px" onkeydown="if(event.key==='Enter')efEditSave('${id}');if(event.key==='Escape')drawEF()"><button class="ab" onclick="efEditSave('${id}')" style="font-size:8px;margin-left:3px">Save</button><button class="ab" onclick="drawEF()" style="font-size:8px;margin-left:2px;opacity:.6">✕</button>`;
+  const inp=document.getElementById('ef-ei-'+id);
+  if(inp){inp.focus();inp.select();}
+}
+function efEditSave(id){
+  const inp=document.getElementById('ef-ei-'+id);
+  const email=(inp?.value||'').trim();
+  if(!email){const l=leads.find(x=>x.id===id);if(l){l.foundEmail='';l.emailConfidence=null;}fetch('/api/leads/'+id+'/email',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:''})});drawEF();return;}
+  efSaveManualDirect(id,email);
 }
 async function efSaveManualDirect(id,email){
   const r=await fetch('/api/leads/'+id+'/email',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
