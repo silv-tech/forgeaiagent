@@ -1379,10 +1379,11 @@ const BIZ_SUGGESTIONS=[
 
 
 // ── CITY GROUPING ────────────────────────────────────────────────────────
+function normalizeCity(s){return(s||'Unknown').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());}
 function groupByLocation(arr){
   const groups=new Map();
   arr.forEach((l,i)=>{
-    const city=(l.location||'Unknown').trim();
+    const city=normalizeCity(l.location);
     if(!groups.has(city))groups.set(city,[]);
     groups.get(city).push({lead:l,idx:i});
   });
