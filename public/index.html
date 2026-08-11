@@ -917,8 +917,13 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
         <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--green),var(--cyan));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(0,255,136,.3)">⚡</div>
         <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Batch Send</div>
       </div>
-      <div style="font-size:10.5px;color:var(--t3);line-height:1.65;margin-bottom:11px">Send outreach to all leads that have emails but haven't been contacted yet. Only leads with found emails are included.</div>
-      <div id="batch-send-info" style="font-size:10.5px;color:var(--cyan);margin-bottom:8px"></div>
+      <div style="font-size:10.5px;color:var(--t3);line-height:1.65;margin-bottom:11px">Send outreach to leads with emails that haven't been contacted yet. Check/uncheck to choose who to include.</div>
+      <div id="batch-send-info" style="font-size:10.5px;color:var(--cyan);margin-bottom:6px"></div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <button class="ab" onclick="batchSelAll(true)" style="font-size:10px;color:var(--cyan)">Select All</button>
+        <button class="ab" onclick="batchSelAll(false)" style="font-size:10px;opacity:.6">Deselect All</button>
+      </div>
+      <div id="batch-list" style="max-height:180px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:8px;background:rgba(0,0,0,.15);margin-bottom:8px;scrollbar-width:thin"></div>
       <button class="btn btn-main" id="o-batch-btn" onclick="sendBatchOutreach()" style="font-size:12.5px;padding:10px 12px;margin-bottom:4px">📨 Send Batch Outreach</button>
     </div>
 
@@ -2173,27 +2178,42 @@ async function sendOut(force){
   }catch(e){log('o-feed','✗ Network error: '+e.message,'er');btn(btnId,btnLabel,false);}
 }
 async function sendBatchOutreach(){
-  const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);
-  if(!eligible.length){log('o-feed','No eligible leads — all leads either have no email or were already contacted','er');return;}
-  if(!confirm(`Send outreach to ${eligible.length} lead(s) with emails that haven't been contacted yet?`))return;
+  const selected=leads.filter(l=>l.foundEmail&&!l.outreachEmail&&batchSel.has(l.id));
+  if(!selected.length){log('o-feed','No leads selected — check the leads you want to send to','er');return;}
+  if(!confirm(`Send outreach to ${selected.length} selected lead(s)?`))return;
   btn('o-batch-btn','Sending...',true);
   document.getElementById('batch-prog').style.display='block';
   document.getElementById('batch-msg').textContent='Starting batch outreach...';
   bar('batch-pb',5);
-  log('o-feed',`📨 Batch sending to ${eligible.length} leads...`,'hi');
+  log('o-feed',`📨 Batch sending to ${selected.length} leads...`,'hi');
   try{
-    const r=await post('/api/outreach/batch',{ids:eligible.map(l=>l.id),sessionId:sid});
+    const r=await post('/api/outreach/batch',{ids:selected.map(l=>l.id),sessionId:sid});
     if(!r.ok){const d=await r.json().catch(()=>({}));log('o-feed','✗ '+(d.error||'Batch failed'),'er');btn('o-batch-btn','📨 Send Batch Outreach',false);document.getElementById('batch-prog').style.display='none';}
   }catch(e){log('o-feed','✗ Network error: '+e.message,'er');btn('o-batch-btn','📨 Send Batch Outreach',false);document.getElementById('batch-prog').style.display='none';}
 }
+let batchSel=new Set();
 function updateBatchInfo(){
   const el=document.getElementById('batch-send-info');
+  const listEl=document.getElementById('batch-list');
   if(!el)return;
-  const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail).length;
+  const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);
   const withEmail=leads.filter(l=>l.foundEmail).length;
   const sent=leads.filter(l=>l.outreachEmail).length;
-  el.textContent=eligible?`${eligible} leads ready (${withEmail} with email, ${sent} already sent)`:'No eligible leads — find emails first';
+  // init selection with all eligible on first load
+  if(!batchSel._init){eligible.forEach(l=>batchSel.add(l.id));batchSel._init=true;}
+  // remove any that are no longer eligible
+  batchSel.forEach(id=>{if(!eligible.find(l=>l.id===id))batchSel.delete(id);});
+  el.textContent=eligible.length?`${batchSel.size} of ${eligible.length} selected (${withEmail} with email, ${sent} already sent)`:'No eligible leads — find emails first';
+  if(!listEl)return;
+  if(!eligible.length){listEl.innerHTML='';return;}
+  listEl.innerHTML=eligible.map(l=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;font-size:10.5px;color:var(--t2);transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='none'">
+    <input type="checkbox" class="b-cb" value="${l.id}" ${batchSel.has(l.id)?'checked':''} onchange="batchToggle('${l.id}',this.checked)" style="width:auto;margin:0;accent-color:var(--cyan)">
+    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.name)}</span>
+    <span style="font-size:9px;color:var(--t4);font-family:var(--mono)">${x(l.foundEmail)}</span>
+  </label>`).join('');
 }
+function batchToggle(id,checked){if(checked)batchSel.add(id);else batchSel.delete(id);const el=document.getElementById('batch-send-info');const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);el.textContent=`${batchSel.size} of ${eligible.length} selected`;}
+function batchSelAll(checked){const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);if(checked)eligible.forEach(l=>batchSel.add(l.id));else batchSel.clear();updateBatchInfo();}
 function getLeadTracking(id){
   const recs=trackingMap.get(id)||[];
   const followUps=recs.filter(t=>t.type==='followup').length;
