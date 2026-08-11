@@ -612,6 +612,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
           <div style="font-size:9px;color:var(--t3);font-weight:600;margin-bottom:5px">Website Filter</div>
           <select id="s-filter" style="width:100%;font-size:11px;padding:7px 9px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:var(--s2);color:var(--t1);outline:none;cursor:pointer">
             <option value="no_website">No website only</option>
+            <option value="has_website">Has website only</option>
             <option value="all">All businesses</option>
           </select>
         </div>
@@ -1421,12 +1422,28 @@ async function boot(){
 }
 
 // SSE reconnect with exponential backoff (1s → 2s → 4s → … capped at 30s).
+// #7 fix: after reconnect, check if scout finished while disconnected
 let _sseRetry=0, _sseTimer=null;
+async function _checkScoutStatus(){
+  try{
+    const r=await(await fetch('/api/scout/status')).json();
+    if(!r.running&&r.lastResult){
+      // Scout finished while we were disconnected — unstick the UI
+      btn('scout-btn','▶ Run Scout Agent',false);
+      const sa=document.getElementById('scan-anim');if(sa)sa.style.display='none';
+      const parts=[];
+      if(r.lastResult.newCount)parts.push(r.lastResult.newCount+' new');
+      if(r.lastResult.dupCount)parts.push(r.lastResult.dupCount+' already existed');
+      log('s-feed','✓ Scout complete (recovered after reconnect)'+(parts.length?' — '+parts.join(', '):''),'gr');
+      loadLeads().then(()=>{drawB();drawEF();});
+    }
+  }catch(e){/* status check failed, non-critical */}
+}
 function connect(){
   if(_sseTimer){clearTimeout(_sseTimer);_sseTimer=null;}
   if(sse)sse.close();
   sse=new EventSource(`/api/stream/${sid}`);
-  sse.onopen=()=>{ _sseRetry=0; };
+  sse.onopen=()=>{ const wasRetry=_sseRetry>0; _sseRetry=0; if(wasRetry)_checkScoutStatus(); };
   sse.onmessage=e=>{ _sseRetry=0; try{onSSE(JSON.parse(e.data));}catch(err){console.warn('[SSE] Bad JSON:',err.message);} };
   sse.onerror=()=>{
     if(_sseTimer)return;

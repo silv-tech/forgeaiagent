@@ -5,16 +5,13 @@ const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 
 function sanitize(str) { return (str||'').replace(/[<>"']/g,'').trim(); }
 
-// ── API call tracking ─────────────────────────────────────────────────────
-let googleCallCount = 0;
-let freeCallCount = 0;
-function resetCallCounts() { googleCallCount = 0; freeCallCount = 0; }
-function getCallCount() { return googleCallCount; }
-function getFreeCallCount() { return freeCallCount; }
+// ── API call tracking (scoped per run to avoid concurrency issues) ───────
+// #20 fix: use a counter object passed per-run instead of module globals
+function createCounters() { return { google: 0, free: 0 }; }
 
 // ── OSM Tag Mapping ───────────────────────────────────────────────────────
 // Maps ForgeAI business types to OSM tags for Overpass queries.
-// Format: { key, value } or array of fallbacks to try in order.
+// #3 fix: added missing types that exist in frontend TYPES array
 const OSM_TAGS = {
   // Food & Drink
   restaurant:       [{ key: 'amenity', value: 'restaurant' }],
@@ -32,7 +29,8 @@ const OSM_TAGS = {
 
   // Health & Fitness
   gym:              [{ key: 'leisure', value: 'fitness_centre' }],
-  yoga_studio:      [{ key: 'leisure', value: 'fitness_centre' }, { key: 'sport', value: 'yoga' }],
+  // #4 fix: yoga_studio uses combined tag query — sport=yoga alone returns almost nothing
+  yoga_studio:      [{ key: 'leisure', value: 'fitness_centre' }],
   dentist:          [{ key: 'amenity', value: 'dentist' }, { key: 'healthcare', value: 'dentist' }],
   chiropractor:     [{ key: 'healthcare', value: 'chiropractor' }],
 
@@ -53,6 +51,20 @@ const OSM_TAGS = {
   clothing_store:   [{ key: 'shop', value: 'clothes' }],
   hardware_store:   [{ key: 'shop', value: 'hardware' }, { key: 'shop', value: 'doityourself' }],
   computer_store:   [{ key: 'shop', value: 'computer' }, { key: 'shop', value: 'electronics' }],
+  // #3 fix: added missing types from frontend
+  wedding_officiant:[{ key: 'amenity', value: 'place_of_worship' }, { key: 'office', value: 'religion' }],
+  veterinary_care:  [{ key: 'amenity', value: 'veterinary' }],
+  car_wash:         [{ key: 'amenity', value: 'car_wash' }],
+  locksmith:        [{ key: 'craft', value: 'locksmith' }],
+  moving_company:   [{ key: 'office', value: 'moving_company' }],
+  insurance_agency: [{ key: 'office', value: 'insurance' }],
+  real_estate_agency:[{ key: 'office', value: 'estate_agent' }],
+  accounting:       [{ key: 'office', value: 'accountant' }],
+  lawyer:           [{ key: 'office', value: 'lawyer' }],
+  travel_agency:    [{ key: 'shop', value: 'travel_agency' }],
+  jewelry_store:    [{ key: 'shop', value: 'jewelry' }],
+  shoe_store:       [{ key: 'shop', value: 'shoes' }],
+  furniture_store:  [{ key: 'shop', value: 'furniture' }],
 
   // Agencies — unlikely in OSM, will usually fall back to Google
   marketing_agency:        [{ key: 'office', value: 'marketing' }],
@@ -71,39 +83,59 @@ const OSM_TAGS = {
 };
 
 // ── Nominatim Geocoder ────────────────────────────────────────────────────
+// #8 fix: LRU cache with max 500 entries instead of unbounded Map
+const GEO_CACHE_MAX = 500;
 const geoCache = new Map();
 let lastNominatimCall = 0;
+// #9 fix: mutex to serialize Nominatim calls (prevents rate limit violations)
+let nominatimLock = Promise.resolve();
 
-async function geocodeCity(city) {
+async function geocodeCity(city, counters) {
   if (geoCache.has(city)) return geoCache.get(city);
 
-  // Rate limit: 1 req/sec
-  const now = Date.now();
-  const wait = Math.max(0, 1100 - (now - lastNominatimCall));
-  if (wait > 0) await new Promise(r => setTimeout(r, wait));
-  lastNominatimCall = Date.now();
+  // Serialize Nominatim calls to respect 1 req/sec rate limit
+  const unlock = nominatimLock;
+  let resolve;
+  nominatimLock = new Promise(r => { resolve = r; });
+  await unlock;
 
-  freeCallCount++;
+  // Double-check cache after waiting
+  if (geoCache.has(city)) { resolve(); return geoCache.get(city); }
+
   try {
+    // Rate limit: 1 req/sec
+    const now = Date.now();
+    const wait = Math.max(0, 1100 - (now - lastNominatimCall));
+    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    lastNominatimCall = Date.now();
+
     const res = await axios.get(NOMINATIM_URL, {
       params: { q: city, format: 'json', limit: 1 },
       headers: { 'User-Agent': 'ForgeAI-Scout/1.0 (contact@forgeaiagent.com)' },
       timeout: 8000,
     });
+    // #19 fix: only count after successful request
+    counters.free++;
     if (res.data && res.data.length > 0) {
       const result = { lat: parseFloat(res.data[0].lat), lon: parseFloat(res.data[0].lon) };
+      // #8 fix: evict oldest entry if cache is full
+      if (geoCache.size >= GEO_CACHE_MAX) {
+        const oldest = geoCache.keys().next().value;
+        geoCache.delete(oldest);
+      }
       geoCache.set(city, result);
       return result;
     }
   } catch (e) {
     // Geocoding failed — will fall back to Google
+  } finally {
+    resolve();
   }
   return null;
 }
 
 // ── Overpass Search ───────────────────────────────────────────────────────
 function buildOverpassQuery(tags, lat, lon, radiusM) {
-  // Build union of all tag queries within a radius
   const parts = tags.map(t =>
     `node["${t.key}"="${t.value}"]["name"](around:${radiusM},${lat},${lon});` +
     `way["${t.key}"="${t.value}"]["name"](around:${radiusM},${lat},${lon});`
@@ -113,9 +145,8 @@ function buildOverpassQuery(tags, lat, lon, radiusM) {
 
 function parseOverpassResult(el, businessType, location) {
   const tags = el.tags || {};
-  if (!tags.name) return null; // Skip unnamed entries
+  if (!tags.name) return null;
 
-  // Build address from OSM addr:* tags
   const parts = [];
   if (tags['addr:housenumber']) parts.push(tags['addr:housenumber']);
   if (tags['addr:street']) parts.push(tags['addr:street']);
@@ -145,36 +176,38 @@ function parseOverpassResult(el, businessType, location) {
   };
 }
 
-async function overpassSearch(businessType, lat, lon, radiusM, needed) {
+async function overpassSearch(businessType, lat, lon, radiusM, needed, counters) {
   const tags = OSM_TAGS[businessType];
-  if (!tags) return [];
+  if (!tags) return { elements: [], skipped: true };
 
   const query = buildOverpassQuery(tags, lat, lon, radiusM);
-  freeCallCount++;
   try {
+    // #17 fix: Axios timeout 35s (30s Overpass timeout + 5s buffer)
     const res = await axios.post(OVERPASS_URL, `data=${encodeURIComponent(query)}`, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'ForgeAI-Scout/1.0' },
-      timeout: 45000,
+      timeout: 35000,
     });
-    return (res.data.elements || []).slice(0, needed * 3); // Get extra to account for filtering
+    // #19 fix: count after success
+    counters.free++;
+    return { elements: (res.data.elements || []).slice(0, needed * 3), skipped: false };
   } catch (e) {
-    // Overpass timeout or error — will fall back to Google
-    return [];
+    return { elements: [], skipped: false };
   }
 }
 
 // ── Google Places (kept as fallback) ──────────────────────────────────────
-async function searchPlaces(query, location, needed) {
+async function searchPlaces(query, location, needed, counters) {
   const key = process.env.GOOGLE_PLACES_API_KEY;
   if (!key) throw new Error('Google Places API key not set.');
   const results = [];
   let pageToken = null, pages = 0;
   do {
     pages++;
-    googleCallCount++;
     const params = { query: `${query} in ${location}`, key };
     if (pageToken) params.pagetoken = pageToken;
     const res = await axios.get(`${BASE_URL}/textsearch/json`, { params, timeout: 10000 });
+    // #11 fix: only count after successful request
+    counters.google++;
     if (res.data.status === 'REQUEST_DENIED') throw new Error('Google API key invalid: ' + (res.data.error_message||''));
     if (res.data.status === 'ZERO_RESULTS') break;
     results.push(...(res.data.results||[]));
@@ -185,26 +218,27 @@ async function searchPlaces(query, location, needed) {
   return results;
 }
 
-async function getDetails(placeId) {
+// #11 fix: check key before calling, only count on success
+async function getDetails(placeId, counters) {
   const key = process.env.GOOGLE_PLACES_API_KEY;
-  googleCallCount++;
+  if (!key) return null;
   try {
     const res = await axios.get(`${BASE_URL}/details/json`, {
       params: { place_id: placeId, fields: 'name,formatted_address,formatted_phone_number,website,rating,user_ratings_total,business_status,url', key },
       timeout: 8000
     });
+    counters.google++;
     if (res.data.result) return res.data.result;
   } catch { /* single attempt, no retry */ }
   return null;
 }
 
 // ── Google enrichment for OSM leads missing phone ─────────────────────────
-async function enrichWithGoogle(lead) {
+// #18 fix: only set _source to 'osm+google' when data actually changed
+async function enrichWithGoogle(lead, counters) {
   const key = process.env.GOOGLE_PLACES_API_KEY;
-  if (!key) return lead; // No key, can't enrich
+  if (!key) return lead;
 
-  // Use findplacefromtext (cheaper than textsearch) to locate the business
-  googleCallCount++;
   try {
     const res = await axios.get(`${BASE_URL}/findplacefromtext/json`, {
       params: {
@@ -215,35 +249,67 @@ async function enrichWithGoogle(lead) {
       },
       timeout: 8000,
     });
+    counters.google++;
     const candidates = res.data.candidates || [];
     if (candidates.length === 0) return lead;
 
-    const d = await getDetails(candidates[0].place_id);
+    const d = await getDetails(candidates[0].place_id, counters);
     if (!d) return lead;
 
-    // Fill in missing data only
-    if (!lead.phone || lead.phone === 'N/A') lead.phone = d.formatted_phone_number || lead.phone;
-    if (!lead.website) lead.website = d.website || null;
-    if (lead.rating === 'N/A' && d.rating) lead.rating = d.rating;
-    if (lead.reviews === 0 && d.user_ratings_total) lead.reviews = d.user_ratings_total;
-    if (!lead.google_maps_url && d.url) lead.google_maps_url = d.url;
-    lead._source = 'osm+google';
+    let updated = false;
+    if (!lead.phone || lead.phone === 'N/A') { const v = d.formatted_phone_number; if (v) { lead.phone = v; updated = true; } }
+    if (!lead.website && d.website) { lead.website = d.website; updated = true; }
+    if (lead.rating === 'N/A' && d.rating) { lead.rating = d.rating; updated = true; }
+    if (lead.reviews === 0 && d.user_ratings_total) { lead.reviews = d.user_ratings_total; updated = true; }
+    if (!lead.google_maps_url && d.url) { lead.google_maps_url = d.url; updated = true; }
+    if (updated) lead._source = 'osm+google';
   } catch { /* enrichment failed, keep lead as-is */ }
   return lead;
 }
 
+// ── Address normalization for cross-source dedup ─────────────────────────
+// #10 fix: normalize addresses to reduce false non-matches across OSM/Google
+function normalizeForDedup(name, address) {
+  const n = (name || '').toLowerCase().trim()
+    .replace(/[''`]/g, '')
+    .replace(/\s+/g, ' ');
+  const a = (address || '').toLowerCase().trim()
+    .replace(/\bstreet\b/g, 'st')
+    .replace(/\bavenue\b/g, 'ave')
+    .replace(/\bboulevard\b/g, 'blvd')
+    .replace(/\bdrive\b/g, 'dr')
+    .replace(/\broad\b/g, 'rd')
+    .replace(/\blane\b/g, 'ln')
+    .replace(/\bcourt\b/g, 'ct')
+    .replace(/\bplace\b/g, 'pl')
+    .replace(/\bnorth\b/g, 'n').replace(/\bsouth\b/g, 's')
+    .replace(/\beast\b/g, 'e').replace(/\bwest\b/g, 'w')
+    .replace(/,?\s*usa$/i, '')
+    .replace(/,?\s*united states$/i, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[,.\s]+$/g, '');
+  return `${n}|${a}`;
+}
+
 // ── Scout Flow ────────────────────────────────────────────────────────────
-async function scoutType({ location, businessType, maxLeads, seenIds, filter }, onProgress) {
+// #14 fix: accept runningTotal to track cumulative leads across types
+async function scoutType({ location, businessType, maxLeads, seenIds, filter, counters, runningTotal }, onProgress) {
   const needed = parseInt(maxLeads) || 20;
   let leads = [];
 
   // ── Phase 1: Try free sources (Overpass via Nominatim) ──
-  const geo = await geocodeCity(location);
+  const geo = await geocodeCity(location, counters);
 
   if (geo) {
-    onProgress({ status: 'found', message: `[${businessType}] Searching free sources (OSM)...` });
-    const radiusM = 25000; // 25km radius
-    const raw = await overpassSearch(businessType, geo.lat, geo.lon, radiusM, needed);
+    // #3 fix: tell user if type has no OSM mapping
+    const hasOsmTags = !!OSM_TAGS[businessType];
+    if (!hasOsmTags) {
+      onProgress({ status: 'found', message: `[${businessType}] No OSM mapping — skipping free search, using Google...` });
+    } else {
+      onProgress({ status: 'found', message: `[${businessType}] Searching free sources (OSM)...` });
+    }
+    const radiusM = 25000;
+    const { elements: raw, skipped } = await overpassSearch(businessType, geo.lat, geo.lon, radiusM, needed, counters);
 
     if (raw.length > 0) {
       onProgress({ status: 'found', message: `[${businessType}] Found ${raw.length} from OSM, processing...` });
@@ -253,26 +319,26 @@ async function scoutType({ location, businessType, maxLeads, seenIds, filter }, 
         let lead = parseOverpassResult(el, businessType, location);
         if (!lead) continue;
 
-        // Dedup by name+address
-        const dedup = `${lead.name}|${lead.address}`.toLowerCase();
+        // #10 fix: normalized dedup key
+        const dedup = normalizeForDedup(lead.name, lead.address);
         if (seenIds.has(dedup)) continue;
         seenIds.add(dedup);
 
-        // Apply filter
+        // #2 fix: enrich BEFORE filter check so enriched website is caught
+        onProgress({ status: 'checking', message: `[${businessType}] Processing: ${lead.name}`, leadsFound: runningTotal.count + leads.length });
+
+        if (!lead.phone) {
+          lead = await enrichWithGoogle(lead, counters);
+        }
+
+        // Apply filter AFTER enrichment
         if (filter === 'no_website' && lead.website) continue;
         if (filter === 'has_website' && !lead.website) continue;
-        // Skip rating filter for OSM leads — OSM has no rating data
-
-        onProgress({ status: 'checking', message: `[${businessType}] Processing: ${lead.name}`, leadsFound: leads.length });
-
-        // Enrich with Google only if lead is missing phone
-        if (!lead.phone) {
-          lead = await enrichWithGoogle(lead);
-        }
 
         leads.push(lead);
         const ratingStr = lead.rating !== 'N/A' ? `${lead.rating}★ (${lead.reviews} reviews)` : 'OSM lead';
-        onProgress({ status: 'lead_found', message: `✓ ${lead.name}, ${ratingStr}`, lead, leadsFound: leads.length });
+        // #14 fix: use runningTotal for cumulative count
+        onProgress({ status: 'lead_found', message: `✓ ${lead.name}, ${ratingStr}`, lead, leadsFound: runningTotal.count + leads.length });
         await new Promise(r => setTimeout(r, 100));
       }
     }
@@ -287,14 +353,14 @@ async function scoutType({ location, businessType, maxLeads, seenIds, filter }, 
       onProgress({ status: 'found', message: `[${businessType}] ${leads.length > 0 ? `Got ${leads.length} from OSM, need ${remaining} more — ` : ''}Searching Google Places...` });
 
       let raw = [];
-      try { raw = await searchPlaces(businessType, location, remaining); }
+      try { raw = await searchPlaces(businessType, location, remaining, counters); }
       catch(e) { onProgress({ status: 'error', message: `[${businessType}] Google fallback error: ${e.message}` }); }
 
       const fresh = raw.filter(p => {
         if (seenIds.has(p.place_id)) return false;
         seenIds.add(p.place_id);
-        // Also check name-based dedup
-        const nameKey = `${p.name}|${p.formatted_address||''}`.toLowerCase();
+        // #10 fix: normalized dedup
+        const nameKey = normalizeForDedup(p.name, p.formatted_address || '');
         if (seenIds.has(nameKey)) return false;
         seenIds.add(nameKey);
         return true;
@@ -302,13 +368,13 @@ async function scoutType({ location, businessType, maxLeads, seenIds, filter }, 
 
       for (const place of fresh) {
         if (leads.length >= needed) break;
-        const d = await getDetails(place.place_id);
+        const d = await getDetails(place.place_id, counters);
         if (!d) continue;
-        onProgress({ status: 'checking', message: `[${businessType}] Checking: ${d.name||place.name}`, leadsFound: leads.length });
+        onProgress({ status: 'checking', message: `[${businessType}] Checking: ${d.name||place.name}`, leadsFound: runningTotal.count + leads.length });
         if (filter === 'no_website' && d.website) continue;
         if (filter === 'has_website' && !d.website) continue;
         if (d.business_status && d.business_status !== 'OPERATIONAL') continue;
-        if (!d.rating && !d.user_ratings_total) continue;
+        // #13 fix: don't skip unrated businesses — they're still valid leads
         const lead = {
           name: d.name || place.name || 'Unknown',
           address: d.formatted_address || '',
@@ -324,7 +390,7 @@ async function scoutType({ location, businessType, maxLeads, seenIds, filter }, 
           _source: 'google',
         };
         leads.push(lead);
-        onProgress({ status: 'lead_found', message: `✓ ${lead.name}, ${lead.rating}★ (${lead.reviews} reviews)`, lead, leadsFound: leads.length });
+        onProgress({ status: 'lead_found', message: `✓ ${lead.name}, ${lead.rating !== 'N/A' ? lead.rating + '★ (' + lead.reviews + ' reviews)' : 'new listing'}`, lead, leadsFound: runningTotal.count + leads.length });
         await new Promise(r => setTimeout(r, 250));
       }
     } else if (leads.length === 0) {
@@ -341,29 +407,38 @@ async function scoutType({ location, businessType, maxLeads, seenIds, filter }, 
   if (enrichedCount > 0) sourceMsg.push(`${enrichedCount} free+enriched`);
   if (googleCount > 0) sourceMsg.push(`${googleCount} Google`);
 
+  // #14 fix: update running total
+  runningTotal.count += leads.length;
+
   onProgress({ status: 'type_done', message: `[${businessType}] Complete: ${leads.length} leads (${sourceMsg.join(', ') || 'none'})` });
   return leads;
 }
 
 async function runScout({ location, businessTypes, businessType, maxLeads=20, filter='no_website' }, onProgress) {
-  resetCallCounts();
+  // #20 fix: per-run counters instead of module globals
+  const counters = createCounters();
   const loc = sanitize(location);
   const types = (businessTypes?.length ? businessTypes : [businessType]).filter(Boolean);
   if (!types.length) throw new Error('No business types selected');
 
-  const filterLabel = filter === 'all' ? ' (all businesses)' : filter === 'has_website' ? ' (with website)' : '';
+  // #12 fix: show filter label for all filter values including no_website
+  const filterLabels = { all: ' (all businesses)', has_website: ' (with website)', no_website: ' (without website only)' };
+  const filterLabel = filterLabels[filter] || '';
   onProgress({ status: 'start', message: `Searching ${types.length} type(s) in "${loc}"${filterLabel}... (free sources first, Google fallback)` });
 
   const seenIds = new Set();
   const all = [];
+  // #14 fix: shared running total across types
+  const runningTotal = { count: 0 };
   for (const t of types) {
-    const results = await scoutType({ location: loc, businessType: t, maxLeads: parseInt(maxLeads)||20, seenIds, filter }, onProgress);
+    const results = await scoutType({ location: loc, businessType: t, maxLeads: parseInt(maxLeads)||20, seenIds, filter, counters, runningTotal }, onProgress);
     all.push(...results);
   }
 
+  // #10 fix: final dedup with normalized keys
   const seen = new Set();
   const unique = all.filter(l => {
-    const k = `${l.name}|${l.address}`.toLowerCase();
+    const k = normalizeForDedup(l.name, l.address);
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
@@ -372,10 +447,10 @@ async function runScout({ location, businessTypes, businessType, maxLeads=20, fi
   // Clean internal fields before returning
   unique.forEach(l => { delete l._source; delete l._lat; delete l._lon; });
 
-  const costMsg = googleCallCount > 0
-    ? `${googleCallCount} Google API calls, ${freeCallCount} free calls`
-    : `${freeCallCount} free calls, 0 Google API calls ($0 cost!)`;
-  onProgress({ status: 'complete', message: `✅ Done, ${unique.length} quality leads found (${costMsg})`, leads: unique, leadsFound: unique.length });
+  const costMsg = counters.google > 0
+    ? `${counters.google} Google API calls, ${counters.free} free calls`
+    : `${counters.free} free calls, 0 Google API calls ($0 cost!)`;
+  onProgress({ status: 'complete', message: `Done, ${unique.length} quality leads found (${costMsg})`, leads: unique, leadsFound: unique.length });
   return unique;
 }
 

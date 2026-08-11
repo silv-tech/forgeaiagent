@@ -535,6 +535,12 @@ let scoutRunning = false;
 let dailyScoutRuns = 0;
 let dailyScoutDate = new Date().toDateString();
 const MAX_SCOUT_RUNS_PER_DAY = 50;
+// #7 fix: track last scout result so frontend can recover after SSE reconnect
+let lastScoutResult = null;
+
+app.get('/api/scout/status', (req,res) => {
+  res.json({ running: scoutRunning, lastResult: lastScoutResult });
+});
 
 app.post('/api/scout/run', async (req,res) => {
   const { location, businessTypes, businessType, maxLeads, filter, sessionId } = req.body;
@@ -544,8 +550,8 @@ app.post('/api/scout/run', async (req,res) => {
   const today = new Date().toDateString();
   if (today !== dailyScoutDate) { dailyScoutRuns = 0; dailyScoutDate = today; }
   if (dailyScoutRuns >= MAX_SCOUT_RUNS_PER_DAY) return res.status(429).json({ error:`Daily scout limit reached (${MAX_SCOUT_RUNS_PER_DAY} runs). Resets at midnight.` });
-  dailyScoutRuns++;
   scoutRunning = true;
+  lastScoutResult = null;
   res.json({ status:'started' });
   try {
     // Server-side caps: max 50 leads, max 5 business types
@@ -554,11 +560,13 @@ app.post('/api/scout/run', async (req,res) => {
     let newCount = 0, dupCount = 0, errCount = 0;
     await runScout({ location, businessTypes: cappedTypes, maxLeads: cappedLeads, filter:filter||'no_website' }, p => {
       if (p.lead) {
+        // #1 fix: use leads.find (array mutation) not reassignment — safe during concurrent access
         const existing = leads.find(l=>l.name===p.lead.name&&l.address===p.lead.address);
         if (!existing) {
           p.lead.id = randomUUID();
           leads.push(p.lead);
-          try { save(LF,leads); } catch(e) { errCount++; console.error('[scout] save error:', e.message); }
+          // #5 fix: use saveDebounced instead of save for per-lead writes
+          try { saveDebounced(LF,leads); } catch(e) { errCount++; console.error('[scout] save error:', e.message); }
           p._saved = true;
           newCount++;
         } else {
@@ -569,7 +577,7 @@ app.post('/api/scout/run', async (req,res) => {
           if (p.lead.phone && p.lead.phone !== 'N/A' && (!existing.phone || existing.phone === 'N/A')) { existing.phone = p.lead.phone; updated = true; }
           if (p.lead.website && !existing.website) { existing.website = p.lead.website; updated = true; }
           if (p.lead.google_maps_url && !existing.google_maps_url) { existing.google_maps_url = p.lead.google_maps_url; updated = true; }
-          if (updated) { try { save(LF,leads); } catch(e) { console.error('[scout] save error:', e.message); } }
+          if (updated) { try { saveDebounced(LF,leads); } catch(e) { console.error('[scout] save error:', e.message); } }
           // Send the existing lead (with id) so frontend can track it
           p.lead = existing;
           p._duplicate = true;
@@ -578,10 +586,18 @@ app.post('/api/scout/run', async (req,res) => {
       }
       emit(sessionId, { type:'scout', ...p });
     });
-    // Save once at end to catch any missed saves
+    // #5 fix: final save is synchronous to ensure all data is flushed
     try { save(LF,leads); } catch(e) { console.error('[scout] final save error:', e.message); }
-    emit(sessionId, { type:'scout_done', total: leads.length, newCount, dupCount, errCount });
-  } catch(e) { emit(sessionId, { type:'error', agent:'scout', message:e.message }); }
+    // #7 fix: store result for SSE reconnection recovery
+    const result = { total: leads.length, newCount, dupCount, errCount };
+    lastScoutResult = result;
+    emit(sessionId, { type:'scout_done', ...result });
+    // #6 fix: increment daily counter only on successful completion
+    dailyScoutRuns++;
+  } catch(e) {
+    emit(sessionId, { type:'error', agent:'scout', message:e.message });
+    // #6 fix: don't count failed runs
+  }
   finally { scoutRunning = false; }
 });
 
@@ -1153,15 +1169,20 @@ app.delete('/api/leads/:id', (req,res) => {
   res.json({ ok:true });
 });
 
-app.delete('/api/leads', (req,res) => { leads=[];save(LF,leads);res.json({ok:true}); });
+// #1 fix: mutate array (splice) instead of reassigning, so scout callback keeps valid reference
+app.delete('/api/leads', (req,res) => { leads.splice(0,leads.length);save(LF,leads);res.json({ok:true}); });
 
 app.post('/api/leads/delete-batch', (req,res) => {
   const { ids } = req.body;
   if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error:'No ids' });
-  const before = leads.length;
-  leads = leads.filter(l => !ids.includes(l.id));
+  // #1 fix: mutate in place instead of reassigning (keeps scout callback reference valid)
+  const idsSet = new Set(ids);
+  let removed = 0;
+  for (let i = leads.length - 1; i >= 0; i--) {
+    if (idsSet.has(leads[i].id)) { leads.splice(i, 1); removed++; }
+  }
   save(LF,leads);
-  res.json({ ok:true, removed:before-leads.length, remaining:leads.length });
+  res.json({ ok:true, removed, remaining:leads.length });
 });
 
 app.get('/api/leads/export/csv', (req,res) => {
