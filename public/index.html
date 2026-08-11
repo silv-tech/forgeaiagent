@@ -735,8 +735,14 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <div class="mh">
       <div class="mt">EMAIL SEARCH</div>
       <div class="cnt" id="ef-badge">0 leads</div>
+      <div style="position:relative;flex:1;max-width:260px;margin:0 10px">
+        <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;opacity:.35" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="ef-search" placeholder="Search leads..." autocomplete="one-time-code" role="presentation" oninput="drawEF()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
+      </div>
       <div class="acts">
         <button class="ab" onclick="efSelAll()">Select All</button>
+        <button class="ab" onclick="efSelVisible()">Select Visible</button>
+        <button class="ab" onclick="efClear()">Clear</button>
         <button class="ab v" onclick="go('outreach')">→ Outreach</button>
       </div>
     </div>
@@ -1822,8 +1828,12 @@ function drawEF(){
   const e=document.getElementById('ef-e'),t=document.getElementById('ef-tbl');
   if(!leads.length){e.style.display='flex';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
-  const efCapped=leads.length>MAX_VISIBLE;
-  const efVisible=efCapped?leads.slice(0,MAX_VISIBLE):leads;
+  const efq=(document.getElementById('ef-search')?.value||'').trim().toLowerCase();
+  const efWords=efq?efq.split(/\s+/).filter(Boolean):[];
+  const efFiltered=efWords.length?leads.filter(l=>{const hay=[(l.name||''),(l.address||''),(l.location||''),(l.type||'').replace(/_/g,' '),(l.foundEmail||'')].join(' ').toLowerCase();return efWords.every(w=>hay.includes(w));}):leads;
+  document.getElementById('ef-badge').textContent=efq?efFiltered.length+'/'+leads.length+' leads':leads.length+' leads';
+  const efCapped=efFiltered.length>MAX_VISIBLE;
+  const efVisible=efCapped?efFiltered.slice(0,MAX_VISIBLE):efFiltered;
   const groups=groupByLocation(efVisible);
   const multi=groups.size>1;
   let html='';
@@ -1847,6 +1857,13 @@ function efTog(id,c){c?efSel.add(id):efSel.delete(id);document.getElementById('e
 function efTogAll(c){efSel.clear();if(c)leads.forEach(l=>efSel.add(l.id));drawEF();}
 function efSelAll(){efSel.clear();leads.forEach(l=>{if(!l.foundEmail)efSel.add(l.id);});drawEF();}
 function efClear(){efSel.clear();const a=document.getElementById('ef-all');if(a)a.checked=false;drawEF();}
+function efSelVisible(){
+  const efq=(document.getElementById('ef-search')?.value||'').trim().toLowerCase();
+  const efWords=efq?efq.split(/\s+/).filter(Boolean):[];
+  const visible=efWords.length?leads.filter(l=>{const hay=[(l.name||''),(l.address||''),(l.location||''),(l.type||'').replace(/_/g,' '),(l.foundEmail||'')].join(' ').toLowerCase();return efWords.every(w=>hay.includes(w));}):leads;
+  visible.forEach(l=>efSel.add(l.id));
+  drawEF();
+}
 async function efOne(id){const l=leads.find(x=>x.id===id);log('ef-feed',`Searching ${l?.name||id}...`);await post('/api/emailfinder/find',{id,sessionId:sid});}
 async function efHunter(id){const l=leads.find(x=>x.id===id);log('ef-feed',`Hunter.io → ${l?.name||id}...`);await post('/api/emailfinder/hunter',{id,sessionId:sid});}
 async function efBatch(){
