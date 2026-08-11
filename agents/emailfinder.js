@@ -394,33 +394,89 @@ async function findEmailFromInstagram(lead, onProgress) {
   return null;
 }
 
-// Step 3: Scrape business website (plain HTTP, no browser needed)
+// Step 1: Deep scrape business website — homepage, contact, about, team pages + footer
 async function findEmailFromWebsite(lead, onProgress) {
   const website = lead.socials?.website || lead.website || null;
   if (!website) return null;
 
-  onProgress && onProgress({ status:'searching', message:`🌐 Scanning website: ${website}` });
-  try {
-    const html = await fetchPage(website);
-    let emails = extractEmails(html);
+  const subpages = [
+    '', '/contact', '/contact-us', '/contactus', '/about', '/about-us', '/aboutus',
+    '/team', '/our-team', '/staff', '/get-in-touch', '/reach-us', '/support'
+  ];
 
-    // Also try /contact page
-    if (!emails.length) {
+  onProgress && onProgress({ status:'searching', message:`🌐 Deep-scanning website: ${website}` });
+  const allEmails = [];
+
+  for (const path of subpages) {
+    try {
+      const url = path ? new URL(path, website).href : website;
+      onProgress && onProgress({ status:'searching', message:`🌐 Checking ${url}` });
+      const html = await fetchPage(url);
+      const found = extractEmails(html);
+      if (found.length) {
+        allEmails.push(...found);
+        // Return immediately on first find for speed
+        onProgress && onProgress({ status:'found', message:`✅ Found on website${path||' homepage'}: ${found[0]}` });
+        return { email: found[0], confidence: 90, source: 'website' };
+      }
+    } catch {}
+  }
+
+  onProgress && onProgress({ status:'not_found', message:`No email found on website (checked ${subpages.length} pages)` });
+  return null;
+}
+
+// Step 1b: Google search to find website, then deep-scrape it
+async function findEmailViaGoogle(lead, onProgress) {
+  onProgress && onProgress({ status:'searching', message:`🔎 Googling "${lead.name}" to find website...` });
+  let page;
+  try {
+    const browser = await getBrowser();
+    page = await browser.newPage();
+    await page.setUserAgent(UA);
+    const query = encodeURIComponent(`${lead.name} ${lead.address || ''} contact email`);
+    await page.goto(`https://www.google.com/search?q=${query}`, { waitUntil: 'networkidle2', timeout: 15000 });
+    await new Promise(r => setTimeout(r, 2000));
+
+    // Extract result URLs and emails visible in search results
+    const data = await page.evaluate(() => {
+      const links = Array.from(document.querySelectorAll('a[href]'))
+        .map(a => a.href)
+        .filter(h => h.startsWith('http') && !h.includes('google.') && !h.includes('youtube.') &&
+          !h.includes('facebook.com') && !h.includes('instagram.com') && !h.includes('yelp.com') &&
+          !h.includes('yellowpages.') && !h.includes('bbb.org') && !h.includes('mapquest.'))
+        .slice(0, 5);
+      const text = document.body.innerText;
+      return { links, text };
+    });
+    await page.close();
+
+    // Check if any emails visible directly in Google results
+    const googleEmails = extractEmails(data.text);
+    if (googleEmails.length) {
+      onProgress && onProgress({ status:'found', message:`✅ Found in Google results: ${googleEmails[0]}` });
+      return { email: googleEmails[0], confidence: 75, source: 'google_search' };
+    }
+
+    // Try scraping the top result websites
+    for (const url of data.links) {
       try {
-        const contactUrl = new URL('/contact', website).href;
-        onProgress && onProgress({ status:'searching', message:`🌐 Checking ${contactUrl}` });
-        const contactHtml = await fetchPage(contactUrl);
-        emails = extractEmails(contactHtml);
+        onProgress && onProgress({ status:'searching', message:`🌐 Checking ${new URL(url).hostname}...` });
+        const html = await fetchPage(url);
+        const emails = extractEmails(html);
+        if (emails.length) {
+          // Save discovered website to lead
+          if (!lead.website) lead.website = url;
+          onProgress && onProgress({ status:'found', message:`✅ Found on ${new URL(url).hostname}: ${emails[0]}` });
+          return { email: emails[0], confidence: 80, source: 'google_search' };
+        }
       } catch {}
     }
 
-    if (emails.length) {
-      onProgress && onProgress({ status:'found', message:`✅ Found on website: ${emails[0]}` });
-      return { email: emails[0], confidence: 85, source: 'website' };
-    }
-    onProgress && onProgress({ status:'not_found', message:`No email on website` });
+    onProgress && onProgress({ status:'not_found', message:`No email found via Google search` });
   } catch(e) {
-    onProgress && onProgress({ status:'error', message:`⚠ Could not fetch website: ${e.message}` });
+    if (page) await page.close().catch(() => {});
+    onProgress && onProgress({ status:'error', message:`⚠ Google search failed: ${e.message}` });
   }
   return null;
 }
@@ -464,39 +520,49 @@ async function hunterSearch(lead, onProgress) {
   return null;
 }
 
-// Main findEmail pipeline: Facebook slug guess → Instagram slug guess → Website
+// Main findEmail pipeline: Website → Google → Facebook → Instagram
 async function findEmail(lead, onProgress) {
   onProgress && onProgress({ status:'searching', message:`🔎 Finding email for ${lead.name}...` });
   const sources = [];
 
-  // Step 1: Find + scrape Facebook page (slug guessing → Puppeteer scrape, no login needed)
-  try {
-    const fb = await findEmailFromFacebook(lead, onProgress);
-    if (fb) { markSearched(lead); return fb; }
-    sources.push('Facebook: no email found');
-  } catch(e) {
-    sources.push(`Facebook: error (${e.message})`);
-    onProgress && onProgress({ status:'error', message:`⚠ Facebook search failed: ${e.message}` });
-  }
-
-  // Step 2: Find + scrape Instagram page (slug guessing → Puppeteer scrape, needs IG login)
-  try {
-    const ig = await findEmailFromInstagram(lead, onProgress);
-    if (ig) { markSearched(lead); return ig; }
-    sources.push('Instagram: no email found');
-  } catch(e) {
-    sources.push(`Instagram: error (${e.message})`);
-    onProgress && onProgress({ status:'error', message:`⚠ Instagram search failed: ${e.message}` });
-  }
-
-  // Step 3: Try website if available (usually not, since scout filters for no-website leads)
+  // Step 1: Deep-scrape business website (highest accuracy, matches manual method)
   try {
     const web = await findEmailFromWebsite(lead, onProgress);
     if (web) { markSearched(lead); return web; }
-    sources.push('Website: no email found');
+    sources.push('Website: no email');
   } catch(e) {
-    sources.push(`Website: error (${e.message})`);
-    onProgress && onProgress({ status:'error', message:`⚠ Website search failed: ${e.message}` });
+    sources.push(`Website: error`);
+    onProgress && onProgress({ status:'error', message:`⚠ Website scrape failed: ${e.message}` });
+  }
+
+  // Step 2: Google search to find website + scrape (for leads without website URL)
+  try {
+    const gs = await findEmailViaGoogle(lead, onProgress);
+    if (gs) { markSearched(lead); return gs; }
+    sources.push('Google: no email');
+  } catch(e) {
+    sources.push(`Google: error`);
+    onProgress && onProgress({ status:'error', message:`⚠ Google search failed: ${e.message}` });
+  }
+
+  // Step 3: Facebook slug guess + scrape (no login needed)
+  try {
+    const fb = await findEmailFromFacebook(lead, onProgress);
+    if (fb) { markSearched(lead); return fb; }
+    sources.push('Facebook: no email');
+  } catch(e) {
+    sources.push(`Facebook: error`);
+    onProgress && onProgress({ status:'error', message:`⚠ Facebook search failed: ${e.message}` });
+  }
+
+  // Step 4: Instagram slug guess + scrape (needs IG login)
+  try {
+    const ig = await findEmailFromInstagram(lead, onProgress);
+    if (ig) { markSearched(lead); return ig; }
+    sources.push('Instagram: no email');
+  } catch(e) {
+    sources.push(`Instagram: error`);
+    onProgress && onProgress({ status:'error', message:`⚠ Instagram search failed: ${e.message}` });
   }
 
   markSearched(lead);
