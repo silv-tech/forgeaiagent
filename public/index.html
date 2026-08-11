@@ -245,25 +245,24 @@ input[type=range]{flex:1;accent-color:var(--cyan);cursor:pointer;padding:0}
 
 .gap{height:16px}
 
-/* ── TYPE PICKER ── */
-.type-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;min-height:20px}
-.ttag{
-  display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
-  border-radius:20px;font-size:10.5px;font-weight:700;
-  background:rgba(0,229,255,.12);border:1px solid rgba(0,229,255,.35);color:var(--cyan);
-}
-.ttag span{cursor:pointer;opacity:.5;line-height:1;font-size:13px;transition:opacity .15s}
-.ttag span:hover{opacity:1;color:var(--red)}
-.tpicker{display:flex;flex-direction:column;gap:10px;margin-bottom:4px;max-height:260px;overflow-y:auto;padding-right:4px}
-.tcat-label{font-size:8.5px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);padding:0 2px;margin-bottom:2px}
-.tcat-items{display:flex;flex-wrap:wrap;gap:4px}
-.tp{
+/* ── SEARCH QUERY ── */
+.sq-wrap{position:relative}
+.sq-input{width:100%;padding:9px 32px 9px 12px;font-size:12.5px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box;font-family:var(--font)}
+.sq-input:focus{border-color:var(--cyan)}
+.sq-input::placeholder{color:var(--t4)}
+.sq-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t4);cursor:pointer;font-size:14px;padding:2px 4px;line-height:1;transition:color .15s}
+.sq-clear:hover{color:var(--red)}
+.sq-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.sq-chip{
   padding:4px 10px;border-radius:20px;border:1px solid var(--b1);
   background:transparent;font-family:var(--font);font-size:10.5px;font-weight:600;
   color:var(--t3);cursor:pointer;transition:all .15s;white-space:nowrap;
 }
-.tp:hover{border-color:var(--b2);color:var(--t1);background:rgba(255,255,255,.04)}
-.tp.sel{border-color:rgba(0,229,255,.4);background:rgba(0,229,255,.12);color:var(--cyan);box-shadow:0 0 8px rgba(0,229,255,.12)}
+.sq-chip:hover{border-color:var(--b2);color:var(--t1);background:rgba(255,255,255,.04)}
+.sq-ac-item{padding:7px 12px;font-size:11.5px;color:var(--t2);cursor:pointer;transition:background .1s;border-bottom:1px solid rgba(255,255,255,.04)}
+.sq-ac-item:last-child{border-bottom:none}
+.sq-ac-item:hover,.sq-ac-item.active{background:rgba(0,229,255,.08);color:var(--t1)}
+.sq-ac-cat{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t4);margin-left:6px}
 
 /* ── SCAN ANIM ── */
 .scan{display:flex;align-items:center;gap:6px;font-size:10px;font-family:var(--mono);color:var(--cyan)}
@@ -298,6 +297,10 @@ input[type=range]{flex:1;accent-color:var(--cyan);cursor:pointer;padding:0}
 table{width:100%;border-collapse:collapse}
 thead{position:sticky;top:0;background:rgba(11,15,26,.95);z-index:5;backdrop-filter:blur(8px)}
 th{padding:8px 12px;text-align:left;font-size:8.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--b1)}
+th.sortable{cursor:pointer;user-select:none;transition:color .15s}
+th.sortable:hover{color:var(--cyan)}
+th.sortable.active{color:var(--cyan)}
+th.sortable .arrow{font-size:8px;margin-left:3px;opacity:.7}
 td{padding:9px 12px;border-bottom:1px solid rgba(30,42,69,.5);vertical-align:middle;transition:background .12s}
 tr:hover td{background:rgba(0,229,255,.03)}
 .ln{font-weight:700;font-size:12px;color:var(--t1)}
@@ -594,13 +597,14 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       </div>
 
       <div style="margin-bottom:4px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)">Business Types</div>
-          <div id="s-type-count" style="font-size:9px;font-family:var(--mono);color:var(--cyan);background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);padding:2px 8px;border-radius:8px;font-weight:700">0</div>
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">What to Search</div>
+        <div class="sq-wrap">
+          <input type="text" id="s-query" class="sq-input" placeholder="e.g. contractors house renovations, plumbers" autocomplete="off" oninput="onQueryInput()" onfocus="onQueryInput()">
+          <button class="sq-clear" onclick="document.getElementById('s-query').value='';document.getElementById('sq-ac').style.display='none'" title="Clear">×</button>
+          <div id="sq-ac" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;max-height:180px;overflow-y:auto;background:var(--s2);border:1px solid var(--b1);border-radius:8px;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
         </div>
-        <div class="type-tags" id="ttags"></div>
-        <div class="tpicker" id="tpicker"></div>
-        <div style="font-size:9px;color:var(--t4);margin-top:6px;letter-spacing:.02em">Tap to add · tap × to remove · up to 5</div>
+        <div class="sq-chips" id="sq-chips"></div>
+        <div style="font-size:9px;color:var(--t4);margin-top:6px;letter-spacing:.02em">Type any niche · comma-separate for multiple searches · up to 10</div>
       </div>
     </div>
 
@@ -691,7 +695,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
         <div class="es">Set location, pick business types, then launch the Scout</div>
       </div>
       <table id="scout-tbl" style="display:none">
-        <thead><tr><th><input type="checkbox" id="s-all" onchange="sTogAll(this.checked)" style="width:auto;margin:0;padding:0;accent-color:var(--cyan)"></th><th>#</th><th>Business</th><th>Phone</th><th>Rating</th><th>Website</th><th>Email</th><th>Type</th><th>Score</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="s-all" onchange="sTogAll(this.checked)" style="width:auto;margin:0;padding:0;accent-color:var(--cyan)"></th><th>#</th><th class="sortable" onclick="sortBy('name')">Business<span id="sort-name"></span></th><th class="sortable" onclick="sortBy('phone')">Phone<span id="sort-phone"></span></th><th class="sortable" onclick="sortBy('rating')">Rating<span id="sort-rating"></span></th><th class="sortable" onclick="sortBy('website')">Website<span id="sort-website"></span></th><th class="sortable" onclick="sortBy('email')">Email<span id="sort-email"></span></th><th class="sortable" onclick="sortBy('type')">Type<span id="sort-type"></span></th><th class="sortable" onclick="sortBy('score')">Score<span id="sort-score"></span></th><th class="sortable" onclick="sortBy('status')">Status<span id="sort-status"></span></th><th></th></tr></thead>
         <tbody id="scout-body"></tbody>
       </table>
     </div>
@@ -1322,6 +1326,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 <script>
 // ── STATE ─────────────────────────────────────────────────────────────────
 let leads=[], lastReply=null, siteLead=null, trackingData=[], notesLeadId=null;
+let sortCol=null, sortDir='desc';
 let trackingMap=new Map();
 function rebuildTrackingMap(){trackingMap=new Map();for(const t of trackingData){if(!trackingMap.has(t.leadId))trackingMap.set(t.leadId,[]);trackingMap.get(t.leadId).push(t);}}
 const MAX_VISIBLE=200;
@@ -1346,31 +1351,28 @@ function debounce(fn,ms){
 }
 const idle=(cb)=> (window.requestIdleCallback||((f)=>setTimeout(f,120)))(cb,{timeout:1500});
 
-const TYPES=[
-  {v:'restaurant',l:'Restaurant',c:'Food & Drink'},{v:'cafe',l:'Cafe',c:'Food & Drink'},{v:'bakery',l:'Bakery',c:'Food & Drink'},
-  {v:'bar',l:'Bar / Pub',c:'Food & Drink'},{v:'grocery_or_supermarket',l:'Grocery',c:'Food & Drink'},
-  {v:'beauty_salon',l:'Beauty Salon',c:'Personal Care'},{v:'hair_care',l:'Hair Salon',c:'Personal Care'},
-  {v:'barbershop',l:'Barbershop',c:'Personal Care'},{v:'massage_therapist',l:'Massage Therapist',c:'Personal Care'},
-  {v:'tailor',l:'Tailor',c:'Personal Care'},
-  {v:'gym',l:'Gym',c:'Health & Fitness'},{v:'yoga_studio',l:'Yoga Studio',c:'Health & Fitness'},
-  {v:'dentist',l:'Dentist',c:'Health & Fitness'},{v:'chiropractor',l:'Chiropractor',c:'Health & Fitness'},
-  {v:'plumber',l:'Plumber',c:'Home Services'},{v:'electrician',l:'Electrician',c:'Home Services'},
-  {v:'roofer',l:'Roofer',c:'Home Services'},{v:'landscaper',l:'Landscaper',c:'Home Services'},
-  {v:'pool_cleaner',l:'Pool Cleaner',c:'Home Services'},{v:'pest_control',l:'Pest Control',c:'Home Services'},
-  {v:'auto_repair',l:'Auto Repair',c:'Other Services'},{v:'photographer',l:'Photographer',c:'Other Services'},
-  {v:'wedding_officiant',l:'Wedding Officiant',c:'Other Services'},{v:'florist',l:'Florist',c:'Other Services'},
-  {v:'pet_store',l:'Pet Store',c:'Other Services'},{v:'laundry',l:'Laundry',c:'Other Services'},
-  {v:'clothing_store',l:'Clothing',c:'Other Services'},{v:'hardware_store',l:'Hardware',c:'Other Services'},
-  {v:'computer_store',l:'Computer Parts',c:'Other Services'},
-  {v:'marketing_agency',l:'Marketing Agency',c:'Agencies'},{v:'digital_agency',l:'Digital Agency',c:'Agencies'},
-  {v:'creative_agency',l:'Creative Agency',c:'Agencies'},{v:'advertising_agency',l:'Advertising Agency',c:'Agencies'},
-  {v:'social_media_agency',l:'Social Media Agency',c:'Agencies'},{v:'seo_agency',l:'SEO Agency',c:'Agencies'},
-  {v:'pr_agency',l:'PR Agency',c:'Agencies'},{v:'web_design_agency',l:'Web Design Agency',c:'Agencies'},
-  {v:'video_production_agency',l:'Video Production Agency',c:'Agencies'},{v:'branding_agency',l:'Branding Agency',c:'Agencies'},
-  {v:'content_marketing_agency',l:'Content Marketing Agency',c:'Agencies'},{v:'email_marketing_agency',l:'Email Marketing Agency',c:'Agencies'},
-  {v:'media_buying_agency',l:'Media Buying Agency',c:'Agencies'},
+const BIZ_SUGGESTIONS=[
+  {l:'Restaurant',c:'Food & Drink'},{l:'Cafe',c:'Food & Drink'},{l:'Bakery',c:'Food & Drink'},
+  {l:'Bar / Pub',c:'Food & Drink'},{l:'Grocery',c:'Food & Drink'},
+  {l:'Beauty Salon',c:'Personal Care'},{l:'Hair Salon',c:'Personal Care'},
+  {l:'Barbershop',c:'Personal Care'},{l:'Massage Therapist',c:'Personal Care'},
+  {l:'Tailor',c:'Personal Care'},{l:'Nail Salon',c:'Personal Care'},
+  {l:'Gym',c:'Health & Fitness'},{l:'Yoga Studio',c:'Health & Fitness'},
+  {l:'Dentist',c:'Health & Fitness'},{l:'Chiropractor',c:'Health & Fitness'},
+  {l:'Plumber',c:'Home Services'},{l:'Electrician',c:'Home Services'},
+  {l:'Roofer',c:'Home Services'},{l:'Landscaper',c:'Home Services'},
+  {l:'Pool Cleaner',c:'Home Services'},{l:'Pest Control',c:'Home Services'},
+  {l:'Contractor',c:'Home Services'},{l:'HVAC',c:'Home Services'},
+  {l:'Auto Repair',c:'Other Services'},{l:'Photographer',c:'Other Services'},
+  {l:'Florist',c:'Other Services'},{l:'Pet Store',c:'Other Services'},
+  {l:'Laundry',c:'Other Services'},{l:'Clothing Store',c:'Other Services'},
+  {l:'Hardware Store',c:'Other Services'},{l:'Computer Store',c:'Other Services'},
+  {l:'Marketing Agency',c:'Agencies'},{l:'Digital Agency',c:'Agencies'},
+  {l:'Creative Agency',c:'Agencies'},{l:'Advertising Agency',c:'Agencies'},
+  {l:'Social Media Agency',c:'Agencies'},{l:'SEO Agency',c:'Agencies'},
+  {l:'PR Agency',c:'Agencies'},{l:'Web Design Agency',c:'Agencies'},
+  {l:'Video Production',c:'Agencies'},{l:'Branding Agency',c:'Agencies'},
 ];
-let selTypes=[];
 
 
 // ── CITY GROUPING ────────────────────────────────────────────────────────
@@ -1411,7 +1413,7 @@ function toggleCitySel(city,checked){
 }
 
 async function boot(){
-  initTypes();
+  initSuggestions();
   // Critical path: leads + config. Everything else is pushed off the first paint.
   await loadLeads();
   connect();
@@ -1570,7 +1572,7 @@ function onSSE(d){
       document.getElementById('s-run').textContent=d.leadsFound;drawScout();updStats();
     }
   }
-  if(d.type==='scout_done'){bar('s-pb',100);setTimeout(()=>bar('s-pb',0),2500);btn('scout-btn','▶ Run Scout Agent',false);document.getElementById('scan-anim').style.display='none';const parts=[];if(d.newCount)parts.push(d.newCount+' new');if(d.dupCount)parts.push(d.dupCount+' already existed');if(d.errCount)parts.push(d.errCount+' save errors');log('s-feed','✓ Scout complete'+(parts.length?' — '+parts.join(', '):''),'gr');loadLeads().then(()=>{drawB();drawEF();});}
+  if(d.type==='scout_done'){bar('s-pb',100);setTimeout(()=>bar('s-pb',0),2500);btn('scout-btn','▶ Run Scout Agent',false);document.getElementById('scan-anim').style.display='none';const parts=[];if(d.newCount)parts.push(d.newCount+' new');if(d.dupCount)parts.push(d.dupCount+' already existed');if(d.errCount)parts.push(d.errCount+' save errors');log('s-feed','✓ Scout complete'+(parts.length?' — '+parts.join(', '):''),'gr');loadLeads().then(()=>{drawB();drawEF();scoreAll();});}
   if(d.type==='emailfinder')log('ef-feed',d.message,d.status==='found'?'gr':d.status==='error'?'er':'');
   if(d.type==='emailfinder_done'){if(d.email&&d.leadId){const l=findLeadLocal(d.leadId);if(l){l.foundEmail=d.email;l.emailConfidence=d.confidence;}drawEF();drawScout();updStats();}}
   if(d.type==='emailfinder_batch_done'){log('ef-feed',`✓ Done, ${d.found}/${d.total} emails found`,'gr');btn('ef-btn','▶ Find Emails',false);bar('ef-pb',0);loadCreds();}
@@ -1599,58 +1601,108 @@ function onSSE(d){
 }
 
 // ── TYPE PICKER ───────────────────────────────────────────────────────────
-function initTypes(){
-  const cats=[...new Set(TYPES.map(t=>t.c))];
-  document.getElementById('tpicker').innerHTML=cats.map(c=>{
-    const items=TYPES.filter(t=>t.c===c);
-    return `<div class="tcat"><div class="tcat-label">${c}</div><div class="tcat-items">${items.map(t=>`<div class="tp ${selTypes.includes(t.v)?'sel':''}" id="tp-${t.v}" onclick="togType('${t.v}')">${t.l}</div>`).join('')}</div></div>`;
-  }).join('');
-  drawTags();
+function initSuggestions(){
+  const quick=['Restaurant','Contractor','Beauty Salon','Plumber','Gym','Auto Repair','Marketing Agency','Dentist'];
+  document.getElementById('sq-chips').innerHTML=quick.map(s=>`<button class="sq-chip" onclick="pickSuggestion('${s}')">${s}</button>`).join('');
+  document.addEventListener('click',e=>{if(!e.target.closest('.sq-wrap'))document.getElementById('sq-ac').style.display='none';});
 }
-function togType(v){
-  if(selTypes.includes(v)){selTypes=selTypes.filter(x=>x!==v);}
-  else{if(selTypes.length>=5){log('s-feed','Maximum 5 business types per run','er');return;}selTypes.push(v);}
-  drawTags();
+let _acIdx=-1;
+function onQueryInput(){
+  const inp=document.getElementById('s-query');
+  const ac=document.getElementById('sq-ac');
+  // Get the current segment (after last comma)
+  const raw=inp.value;
+  const parts=raw.split(',');
+  const cur=parts[parts.length-1].trim().toLowerCase();
+  if(!cur){ac.style.display='none';_acIdx=-1;return;}
+  const matches=BIZ_SUGGESTIONS.filter(s=>s.l.toLowerCase().includes(cur));
+  if(!matches.length){ac.style.display='none';_acIdx=-1;return;}
+  _acIdx=-1;
+  ac.innerHTML=matches.slice(0,12).map((s,i)=>`<div class="sq-ac-item" onmousedown="pickSuggestion('${s.l}')">${s.l} <span class="sq-ac-cat">${s.c}</span></div>`).join('');
+  ac.style.display='block';
 }
-function drawTags(){
-  const count=document.getElementById('s-type-count');
-  if(count)count.textContent=selTypes.length;
-  document.getElementById('ttags').innerHTML=selTypes.length
-    ? selTypes.map(v=>{const t=TYPES.find(x=>x.v===v);return`<span class="ttag">${t?.l||v} <span onclick="togType('${v}')">×</span></span>`;}).join('')
-    : '<span style="font-size:10px;color:var(--t4);font-style:italic">None selected — pick types below</span>';
-  TYPES.forEach(t=>{const el=document.getElementById('tp-'+t.v);if(el)el.className=`tp ${selTypes.includes(t.v)?'sel':''}`;});
+function pickSuggestion(label){
+  const inp=document.getElementById('s-query');
+  const parts=inp.value.split(',').map(s=>s.trim()).filter(Boolean);
+  // Replace the current (incomplete) segment with the suggestion
+  if(parts.length>0){
+    const last=parts[parts.length-1].toLowerCase();
+    if(label.toLowerCase().includes(last))parts.pop();
+  }
+  if(!parts.includes(label))parts.push(label);
+  inp.value=parts.join(', ');
+  document.getElementById('sq-ac').style.display='none';
+  inp.focus();
 }
 
 // ── SCOUT ─────────────────────────────────────────────────────────────────
 async function runScout(){
   const loc=document.getElementById('s-loc').value.trim();
   if(!loc){log('s-feed','Enter a location first','er');return;}
-  if(!selTypes.length){log('s-feed','Select at least one business type','er');return;}
+  const rawQ=document.getElementById('s-query').value;
+  const queries=[...new Set(rawQ.split(',').map(s=>s.trim()).filter(Boolean))].slice(0,10);
+  if(!queries.length){log('s-feed','Enter what to search for','er');return;}
   btn('scout-btn','Scanning...',true);
   document.getElementById('scan-anim').style.display='flex';
   document.getElementById('s-run').textContent='0';
-  log('s-feed',`Launching ${selTypes.length} search(es) in ${loc}...`,'hi');
-  const r=await post('/api/scout/run',{location:loc,businessTypes:selTypes,maxLeads:document.getElementById('s-max').value,filter:document.getElementById('s-filter').value,sessionId:sid});
+  log('s-feed',`Launching ${queries.length} search(es) in ${loc}...`,'hi');
+  const r=await post('/api/scout/run',{location:loc,searchQueries:queries,maxLeads:document.getElementById('s-max').value,filter:document.getElementById('s-filter').value,sessionId:sid});
   if(!r.ok){btn('scout-btn','▶ Run Scout Agent',false);document.getElementById('scan-anim').style.display='none';}
 }
 
 function scoreBadge(s){if(s==null)return'';return s>=70?`<span class="score score-hi">${s}</span>`:s>=40?`<span class="score score-md">${s}</span>`:`<span class="score score-lo">${s}</span>`;}
+
+function sortBy(col){
+  if(sortCol===col){if(sortDir==='desc')sortDir='asc';else{sortCol=null;sortDir='desc';}}
+  else{sortCol=col;sortDir='desc';}
+  updateSortArrows();
+  drawScout();
+}
+function updateSortArrows(){
+  const cols=['name','phone','rating','website','email','type','score','status'];
+  for(const c of cols){
+    const el=document.getElementById('sort-'+c);
+    if(!el)continue;
+    const th=el.parentElement;
+    if(c===sortCol){el.innerHTML=' <span class="arrow">'+(sortDir==='asc'?'▲':'▼')+'</span>';th.classList.add('active');}
+    else{el.innerHTML='';th.classList.remove('active');}
+  }
+}
+function sortLeads(arr){
+  if(!sortCol)return arr;
+  const m=sortDir==='asc'?1:-1;
+  return [...arr].sort((a,b)=>{
+    let va,vb;
+    switch(sortCol){
+      case'name':va=(a.name||'').toLowerCase();vb=(b.name||'').toLowerCase();return va<vb?-m:va>vb?m:0;
+      case'rating':va=a.rating==='N/A'?0:parseFloat(a.rating)||0;vb=b.rating==='N/A'?0:parseFloat(b.rating)||0;return(va-vb)*m;
+      case'score':va=a.score==null?-1:a.score;vb=b.score==null?-1:b.score;return(va-vb)*m;
+      case'website':va=a.website?1:0;vb=b.website?1:0;return(va-vb)*m;
+      case'email':va=a.foundEmail?1:0;vb=b.foundEmail?1:0;return(va-vb)*m;
+      case'phone':va=(a.phone&&a.phone!=='N/A')?1:0;vb=(b.phone&&b.phone!=='N/A')?1:0;return(va-vb)*m;
+      case'type':va=(a.type||'').toLowerCase();vb=(b.type||'').toLowerCase();return va<vb?-m:va>vb?m:0;
+      case'status':va=(a.status||'').toLowerCase();vb=(b.status||'').toLowerCase();return va<vb?-m:va>vb?m:0;
+      default:return 0;
+    }
+  });
+}
+
 function drawScout(){
   const e=document.getElementById('scout-e'),t=document.getElementById('scout-tbl');
   const sq=(document.getElementById('s-search')?.value||'').trim().toLowerCase();
-  const filtered=sq?leads.filter(l=>(l.name||'').toLowerCase().includes(sq)||(l.type||'').toLowerCase().replace(/_/g,' ').includes(sq)||(l.address||'').toLowerCase().includes(sq)||(l.status||'').toLowerCase().includes(sq)||(l.phone||'').toLowerCase().includes(sq)||(l.foundEmail||'').toLowerCase().includes(sq)):leads;
+  const filtered=sq?leads.filter(l=>(l.name||'').toLowerCase().includes(sq)||(l.type||'').toLowerCase().replace(/_/g,' ').includes(sq)||(l.address||'').toLowerCase().includes(sq)||(l.location||'').toLowerCase().includes(sq)||(l.status||'').toLowerCase().includes(sq)||(l.phone||'').toLowerCase().includes(sq)||(l.foundEmail||'').toLowerCase().includes(sq)):leads;
   document.getElementById('s-badge').textContent=sq?filtered.length+'/'+leads.length+' found':leads.length+' found';
-  if(!filtered.length){e.style.display='flex';e.querySelector('.et').textContent=sq?'No Matches':'Scout Agent Ready';e.querySelector('.es').textContent=sq?'Try a different search term':'Set location, pick business types, then launch the Scout';t.style.display='none';return;}
+  if(!filtered.length){e.style.display='flex';e.querySelector('.et').textContent=sq?'No Matches':'Scout Agent Ready';e.querySelector('.es').textContent=sq?'Try a different search term':'Set location, type what to search for, then launch the Scout';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
-  const capped=filtered.length>MAX_VISIBLE;
-  const visible=capped?filtered.slice(0,MAX_VISIBLE):filtered;
-  const groups=groupByLocation(visible);
-  const multi=groups.size>1;
+  const sorted=sortLeads(filtered);
+  const capped=sorted.length>MAX_VISIBLE;
+  const visible=capped?sorted.slice(0,MAX_VISIBLE):sorted;
+  const isSorted=!!sortCol;
+  const groups=isSorted?null:groupByLocation(visible);
+  const multi=groups?groups.size>1:false;
   let html='';
-  for(const [city,items] of groups){
-    if(multi) html+=cityHeaderRow(city,items.length,11,sSel,items);
-    if(multi&&collapsedCities.has(city)) continue;
-    html+=items.map(({lead:l,idx:i})=>`<tr>
+  if(isSorted){
+    html+=visible.map((l,i)=>`<tr>
     <td><input type="checkbox" ${sSel.has(l.id)?'checked':''} onchange="sTog('${l.id}',this.checked)" style="width:auto;margin:0;padding:0;accent-color:var(--cyan)"></td>
     <td style="color:var(--t4);font-family:var(--mono);font-size:9.5px">${i+1}</td>
     <td><div class="ln">${x(l.name)}</div><div class="la">${x(l.address)}</div></td>
@@ -1668,8 +1720,31 @@ function drawScout(){
       <button class="ib" onclick="delLead('${l.id}')" title="Remove">✕</button>
     </td>
   </tr>`).join('');
+  } else {
+    for(const [city,items] of groups){
+      if(multi) html+=cityHeaderRow(city,items.length,11,sSel,items);
+      if(multi&&collapsedCities.has(city)) continue;
+      html+=items.map(({lead:l,idx:i})=>`<tr>
+    <td><input type="checkbox" ${sSel.has(l.id)?'checked':''} onchange="sTog('${l.id}',this.checked)" style="width:auto;margin:0;padding:0;accent-color:var(--cyan)"></td>
+    <td style="color:var(--t4);font-family:var(--mono);font-size:9.5px">${i+1}</td>
+    <td><div class="ln">${x(l.name)}</div><div class="la">${x(l.address)}</div></td>
+    <td class="ph ${!l.phone||l.phone==='N/A'?'na':''}">${x(l.phone||'N/A')}</td>
+    <td style="font-size:11px;color:var(--amber)">${l.rating!=='N/A'?'★ '+l.rating+' <span style="color:var(--t3);font-size:9px">('+l.reviews+')</span>':'-'}</td>
+    <td>${l.website?'<span class="badge" style="background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);color:#ff6b85;font-size:8.5px;padding:2px 7px;border-radius:10px">Has Site</span>':'<span class="badge" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:var(--green);font-size:8.5px;padding:2px 7px;border-radius:10px">No Site</span>'}</td>
+    <td>${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span>`:'<span style="color:var(--t4);font-size:10px">-</span>'}</td>
+    <td><span class="badge b-type">${x(l.type||'').replace(/_/g,' ')}</span></td>
+    <td>${scoreBadge(l.score)}</td>
+    <td>${sb(l.status||'New')}</td>
+    <td style="white-space:nowrap">
+      <button class="ni ${l.notes?'has':''}" onclick="openNotes('${l.id}')" title="Notes">📝</button>
+      <a href="https://www.google.com/search?q=${encodeURIComponent(l.name+' '+l.address)}" target="_blank" title="Google Search" class="ib" style="text-decoration:none;font-size:11px">🔍</a>
+      <a href="https://www.google.com/maps/search/${encodeURIComponent(l.name+' '+l.address)}" target="_blank" title="Google Maps" class="ib" style="text-decoration:none;font-size:11px">📍</a>
+      <button class="ib" onclick="delLead('${l.id}')" title="Remove">✕</button>
+    </td>
+  </tr>`).join('');
+    }
   }
-  if(capped) html+=`<tr><td colspan="11" style="text-align:center;padding:10px;font-size:10.5px;color:var(--t3)">Showing ${MAX_VISIBLE} of ${filtered.length} leads — use search to filter</td></tr>`;
+  if(capped) html+=`<tr><td colspan="11" style="text-align:center;padding:10px;font-size:10.5px;color:var(--t3)">Showing ${MAX_VISIBLE} of ${sorted.length} leads — use search to filter</td></tr>`;
   document.getElementById('scout-body').innerHTML=html;
   document.getElementById('s-sel-txt').textContent=sSel.size+' selected';
 }
@@ -1929,13 +2004,13 @@ function pickLead(id){
   closeLeadDrop();
   oChg();
 }
-const AGENCY_TYPES=new Set(['marketing_agency','digital_agency','creative_agency','advertising_agency','social_media_agency','seo_agency','pr_agency','web_design_agency','video_production_agency','branding_agency','content_marketing_agency','email_marketing_agency','media_buying_agency']);
+function isAgencyLead(lead){return /agency|agencies/i.test(lead?.type);}
 function getOutreachType(){
   const offer=document.getElementById('o-offer-type')?.value;
   if(offer && offer !== 'auto') return offer;
   const id=document.getElementById('o-lead').value;
   const lead=leads.find(l=>l.id===id);
-  if(AGENCY_TYPES.has(lead?.type)) return 'agency';
+  if(isAgencyLead(lead)) return 'agency';
   return lead?.website ? 'has_website' : 'no_website';
 }
 function oOfferChg(){
@@ -1959,7 +2034,7 @@ function oChg(){
   const badge=document.getElementById('o-outreach-type-badge');
   if(lead){
     badge.style.display='block';
-    if(AGENCY_TYPES.has(lead.type)){
+    if(isAgencyLead(lead)){
       badge.innerHTML='<div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:3px;font-weight:600">Email Strategy</div><div style="font-size:12.5px;font-weight:800">Agency Outreach</div><div style="font-size:10px;opacity:.7;margin-top:3px;font-weight:400">Targets agency owners doing manual client outreach</div>';
       badge.style.color='var(--cyan)';
       badge.style.background='rgba(0,200,255,.07)';
