@@ -1379,7 +1379,7 @@ const BIZ_SUGGESTIONS=[
 
 
 // ── CITY GROUPING ────────────────────────────────────────────────────────
-function normalizeCity(s){return(s||'Unknown').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());}
+function normalizeCity(s){const t=(s||'Unknown').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());return t.replace(/\b(Usa|Uk|Uae|Nyc|La|Dc)\b/gi,m=>m.toUpperCase());}
 function groupByLocation(arr){
   const groups=new Map();
   arr.forEach((l,i)=>{
