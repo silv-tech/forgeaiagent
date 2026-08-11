@@ -1833,6 +1833,9 @@ function drawEF(){
   const e=document.getElementById('ef-e'),t=document.getElementById('ef-tbl');
   if(!leads.length){e.style.display='flex';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
+  // Build duplicate email map
+  const emailCount={};
+  leads.forEach(l=>{if(l.foundEmail){const em=l.foundEmail.toLowerCase();emailCount[em]=(emailCount[em]||0)+1;}});
   const efq=(document.getElementById('ef-search')?.value||'').trim().toLowerCase();
   const efWords=efq?efq.split(/\s+/).filter(Boolean):[];
   const efFiltered=efWords.length?leads.filter(l=>{const hay=[(l.name||''),(l.address||''),(l.location||''),(l.type||'').replace(/_/g,' '),(l.foundEmail||'')].join(' ').toLowerCase();return efWords.every(w=>hay.includes(w));}):leads;
@@ -1849,7 +1852,7 @@ function drawEF(){
     <td><input type="checkbox" ${efSel.has(l.id)?'checked':''} onchange="efTog('${l.id}',this.checked)" style="width:auto;margin:0;padding:0;accent-color:var(--cyan)"></td>
     <td><div class="ln">${x(l.name)}</div></td>
     <td><div class="la">${x(l.address)}</div></td>
-    <td id="ef-edit-${l.id}">${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span><button class="ib" onclick="efManual('${l.id}','${x(l.foundEmail||'').replace(/'/g,"\\'")}')" title="Edit email" style="font-size:9px;margin-left:4px;opacity:.5">✏️</button>`:`<input type="email" id="ef-m-${l.id}" placeholder="Enter email..." style="font-size:10px;padding:3px 6px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;width:140px" onkeydown="if(event.key==='Enter')efSaveManual('${l.id}')"><button class="ab" onclick="efSaveManual('${l.id}')" style="font-size:8px;margin-left:3px">Save</button>`}</td>
+    <td id="ef-edit-${l.id}">${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span>${(emailCount[(l.foundEmail||'').toLowerCase()]||0)>1?'<span style="font-size:8px;color:var(--red);font-weight:700;margin-left:4px;background:rgba(239,68,68,.12);padding:1px 5px;border-radius:4px" title="Duplicate email — shared with another lead">DUPE</span>':''}<button class="ib" onclick="efManual('${l.id}','${x(l.foundEmail||'').replace(/'/g,"\\'")}')" title="Edit email" style="font-size:9px;margin-left:4px;opacity:.5">✏️</button>`:`<input type="email" id="ef-m-${l.id}" placeholder="Enter email..." style="font-size:10px;padding:3px 6px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;width:140px" onkeydown="if(event.key==='Enter')efSaveManual('${l.id}')"><button class="ab" onclick="efSaveManual('${l.id}')" style="font-size:8px;margin-left:3px">Save</button>`}</td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--t3)">${l.emailConfidence?l.emailConfidence+'%':'-'}</td>
     <td><button class="ab" onclick="efOne('${l.id}')">Search</button> <button class="ab" onclick="efHunter('${l.id}')" style="font-size:8px;opacity:.7">Hunter</button></td>
     <td style="white-space:nowrap">
@@ -2199,18 +2202,22 @@ function updateBatchInfo(){
   const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);
   const withEmail=leads.filter(l=>l.foundEmail).length;
   const sent=leads.filter(l=>l.outreachEmail).length;
-  // init selection with all eligible on first load
-  if(!batchSel._init){eligible.forEach(l=>batchSel.add(l.id));batchSel._init=true;}
+  // Build dupe map for batch list
+  const batchEmailCnt={};
+  eligible.forEach(l=>{const em=l.foundEmail.toLowerCase();batchEmailCnt[em]=(batchEmailCnt[em]||0)+1;});
+  // init selection with all eligible on first load, auto-deselect dupes
+  if(!batchSel._init){const seen=new Set();eligible.forEach(l=>{const em=l.foundEmail.toLowerCase();if(!seen.has(em)){seen.add(em);batchSel.add(l.id);}});batchSel._init=true;}
   // remove any that are no longer eligible
   batchSel.forEach(id=>{if(!eligible.find(l=>l.id===id))batchSel.delete(id);});
-  el.textContent=eligible.length?`${batchSel.size} of ${eligible.length} selected (${withEmail} with email, ${sent} already sent)`:'No eligible leads — find emails first';
+  const dupeCount=Object.values(batchEmailCnt).filter(v=>v>1).length;
+  el.textContent=eligible.length?`${batchSel.size} of ${eligible.length} selected (${withEmail} with email, ${sent} already sent)${dupeCount?' — '+dupeCount+' duplicate email(s)':''}`:'No eligible leads — find emails first';
   if(!listEl)return;
   if(!eligible.length){listEl.innerHTML='';return;}
-  listEl.innerHTML=eligible.map(l=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;font-size:10.5px;color:var(--t2);transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='none'">
+  listEl.innerHTML=eligible.map(l=>{const isDupe=batchEmailCnt[l.foundEmail.toLowerCase()]>1;return `<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;font-size:10.5px;color:${isDupe?'var(--red)':'var(--t2)'};transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='none'">
     <input type="checkbox" class="b-cb" value="${l.id}" ${batchSel.has(l.id)?'checked':''} onchange="batchToggle('${l.id}',this.checked)" style="width:auto;margin:0;accent-color:var(--cyan)">
-    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.name)}</span>
+    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.name)}${isDupe?' <span style="font-size:7px;background:rgba(239,68,68,.15);color:var(--red);padding:1px 4px;border-radius:3px;font-weight:700">DUPE</span>':''}</span>
     <span style="font-size:9px;color:var(--t4);font-family:var(--mono)">${x(l.foundEmail)}</span>
-  </label>`).join('');
+  </label>`;}).join('');
 }
 function batchToggle(id,checked){if(checked)batchSel.add(id);else batchSel.delete(id);const el=document.getElementById('batch-send-info');const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);el.textContent=`${batchSel.size} of ${eligible.length} selected`;}
 function batchSelAll(checked){const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);if(checked)eligible.forEach(l=>batchSel.add(l.id));else batchSel.clear();updateBatchInfo();}

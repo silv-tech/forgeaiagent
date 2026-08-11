@@ -867,14 +867,22 @@ app.post('/api/outreach/batch', async (req,res) => {
       return true;
     });
   if (!targets.length) return res.status(400).json({ error:'No eligible leads (need email, built demo for no-website leads, not already sent)' });
+  // Deduplicate by email — only keep the first lead per email address
+  const seenEmails = new Set();
+  const deduped = targets.filter(({lead}) => {
+    const em = lead.foundEmail.toLowerCase();
+    if (seenEmails.has(em)) return false;
+    seenEmails.add(em);
+    return true;
+  });
   batchOutreachRunning = true;
-  res.json({ status:'started', count:targets.length });
-  emit(sessionId, { type:'outreach_batch', status:'start', message:`🚀 Batch sending to ${targets.length} leads...` });
+  res.json({ status:'started', count:deduped.length });
+  emit(sessionId, { type:'outreach_batch', status:'start', message:`🚀 Batch sending to ${deduped.length} leads...` });
   let sent = 0, failed = 0;
-  for (let i = 0; i < targets.length; i++) {
-    const { lead, index } = targets[i];
+  for (let i = 0; i < deduped.length; i++) {
+    const { lead, index } = deduped[i];
     const email = lead.foundEmail;
-    emit(sessionId, { type:'outreach_batch', status:'sending', message:`[${i+1}/${targets.length}] Sending to ${lead.name} (${email})...`, progress: Math.round((i/targets.length)*100) });
+    emit(sessionId, { type:'outreach_batch', status:'sending', message:`[${i+1}/${deduped.length}] Sending to ${lead.name} (${email})...`, progress: Math.round((i/deduped.length)*100) });
     const lockKey = `${lead.id}:${email}`;
     if (sendingInProgress.has(lockKey)) {
       emit(sessionId, { type:'outreach_batch', status:'error', message:`⏭ ${lead.name}: Already sending, skipped` });
@@ -912,12 +920,12 @@ app.post('/api/outreach/batch', async (req,res) => {
       leads[index].outreachSentAt=result.sentAt;
       save(LF, leads);
       sent++;
-      emit(sessionId, { type:'outreach_batch', status:'sent', message:`✅ [${sent}/${targets.length}] ${lead.name} → ${email}` });
+      emit(sessionId, { type:'outreach_batch', status:'sent', message:`✅ [${sent}/${deduped.length}] ${lead.name} → ${email}` });
     } catch(e) {
       failed++;
       emit(sessionId, { type:'outreach_batch', status:'error', message:`❌ ${lead.name}: ${e.message}` });
       if (e.dailyLimitReached) {
-        const remaining = targets.length - i - 1;
+        const remaining = deduped.length - i - 1;
         emit(sessionId, { type:'outreach_batch', status:'error', message:`⛔ Daily email limit reached. Stopping batch. ${remaining} leads skipped.` });
         sendingInProgress.delete(lockKey);
         break;
