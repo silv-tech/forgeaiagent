@@ -1205,6 +1205,16 @@ app.post('/api/leads/:id/notes', (req,res) => {
   res.json({ ok:true });
 });
 
+app.patch('/api/leads/:id/email', (req,res) => {
+  const f = findLead(req.params.id);
+  if (!f) return res.status(404).json({ error:'Lead not found' });
+  const { email } = req.body;
+  leads[f.index].foundEmail = email || '';
+  leads[f.index].emailConfidence = email ? 'manual' : null;
+  save(LF, leads);
+  res.json({ ok:true, email: email || '' });
+});
+
 // ── LEAD SCORING ──────────────────────────────────────────────────────────
 app.post('/api/leads/score', (req,res) => {
   // Pre-build Sets for O(1) lookups instead of O(n) tracking.find() per lead

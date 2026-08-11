@@ -751,7 +751,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <table id="ef-tbl" style="display:none">
         <thead><tr>
           <th><input type="checkbox" id="ef-all" onchange="efTogAll(this.checked)" style="width:auto;margin:0;padding:0;accent-color:var(--cyan)"></th>
-          <th>Business</th><th>Address</th><th>Email</th><th>Confidence</th><th></th>
+          <th>Business</th><th>Address</th><th>Email</th><th>Confidence</th><th>Search</th><th></th>
         </tr></thead>
         <tbody id="ef-body"></tbody>
       </table>
@@ -1838,18 +1838,24 @@ function drawEF(){
   const multi=groups.size>1;
   let html='';
   for(const [city,items] of groups){
-    if(multi) html+=cityHeaderRow(city,items.length,6,efSel,items);
+    if(multi) html+=cityHeaderRow(city,items.length,7,efSel,items);
     if(multi&&collapsedCities.has(city)) continue;
     html+=items.map(({lead:l})=>`<tr>
     <td><input type="checkbox" ${efSel.has(l.id)?'checked':''} onchange="efTog('${l.id}',this.checked)" style="width:auto;margin:0;padding:0;accent-color:var(--cyan)"></td>
     <td><div class="ln">${x(l.name)}</div></td>
     <td><div class="la">${x(l.address)}</div></td>
-    <td>${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span>`:'<span style="color:var(--t4);font-size:10px">Not found</span>'}</td>
+    <td>${l.foundEmail?`<span class="badge b-em">${x(l.foundEmail)}</span><button class="ib" onclick="efManual('${l.id}','${x(l.foundEmail||'')}')" title="Edit email" style="font-size:9px;margin-left:4px;opacity:.5">✏️</button>`:`<input type="email" id="ef-m-${l.id}" placeholder="Enter email..." style="font-size:10px;padding:3px 6px;border:1px solid rgba(255,255,255,.1);border-radius:5px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;width:140px" onkeydown="if(event.key==='Enter')efSaveManual('${l.id}')"><button class="ab" onclick="efSaveManual('${l.id}')" style="font-size:8px;margin-left:3px">Save</button>`}</td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--t3)">${l.emailConfidence?l.emailConfidence+'%':'-'}</td>
     <td><button class="ab" onclick="efOne('${l.id}')">Search</button> <button class="ab" onclick="efHunter('${l.id}')" style="font-size:8px;opacity:.7">Hunter</button></td>
+    <td style="white-space:nowrap">
+      <button class="ni ${l.notes?'has':''}" onclick="openNotes('${l.id}')" title="Notes">📝</button>
+      <a href="https://www.google.com/search?q=${encodeURIComponent(l.name+' '+l.address)}" target="_blank" title="Google Search" class="ib" style="text-decoration:none;font-size:11px">🔍</a>
+      <a href="https://www.google.com/maps/search/${encodeURIComponent(l.name+' '+l.address)}" target="_blank" title="Google Maps" class="ib" style="text-decoration:none;font-size:11px">📍</a>
+      <button class="ib" onclick="delLead('${l.id}')" title="Remove">✕</button>
+    </td>
   </tr>`).join('');
   }
-  if(efCapped) html+=`<tr><td colspan="6" style="text-align:center;padding:10px;font-size:10.5px;color:var(--t3)">Showing ${MAX_VISIBLE} of ${leads.length} leads — use search to filter</td></tr>`;
+  if(efCapped) html+=`<tr><td colspan="7" style="text-align:center;padding:10px;font-size:10.5px;color:var(--t3)">Showing ${MAX_VISIBLE} of ${efFiltered.length} leads — use search to filter</td></tr>`;
   document.getElementById('ef-body').innerHTML=html;
   document.getElementById('ef-sel-txt').textContent=efSel.size+' selected';
 }
@@ -1857,6 +1863,24 @@ function efTog(id,c){c?efSel.add(id):efSel.delete(id);document.getElementById('e
 function efTogAll(c){efSel.clear();if(c)leads.forEach(l=>efSel.add(l.id));drawEF();}
 function efSelAll(){efSel.clear();leads.forEach(l=>{if(!l.foundEmail)efSel.add(l.id);});drawEF();}
 function efClear(){efSel.clear();const a=document.getElementById('ef-all');if(a)a.checked=false;drawEF();}
+async function efSaveManual(id){
+  const inp=document.getElementById('ef-m-'+id);
+  const email=(inp?.value||'').trim();
+  if(!email||!email.includes('@')){alert('Enter a valid email');return;}
+  const r=await fetch('/api/leads/'+id+'/email',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+  if(r.ok){const l=leads.find(x=>x.id===id);if(l){l.foundEmail=email;l.emailConfidence='manual';}drawEF();drawScout();log('ef-feed',`✅ Manual email saved: ${email}`,'gr');}
+  else{log('ef-feed','✗ Failed to save email','er');}
+}
+function efManual(id,current){
+  const email=prompt('Edit email:',current);
+  if(email===null)return;
+  if(!email.trim()){/* clear email */const l=leads.find(x=>x.id===id);if(l){l.foundEmail='';l.emailConfidence=null;}fetch('/api/leads/'+id+'/email',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:''})});drawEF();return;}
+  efSaveManualDirect(id,email.trim());
+}
+async function efSaveManualDirect(id,email){
+  const r=await fetch('/api/leads/'+id+'/email',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+  if(r.ok){const l=leads.find(x=>x.id===id);if(l){l.foundEmail=email;l.emailConfidence='manual';}drawEF();drawScout();log('ef-feed',`✅ Email updated: ${email}`,'gr');}
+}
 function efSelVisible(){
   const efq=(document.getElementById('ef-search')?.value||'').trim().toLowerCase();
   const efWords=efq?efq.split(/\s+/).filter(Boolean):[];
