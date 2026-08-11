@@ -91,7 +91,7 @@ app.use(compression({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'agentforge-secret-key',
+  secret: process.env.SESSION_SECRET || randomUUID(),
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' }
@@ -231,14 +231,16 @@ const saveDebounced = (f, d, ms = 2000) => {
     try { save(f, d); } catch (e) { console.error('[saveDebounced]', f, e.message); }
   }, ms));
 };
-// Flush pending writes on shutdown so nothing is lost.
+// Flush ALL pending writes on shutdown so nothing is lost.
+const _fileDataMap = () => ({ [LF]: leads, [OF]: outreach, [RF]: replies, [TF]: tracking, [SEQ_F]: sequences, [SCH_F]: scheduled, [USF]: unsubscribed, [VPF]: voiceProfiles, [CLF]: callLogs });
 const _flushPending = () => {
+  const dataMap = _fileDataMap();
   for (const [f, t] of _saveTimers) {
     clearTimeout(t);
     _saveTimers.delete(f);
     try {
-      if (f === TF) save(f, tracking);
-    } catch (e) { console.error('[flush]', e.message); }
+      if (dataMap[f]) save(f, dataMap[f]);
+    } catch (e) { console.error('[flush]', f, e.message); }
   }
 };
 process.on('SIGINT', () => { _flushPending(); process.exit(0); });
@@ -543,7 +545,7 @@ app.get('/api/scout/status', (req,res) => {
 });
 
 app.post('/api/scout/run', async (req,res) => {
-  const { location, businessTypes, businessType, maxLeads, filter, sessionId } = req.body;
+  const { location, businessTypes, businessType, searchQueries, maxLeads, filter, sessionId } = req.body;
   if (!location) return res.status(400).json({ error:'Location required' });
   if (scoutRunning) return res.status(409).json({ error:'Scout already running, please wait' });
   // Reset daily counter at midnight
@@ -556,7 +558,8 @@ app.post('/api/scout/run', async (req,res) => {
   try {
     // Server-side caps: max 50 leads, max 5 business types
     const cappedLeads = Math.min(parseInt(maxLeads) || 20, 50);
-    const cappedTypes = (businessTypes?.length ? businessTypes.slice(0, 5) : [businessType]).filter(Boolean);
+    const types = businessTypes?.length ? businessTypes : searchQueries?.length ? searchQueries : [businessType];
+    const cappedTypes = types.filter(Boolean).slice(0, 5);
     let newCount = 0, dupCount = 0, errCount = 0;
     await runScout({ location, businessTypes: cappedTypes, maxLeads: cappedLeads, filter:filter||'no_website' }, p => {
       if (p.lead) {
@@ -1500,12 +1503,15 @@ app.post('/api/settings', (req,res) => {
 // ── DATA RESTORE (import local data to server) ─────────────────────────
 app.post('/api/restore', (req,res) => {
   const { leads:ld, outreach:or, replies:rp, tracking:tr, sequences:sq, scheduled:sc } = req.body;
-  if (ld && Array.isArray(ld)) { leads = ld; save(LF, leads); }
-  if (or && Array.isArray(or)) { outreach = or; save(OF, outreach); }
-  if (rp && Array.isArray(rp)) { replies = rp; save(RF, replies); }
-  if (tr && Array.isArray(tr)) { tracking = tr; save(TF, tracking); }
-  if (sq && Array.isArray(sq)) { sequences = sq; save(SEQ_F, sequences); }
-  if (sc && Array.isArray(sc)) { scheduled = sc; save(SCH_F, scheduled); }
+  // Mutate in place to preserve references held by running callbacks
+  if (ld && Array.isArray(ld)) { leads.length = 0; leads.push(...ld); save(LF, leads); }
+  if (or && Array.isArray(or)) { outreach.length = 0; outreach.push(...or); save(OF, outreach); }
+  if (rp && Array.isArray(rp)) { replies.length = 0; replies.push(...rp); save(RF, replies); }
+  if (tr && Array.isArray(tr)) { tracking.length = 0; tracking.push(...tr); save(TF, tracking); }
+  if (sq && Array.isArray(sq)) { sequences.length = 0; sequences.push(...sq); save(SEQ_F, sequences); }
+  if (sc && Array.isArray(sc)) { scheduled.length = 0; scheduled.push(...sc); save(SCH_F, scheduled); }
+  // Rebuild unsubscribedSet in case unsubscribed list was part of restored data
+  unsubscribedSet = new Set(unsubscribed.map(e => (e||'').toLowerCase()));
   res.json({ ok:true, counts:{ leads:leads.length, outreach:outreach.length, replies:replies.length, tracking:tracking.length } });
 });
 
@@ -1531,7 +1537,8 @@ app.get('/api/unsubscribed', (req,res) => {
 });
 app.delete('/api/unsubscribed/:email', (req,res) => {
   const lower = decodeURIComponent(req.params.email).toLowerCase();
-  unsubscribed = unsubscribed.filter(e => e !== lower);
+  const idx = unsubscribed.indexOf(lower);
+  if (idx !== -1) unsubscribed.splice(idx, 1);
   unsubscribedSet.delete(lower);
   save(USF, unsubscribed);
   res.json({ ok: true });
@@ -1641,7 +1648,7 @@ app.get('/api/voice/calls', (req, res) => {
   // Return newest first, with pagination
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 50;
-  const sorted = logs.sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
+  const sorted = [...logs].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
   const start = (page - 1) * limit;
   res.json({ calls: sorted.slice(start, start + limit), total: sorted.length, page, limit });
 });
