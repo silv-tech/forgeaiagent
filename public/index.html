@@ -593,13 +593,13 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
 
       <div style="margin-bottom:14px">
         <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">City / Location</div>
-        <input type="text" id="s-loc" placeholder="e.g. Baguio City, Philippines" autocomplete="off" style="width:100%;padding:9px 12px;font-size:12.5px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+        <input type="text" id="s-loc" placeholder="e.g. Baguio City, Philippines" autocomplete="one-time-code" style="width:100%;padding:9px 12px;font-size:12.5px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
       </div>
 
       <div style="margin-bottom:4px">
         <div style="font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">What to Search</div>
         <div class="sq-wrap">
-          <input type="text" id="s-query" class="sq-input" placeholder="e.g. contractors house renovations, plumbers" autocomplete="off" oninput="onQueryInput()" onfocus="onQueryInput()">
+          <input type="text" id="s-query" class="sq-input" placeholder="e.g. contractors house renovations, plumbers" autocomplete="one-time-code" oninput="onQueryInput()" onfocus="onQueryInput()">
           <button class="sq-clear" onclick="document.getElementById('s-query').value='';document.getElementById('sq-ac').style.display='none'" title="Clear">×</button>
           <div id="sq-ac" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;max-height:180px;overflow-y:auto;background:var(--s2);border:1px solid var(--b1);border-radius:8px;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,.4)"></div>
         </div>
@@ -684,7 +684,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
     <div style="padding:8px 18px 14px;display:flex;align-items:center;gap:8px">
       <div style="position:relative;flex:1;display:flex;align-items:center">
         <svg style="position:absolute;left:10px;pointer-events:none;opacity:.35" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="s-search" placeholder="Search leads..." autocomplete="off" oninput="onSearchScout()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
+        <input type="text" id="s-search" placeholder="Search leads..." autocomplete="one-time-code" oninput="onSearchScout()" style="width:100%;padding:7px 12px 7px 32px;font-size:11.5px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s,background .2s" onfocus="this.style.borderColor='var(--cyan)';this.style.background='rgba(255,255,255,.07)'" onblur="this.style.borderColor='rgba(255,255,255,.08)';this.style.background='rgba(255,255,255,.04)'">
       </div>
       <button class="ab" onclick="document.getElementById('s-search').value='';drawScout()" style="font-size:10px;white-space:nowrap;opacity:.6">Clear</button>
     </div>
