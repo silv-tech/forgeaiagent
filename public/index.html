@@ -1694,7 +1694,8 @@ function sortLeads(arr){
 function drawScout(){
   const e=document.getElementById('scout-e'),t=document.getElementById('scout-tbl');
   const sq=(document.getElementById('s-search')?.value||'').trim().toLowerCase();
-  const filtered=sq?leads.filter(l=>(l.name||'').toLowerCase().includes(sq)||(l.type||'').toLowerCase().replace(/_/g,' ').includes(sq)||(l.address||'').toLowerCase().includes(sq)||(l.location||'').toLowerCase().includes(sq)||(l.status||'').toLowerCase().includes(sq)||(l.phone||'').toLowerCase().includes(sq)||(l.foundEmail||'').toLowerCase().includes(sq)):leads;
+  const words=sq?sq.split(/\s+/).filter(Boolean):[];
+  const filtered=words.length?leads.filter(l=>{const hay=[(l.name||''),(l.type||'').replace(/_/g,' '),(l.address||''),(l.location||''),(l.status||''),(l.phone||''),(l.foundEmail||'')].join(' ').toLowerCase();return words.every(w=>hay.includes(w));}):leads;
   document.getElementById('s-badge').textContent=sq?filtered.length+'/'+leads.length+' found':leads.length+' found';
   if(!filtered.length){e.style.display='flex';e.querySelector('.et').textContent=sq?'No Matches':'Scout Agent Ready';e.querySelector('.es').textContent=sq?'Try a different search term':'Set location, type what to search for, then launch the Scout';t.style.display='none';return;}
   e.style.display='none';t.style.display='table';
