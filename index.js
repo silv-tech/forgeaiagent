@@ -1607,6 +1607,60 @@ app.delete('/api/unsubscribed/:email', (req,res) => {
   res.json({ ok: true });
 });
 
+// ── UNSUBSCRIBE MANAGEMENT PAGE ──────────────────────────────────────────
+app.get('/manage-unsubscribes', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manage Unsubscribes | ForgeAI</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0b0f1a;color:#c8cdd5;font-family:'Segoe UI',system-ui,sans-serif;padding:32px 20px}
+.wrap{max-width:600px;margin:0 auto}
+h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:6px}
+.sub{font-size:13px;color:#64748b;margin-bottom:28px}
+.count{display:inline-block;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:20px;padding:4px 14px;font-size:12px;color:#00d4ff;font-weight:600;margin-bottom:20px}
+.empty{text-align:center;padding:48px 20px;color:#475569;font-size:14px}
+.item{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;margin-bottom:8px;transition:background .15s}
+.item:hover{background:rgba(255,255,255,.05)}
+.email{font-size:14px;color:#e2e8f0;word-break:break-all}
+.btn-remove{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171;font-size:12px;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.btn-remove:hover{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.4)}
+.btn-remove:disabled{opacity:.4;cursor:default}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+.back{display:inline-block;margin-bottom:20px;color:#64748b;text-decoration:none;font-size:13px;transition:color .15s}
+.back:hover{color:#00d4ff}
+</style>
+</head><body>
+<div class="wrap">
+  <a href="/" class="back">&larr; Back to Dashboard</a>
+  <h1>Unsubscribed Emails</h1>
+  <p class="sub">Emails that have opted out of outreach. Remove to re-enable sending.</p>
+  <div id="countBadge" class="count"></div>
+  <div id="list"></div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+const listEl=document.getElementById('list'),countEl=document.getElementById('countBadge'),toastEl=document.getElementById('toast');
+function showToast(msg){toastEl.textContent=msg;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),2500)}
+async function load(){
+  const r=await fetch('/api/unsubscribed');const d=await r.json();
+  countEl.textContent=d.count+' unsubscribed';
+  if(!d.count){listEl.innerHTML='<div class="empty">No unsubscribed emails</div>';return}
+  listEl.innerHTML=d.unsubscribed.map(e=>{const safe=e.replace(/"/g,'&quot;');return '<div class="item"><span class="email">'+safe+'</span><button class="btn-remove" onclick="remove(this,&quot;'+safe+'&quot;)">Remove</button></div>';}).join('');
+}
+async function remove(btn,email){
+  btn.disabled=true;btn.textContent='Removing...';
+  const r=await fetch('/api/unsubscribed/'+encodeURIComponent(email),{method:'DELETE'});
+  if(r.ok){btn.closest('.item').remove();showToast(email+' removed');load()}
+  else{btn.disabled=false;btn.textContent='Remove';showToast('Failed to remove')}
+}
+load();
+</script>
+</body></html>`);
+});
+
 // ── VOICE AI ─────────────────────────────────────────────────────────────
 // Active voice sessions keyed by Twilio streamSid
 const activeCalls = new Map();
