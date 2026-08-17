@@ -862,6 +862,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
         <select id="o-offer-type" onchange="oOfferChg()" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:var(--s2);color:var(--t1);outline:none">
           <option value="auto">Auto-detect (default)</option>
           <option value="ai_voice">AI Voice Receptionist</option>
+          <option value="renoview">RenoView</option>
         </select>
       </div>
     </div>
@@ -2095,7 +2096,15 @@ function oOfferChg(){
     badge.style.color='var(--violet2)';
     badge.style.background='rgba(168,85,247,.07)';
     badge.style.border='1px solid rgba(168,85,247,.25)';
-  } else { oChg(); }
+  } else if(offer==='renoview'){
+    badge.style.display='block';
+    badge.innerHTML='<div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7;margin-bottom:3px;font-weight:600">Email Strategy</div><div style="font-size:12.5px;font-weight:800">RenoView Partnership</div><div style="font-size:10px;opacity:.7;margin-top:3px;font-weight:400">AI renovation platform for kitchen, bath &amp; siding contractors</div>';
+    badge.style.color='#f97316';
+    badge.style.background='rgba(249,115,22,.07)';
+    badge.style.border='1px solid rgba(249,115,22,.25)';
+    document.getElementById('o-prev-btn').textContent='◈ Generate Subject Line';
+    document.getElementById('o-prev-box').style.display='none';
+  } else { document.getElementById('o-prev-btn').textContent='◈ Preview Email Copy'; oChg(); }
 }
 function oChg(){
   document.getElementById('o-prev-box').style.display='none';
@@ -2148,21 +2157,32 @@ function useEmail(){const id=document.getElementById('o-lead').value;const lead=
 async function prevEmail(){
   const id=document.getElementById('o-lead').value;
   if(!id){alert('Select a lead first');return;}
-  document.getElementById('o-prev-btn').textContent='Generating...';
   const outreachType=getOutreachType();
+  const isRV=outreachType==='renoview';
+  document.getElementById('o-prev-btn').textContent=isRV?'Generating subject...':'Generating...';
   try{
     const r=await fetch('/api/outreach/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,outreachType})});
-    if(!r.ok){const e=await r.json().catch(()=>({}));log('o-feed','✗ '+(e.error||'Server error ('+r.status+')'),'er');document.getElementById('o-prev-btn').textContent='◈ Preview Email Copy';return;}
+    if(!r.ok){const e=await r.json().catch(()=>({}));log('o-feed','✗ '+(e.error||'Server error ('+r.status+')'),'er');document.getElementById('o-prev-btn').textContent=isRV?'◈ Generate Subject Line':'◈ Preview Email Copy';return;}
     const d=await r.json();
     if(d.ok){
       document.getElementById('o-subj').value=d.copy.subject;
-      document.getElementById('o-email-body').value=d.copy.body;
+      const isRenoview=outreachType==='renoview';
+      const bodyEl=document.getElementById('o-email-body');
+      if(isRenoview){
+        bodyEl.value='[Fixed RenoView HTML template — images, pricing & CTAs will be sent as-is]';
+        bodyEl.style.minHeight='60px';
+        bodyEl.disabled=true;
+      } else {
+        bodyEl.value=d.copy.body;
+        bodyEl.style.minHeight='420px';
+        bodyEl.disabled=false;
+      }
       document.getElementById('o-prev-box').style.display='block';
       if(d.copy.samples){document.getElementById('o-samples-box').style.display='block';document.getElementById('o-s1').textContent=d.copy.samples.instagram_post||'';document.getElementById('o-s2').textContent=d.copy.samples.review_response||'';document.getElementById('o-s3').textContent=d.copy.samples.followup_message||'';}
     }
     else log('o-feed','✗ '+(d.error||'Unknown error. Check your Anthropic API key in Settings.'),'er');
   }catch(e){log('o-feed','✗ '+(e.message||'Network error')+'. Is your Anthropic key saved in Settings?','er');}
-  document.getElementById('o-prev-btn').textContent='◈ Preview Email Copy';
+  document.getElementById('o-prev-btn').textContent=isRV?'◈ Generate Subject Line':'◈ Preview Email Copy';
 }
 async function sendOut(force){
   const id=document.getElementById('o-lead').value,em=document.getElementById('o-email').value.trim();

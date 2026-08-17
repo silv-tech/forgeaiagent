@@ -827,7 +827,7 @@ app.post('/api/outreach/send', async (req,res) => {
   const { lead, index } = f;
   if (!emailAddress) return res.status(400).json({ error:'Email required' });
   if (!isValidEmail(emailAddress)) return res.status(400).json({ error:'Invalid email format' });
-  if (outreachType !== undefined && !['agency','has_website','no_website'].includes(outreachType))
+  if (outreachType !== undefined && !['agency','has_website','no_website','ai_voice','renoview'].includes(outreachType))
     return res.status(400).json({ error:`Invalid outreachType: ${outreachType}` });
   if (!force && outreach.find(o=>o.leadId===id&&o.sentTo===emailAddress))
     return res.status(400).json({ error:'Already sent to this address for this lead.' });
@@ -835,7 +835,7 @@ app.post('/api/outreach/send', async (req,res) => {
   // redesign of the existing site, no CTA button, no demo to build first.
   if (isUnsubscribed(emailAddress))
     return res.status(400).json({ error:`⚠️ ${emailAddress} has unsubscribed. Remove them from your list before sending.`, unsubscribed: true });
-  const needsDemo = !((outreachType === 'has_website') || (outreachType === 'agency') || (!outreachType && lead.website));
+  const needsDemo = !((outreachType === 'has_website') || (outreachType === 'agency') || (outreachType === 'renoview') || (!outreachType && lead.website));
   if (needsDemo && !hasValidDemoUrl(lead.previewUrl))
     return res.status(400).json({ error:`No demo site built for ${lead.name}. Build the site first so the email has something to link to.` });
   // Prevent duplicate concurrent sends

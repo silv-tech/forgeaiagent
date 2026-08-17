@@ -461,7 +461,46 @@ async function sendViaBrevo(emailOpts) {
   return { id: res.data?.messageId || res.data?.messageIds?.[0], method: 'brevo' };
 }
 
+async function generateRenoviewSubject(lead) {
+  const client = getClient();
+  const type = (lead.type || 'business').replace(/_/g, ' ');
+  const reviews = parseInt(lead.reviews) || 0;
+  const hasRating = lead.rating && lead.rating !== 'N/A';
+  const msg = await callAnthropicWithTimeout(client, {
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 100,
+    messages: [{ role: 'user', content:
+`Generate ONE cold email subject line for a contractor/builder who does ${type} work.
+
+Business: ${lead.name}
+Rating: ${hasRating ? lead.rating + '/5' : 'unknown'}
+Reviews: ${reviews}
+
+The email body pitches an AI-powered renovation visualization platform (RenoViews) that turns their website visitors into paying customers. Homeowners upload a photo, AI shows the dream result, they call the contractor.
+
+RULES:
+- 4-9 words, lowercase except proper nouns
+- Must feel like a personal observation, not a sales pitch
+- Reference their business, their leads, their competition, or a pain point
+- No clickbait, no "quick question", no exclamation marks
+- Do NOT mention RenoView or RenoViews in the subject
+- Vary the angle: competition, missed leads, website conversion, AI advantage, growth
+- Examples: "your website isn't converting visitors", "${lead.name} vs the competition", "what if every site visitor called you", "contractors in ${lead.address?.split(',')[1]?.trim() || 'your area'} are switching", "${reviews} reviews but how many website leads"
+
+Return ONLY valid JSON: {"subject":"..."}`
+    }]
+  }, 15000);
+  const result = parseJSON(msg.content[0]?.text || '');
+  return result?.subject || "your website could be closing more jobs";
+}
+
 async function generateEmailCopy(lead, previewUrl, outreachType) {
+  // RenoView: AI-generated subject, fixed HTML body
+  if (outreachType === 'renoview') {
+    const { getRenoviewPlainText } = require('./email-template');
+    const subject = await generateRenoviewSubject(lead);
+    return { subject, body: getRenoviewPlainText(), isRenoview: true };
+  }
   const client = getClient();
   const type = (lead.type || 'business').replace(/_/g, ' ');
   const prompt = outreachType === 'ai_voice'
@@ -517,8 +556,9 @@ Return ONLY valid JSON:
 async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectOverride, bodyOverride, trackingOpts, outreachType, isFollowUp) {
   const isHasWebsite = outreachType === 'has_website';
   const isAgency = outreachType === 'agency';
+  const isRenoview = outreachType === 'renoview';
 
-  if (!isHasWebsite && !isAgency && !hasValidDemoUrl(previewUrl)) {
+  if (!isHasWebsite && !isAgency && !isRenoview && !hasValidDemoUrl(previewUrl)) {
     throw new NoDemoError(`No demo site built for ${lead.name}. Run the Builder first so the email has a real demo to link to.`);
   }
 
@@ -532,59 +572,82 @@ async function sendOutreach(lead, previewUrl, emailAddress, onProgress, subjectO
   const fromEmail = RESEND_FROM || SMTP_USER || 'leif@forgeaiagent.com';
   onProgress({ status: 'sending', message: `Sending to ${emailAddress}...` });
 
-  // Build HTML,clean personal email style (no branding, no buttons)
-  let bodyText = copy.body;
-  const lines = bodyText.split('\n').filter(l => l.trim());
-  let bodyHtml = '';
-
-  for (const l of lines) {
-    const trimmedLine = l.trim();
-
-    // URL-only line,render as plain text link (no_website only, first-touch skips links)
-    if (!isHasWebsite && !isAgency && trimmedLine.match(/^https?:\/\/\S+$/) && previewUrl && trimmedLine.includes(previewUrl.split('/')[2])) {
-      bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111"><a href="${escapeHtml(previewUrl)}" style="color:#2563eb;text-decoration:underline">${escapeHtml(previewUrl)}</a></p>`;
-      continue;
-    }
-
-    // Sign-off,plain text, like a real person
-    if (/^(Leif|ForgeAI|ForgeAIAgent)$/i.test(trimmedLine)) {
-      bodyHtml += `<p style="margin:0 0 4px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(trimmedLine)}</p>`;
-      continue;
-    }
-
-    // Default paragraph
-    bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(l)}</p>`;
-  }
-
-  // Follow-ups get links (recipient already got the intro); first-touch emails stay clean
-  if (isFollowUp) {
-    if (!isHasWebsite && !isAgency && previewUrl && !bodyHtml.includes(previewUrl)) {
-      bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111">Here's the demo I put together: <a href="${escapeHtml(previewUrl)}" style="color:#2563eb;text-decoration:underline">${escapeHtml(previewUrl)}</a></p>`;
-    }
-    if ((isHasWebsite || isAgency) && !bodyHtml.includes('forgeaiagent.com')) {
-      bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111"><a href="https://www.forgeaiagent.com/how-it-works" style="color:#2563eb;text-decoration:underline">See how it works</a></p>`;
-    }
-  }
-
   const pixelHtml = trackingOpts?.pixelHtml || '';
   const unsubscribeUrl = trackingOpts?.unsubscribeUrl || '';
-  // Plain text unsubscribe line (no styled footer)
-  const unsubscribeFooter = unsubscribeUrl
-    ? `<p style="margin:24px 0 0;font-size:11px;color:#999">To stop receiving emails: <a href="${escapeHtml(unsubscribeUrl)}" style="color:#999;text-decoration:underline">unsubscribe</a></p>`
-    : '';
 
-  const emailPayload = {
-    from: `Leif <${fromEmail}>`,
-    to: emailAddress,
-    reply_to: fromEmail,
-    headers: {
-      'List-Unsubscribe': unsubscribeUrl ? `<${unsubscribeUrl}>, <mailto:${fromEmail}?subject=unsubscribe>` : `<mailto:${fromEmail}?subject=unsubscribe>`,
-      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
-    },
-    subject: copy.subject,
-    text: copy.body + (unsubscribeUrl ? `\n\nTo stop receiving emails: ${unsubscribeUrl}` : ''),
-    html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px">${bodyHtml}${pixelHtml}${unsubscribeFooter}</div>`
-  };
+  let emailPayload;
+
+  if (isRenoview) {
+    // RenoView: use the fixed rich HTML template directly
+    const { renderRenoviewHtml } = require('./email-template');
+    // Derive image base URL from the server's public URL (works locally and in production)
+    const baseUrl = (process.env.PUBLIC_URL || previewUrl || '').replace(/\/sites\/.*$/, '').replace(/\/+$/, '') || 'https://forgeaiagent.com';
+    const fullHtml = renderRenoviewHtml({ pixelHtml, unsubscribeUrl, baseImageUrl: `${baseUrl}/img/renoview` });
+    emailPayload = {
+      from: `Leif <${fromEmail}>`,
+      to: emailAddress,
+      reply_to: fromEmail,
+      headers: {
+        'List-Unsubscribe': unsubscribeUrl ? `<${unsubscribeUrl}>, <mailto:${fromEmail}?subject=unsubscribe>` : `<mailto:${fromEmail}?subject=unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+      },
+      subject: copy.subject,
+      text: copy.body + (unsubscribeUrl ? `\n\nTo stop receiving emails: ${unsubscribeUrl}` : ''),
+      html: fullHtml
+    };
+  } else {
+    // All other types: build HTML from plain text paragraphs
+    let bodyText = copy.body;
+    const lines = bodyText.split('\n').filter(l => l.trim());
+    let bodyHtml = '';
+
+    for (const l of lines) {
+      const trimmedLine = l.trim();
+
+      // URL-only line,render as plain text link (no_website only, first-touch skips links)
+      if (!isHasWebsite && !isAgency && trimmedLine.match(/^https?:\/\/\S+$/) && previewUrl && trimmedLine.includes(previewUrl.split('/')[2])) {
+        bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111"><a href="${escapeHtml(previewUrl)}" style="color:#2563eb;text-decoration:underline">${escapeHtml(previewUrl)}</a></p>`;
+        continue;
+      }
+
+      // Sign-off,plain text, like a real person
+      if (/^(Leif|ForgeAI|ForgeAIAgent)$/i.test(trimmedLine)) {
+        bodyHtml += `<p style="margin:0 0 4px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(trimmedLine)}</p>`;
+        continue;
+      }
+
+      // Default paragraph
+      bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111">${escapeHtml(l)}</p>`;
+    }
+
+    // Follow-ups get links (recipient already got the intro); first-touch emails stay clean
+    if (isFollowUp) {
+      if (!isHasWebsite && !isAgency && previewUrl && !bodyHtml.includes(previewUrl)) {
+        bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111">Here's the demo I put together: <a href="${escapeHtml(previewUrl)}" style="color:#2563eb;text-decoration:underline">${escapeHtml(previewUrl)}</a></p>`;
+      }
+      if ((isHasWebsite || isAgency) && !bodyHtml.includes('forgeaiagent.com')) {
+        bodyHtml += `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#111"><a href="https://www.forgeaiagent.com/how-it-works" style="color:#2563eb;text-decoration:underline">See how it works</a></p>`;
+      }
+    }
+
+    // Plain text unsubscribe line (no styled footer)
+    const unsubscribeFooter = unsubscribeUrl
+      ? `<p style="margin:24px 0 0;font-size:11px;color:#999">To stop receiving emails: <a href="${escapeHtml(unsubscribeUrl)}" style="color:#999;text-decoration:underline">unsubscribe</a></p>`
+      : '';
+
+    emailPayload = {
+      from: `Leif <${fromEmail}>`,
+      to: emailAddress,
+      reply_to: fromEmail,
+      headers: {
+        'List-Unsubscribe': unsubscribeUrl ? `<${unsubscribeUrl}>, <mailto:${fromEmail}?subject=unsubscribe>` : `<mailto:${fromEmail}?subject=unsubscribe>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+      },
+      subject: copy.subject,
+      text: copy.body + (unsubscribeUrl ? `\n\nTo stop receiving emails: ${unsubscribeUrl}` : ''),
+      html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:560px">${bodyHtml}${pixelHtml}${unsubscribeFooter}</div>`
+    };
+  }
 
   let data;
   let sendMethod;
