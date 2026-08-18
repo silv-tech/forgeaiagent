@@ -552,6 +552,7 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
   <div class="tab"     onclick="go('finder')">◈ Email Finder</div>
   <div class="tab"     onclick="go('builder')">◉ Builder</div>
   <div class="tab"     onclick="go('outreach')">◎ Outreach</div>
+  <div class="tab"     onclick="go('text')">📱 Text</div>
   <div class="tab"     onclick="go('closer')">⬢ Closer</div>
   <div class="tab"     onclick="go('pipeline')">▥ Pipeline</div>
   <div class="tab"     onclick="go('analytics')">▤ Analytics</div>
@@ -919,6 +920,13 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
         <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Batch Send</div>
       </div>
       <div style="font-size:10.5px;color:var(--t3);line-height:1.65;margin-bottom:11px">Send outreach to leads with emails that haven't been contacted yet. Check/uncheck to choose who to include.</div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Batch Mode</div>
+        <select id="batch-mode" onchange="batchModeChg()" style="width:100%;padding:8px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:var(--s2);color:var(--t1);outline:none">
+          <option value="all">All Leads (auto-detect type)</option>
+          <option value="renoview">RenoView Only (NYC contractors)</option>
+        </select>
+      </div>
       <div id="batch-send-info" style="font-size:10.5px;color:var(--cyan);margin-bottom:6px"></div>
       <div style="display:flex;gap:8px;margin-bottom:6px">
         <button class="ab" onclick="batchSelAll(true)" style="font-size:10px;color:var(--cyan)">Select All</button>
@@ -970,6 +978,83 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
       <table id="o-tbl" style="display:none">
         <thead><tr><th><input type="checkbox" onchange="oTogAll(this.checked)"></th><th>#</th><th>Business</th><th>Sent To</th><th>Preview</th><th>Sent At</th><th>Tracking</th><th>Follow-Ups</th><th>Status</th></tr></thead>
         <tbody id="o-tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TEXT (SMS) ══════════ -->
+<div class="page" id="pg-text">
+  <div class="sb">
+    <div class="ss">
+      <!-- Step 1: Pick a Lead -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#10b981,var(--cyan));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(16,185,129,.3)">1</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Pick a Lead</div>
+      </div>
+      <select id="sms-lead" onchange="smsLeadChg()" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box;margin-bottom:10px">
+        <option value="">— Select a lead with phone number —</option>
+      </select>
+      <div id="sms-lead-info" style="display:none;font-size:10.5px;padding:10px 12px;border:1px solid var(--b1);border-radius:9px;background:var(--s2);margin-bottom:10px;line-height:1.8"></div>
+    </div>
+
+    <div class="ss">
+      <!-- Step 2: Message Type & Preview -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#10b981,var(--cyan));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(16,185,129,.3)">2</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Message</div>
+      </div>
+      <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Message Type</div>
+      <select id="sms-type" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:var(--s2);color:var(--t1);outline:none;margin-bottom:10px">
+        <option value="general">General (Website/AI Pitch)</option>
+        <option value="renoview">RenoView (Renovation AI)</option>
+      </select>
+      <div id="sms-prev-box" style="display:none;margin-bottom:10px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">SMS Preview — <span style="color:#10b981;font-weight:400;text-transform:none;letter-spacing:0">editable before sending</span></div>
+        <textarea id="sms-body" oninput="smsCharCount()" style="width:100%;min-height:100px;resize:vertical;padding:10px 12px;font-size:12px;line-height:1.65;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;box-sizing:border-box;font-family:var(--font)" placeholder="SMS message will appear here..."></textarea>
+        <div id="sms-char-count" style="font-size:10px;font-weight:600;margin-top:4px;text-align:right;color:var(--t3)">0 / 160</div>
+      </div>
+      <button class="btn btn-sec" id="sms-prev-btn" onclick="smsPreview()" style="margin-bottom:8px;font-size:12.5px;padding:10px 12px">📱 Generate SMS Preview</button>
+      <button class="btn btn-main" id="sms-send-btn" onclick="smsSend()" style="margin-bottom:8px;font-size:13px;padding:11px 12px">▶ Send SMS</button>
+    </div>
+
+    <div class="ss">
+      <!-- Batch SMS -->
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#10b981,var(--cyan));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(16,185,129,.3)">⚡</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Batch SMS</div>
+      </div>
+      <div style="font-size:10.5px;color:var(--t3);line-height:1.65;margin-bottom:11px">Send AI-generated SMS to leads with phone numbers that haven't been texted yet.</div>
+      <div id="sms-batch-info" style="font-size:10.5px;color:#10b981;margin-bottom:6px"></div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <button class="ab" onclick="smsBatchSelAll(true)" style="font-size:10px;color:#10b981">Select All</button>
+        <button class="ab" onclick="smsBatchSelAll(false)" style="font-size:10px;opacity:.6">Deselect All</button>
+      </div>
+      <div id="sms-batch-list" style="max-height:200px;overflow-y:auto;border:1px solid rgba(255,255,255,.06);border-radius:8px;background:rgba(0,0,0,.15);margin-bottom:8px;scrollbar-width:thin"></div>
+      <button class="btn btn-main" id="sms-batch-btn" onclick="smsBatchSend()" style="font-size:12.5px;padding:10px 12px;margin-bottom:4px">📱 Send Batch SMS</button>
+      <div class="batch-prog" id="sms-batch-prog" style="display:none">
+        <div class="prog"><div class="pb" id="sms-batch-pb"></div></div>
+        <div class="batch-msg" id="sms-batch-msg">Preparing...</div>
+      </div>
+    </div>
+
+    <div class="feed-wrap" style="margin-top:4px">
+      <div class="lbl">Activity Feed</div>
+      <div class="feed" id="sms-feed"><div class="fl">Waiting...</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="mh">
+      <div class="mt">SMS LOG</div>
+      <div class="cnt" id="sms-badge">0 sent</div>
+      <div class="acts"><span id="sms-stats-badge" style="font-size:10px;color:var(--t3)"></span></div>
+    </div>
+    <div class="tw">
+      <div class="empty" id="sms-e"><div class="ei">📱</div><div class="et">No SMS Sent Yet</div><div class="es">Scout leads with phone numbers, then send text outreach</div></div>
+      <table id="sms-tbl" style="display:none">
+        <thead><tr><th>#</th><th>Business</th><th>Phone</th><th>Message</th><th>Status</th><th>Sent At</th></tr></thead>
+        <tbody id="sms-tbl-body"></tbody>
       </table>
     </div>
   </div>
@@ -1575,10 +1660,11 @@ function go(name){
   const pg=document.getElementById('pg-'+name);
   if(!pg)return;
   pg.classList.add('on');
-  const icons={scout:'⬡ Scout',finder:'◈ Email Finder',builder:'◉ Builder',outreach:'◎ Outreach',closer:'⬢ Closer',pipeline:'▥ Pipeline',analytics:'▤ Analytics',voice:'🎙 Voice',settings:'⚙ Settings'};
+  const icons={scout:'⬡ Scout',finder:'◈ Email Finder',builder:'◉ Builder',outreach:'◎ Outreach',text:'📱 Text',closer:'⬢ Closer',pipeline:'▥ Pipeline',analytics:'▤ Analytics',voice:'🎙 Voice',settings:'⚙ Settings'};
   document.querySelectorAll('.tab').forEach(t=>{if(t.textContent.trim()===icons[name])t.classList.add('on');});
   if(name==='finder')drawEF();
   if(name==='outreach'){loadTracking().then(()=>drawOut());fillSels();}
+  if(name==='text'){fillSmsSel();drawSmsLog();loadSmsStats();}
   if(name==='closer')fillSels();
   if(name==='pipeline')drawPipeline();
   if(name==='analytics')loadAnal();
@@ -1617,6 +1703,13 @@ function onSSE(d){
   if(d.type==='outreach_batch_done'){document.getElementById('batch-prog').style.display='none';bar('batch-pb',0);btn('o-batch-btn','📨 Send Batch Outreach',false);loadLeads().then(()=>{drawOut();updateBatchInfo();});log('o-feed','✓ Batch outreach complete','gr');}
   if(d.type==='followup_batch'){log('o-feed',d.message,d.status==='sent'?'gr':d.status==='error'?'er':'');if(d.progress!==undefined)bar('batch-pb',d.progress);}
   if(d.type==='followup_batch_done'){btn('o-fu-btn','🔄 Follow-Up Selected',false);document.getElementById('batch-prog').style.display='none';bar('batch-pb',0);oSel.clear();drawOut();loadLeads();}
+  if(d.type==='sms')log('sms-feed',d.message,d.status==='sent'?'gr':d.status==='error'?'er':'');
+  if(d.type==='sms_done'){btn('sms-send-btn','▶ Send SMS',false);drawSmsLog();}
+  if(d.type==='sms_batch'){
+    log('sms-feed',d.message,d.status==='sent'?'gr':d.status==='error'?'er':'');
+    if(d.progress!=null){bar('sms-batch-pb',d.progress);document.getElementById('sms-batch-msg').textContent=d.message;}
+  }
+  if(d.type==='sms_batch_done'){document.getElementById('sms-batch-prog').style.display='none';bar('sms-batch-pb',0);btn('sms-batch-btn','📱 Send Batch SMS',false);drawSmsLog();updateSmsBatchInfo();log('sms-feed','✓ Batch SMS complete','gr');}
   if(d.type==='closer')log('c-feed',d.message,d.status==='done'?'gr':'');
   if(d.type==='closer_done'){btn('c-btn','▶ Generate Response',false);lastReply=d.response;showReply(d.response);addCC(d.response,document.getElementById('c-reply').value);document.getElementById('c-badge').textContent=document.querySelectorAll('.cc').length+' handled';}
   if(d.type==='social_done'){
@@ -1624,7 +1717,7 @@ function onSSE(d){
   }
   if(d.type==='sequence_sent'||d.type==='sequence_error')log('o-feed',d.message,d.type==='sequence_sent'?'gr':'er');
   if(d.type==='scheduled_sent'||d.type==='scheduled_error')log('o-feed',d.message,d.type==='scheduled_sent'?'gr':'er');
-  if(d.type==='error'){const fm={scout:'s-feed',emailfinder:'ef-feed',builder:'b-feed',outreach:'o-feed',closer:'c-feed'};log(fm[d.agent]||'s-feed','✗ '+d.message,'er');const bm={scout:'scout-btn',emailfinder:'ef-btn',builder:'b-btn',outreach:'o-send-btn',closer:'c-btn'};if(bm[d.agent])btn(bm[d.agent],null,false);}
+  if(d.type==='error'){const fm={scout:'s-feed',emailfinder:'ef-feed',builder:'b-feed',outreach:'o-feed',sms:'sms-feed',closer:'c-feed'};log(fm[d.agent]||'s-feed','✗ '+d.message,'er');const bm={scout:'scout-btn',emailfinder:'ef-btn',builder:'b-btn',outreach:'o-send-btn',sms:'sms-send-btn',closer:'c-btn'};if(bm[d.agent])btn(bm[d.agent],null,false);}
 }
 
 // ── TYPE PICKER ───────────────────────────────────────────────────────────
@@ -2201,26 +2294,42 @@ async function sendOut(force){
     if(!r.ok){const d=await r.json().catch(()=>({}));log('o-feed','✗ '+(d.error||'Send failed ('+r.status+')'),'er');btn(btnId,btnLabel,false);}
   }catch(e){log('o-feed','✗ Network error: '+e.message,'er');btn(btnId,btnLabel,false);}
 }
+// ── RenoView lead detection (client-side mirror of server logic) ──────────
+const _rvKeywords=['contractor','renovation','remodel','remodeling','kitchen','bathroom','flooring','roofing','roofer','painting','painter','handyman','general contractor','home improvement','home renovation','construction','builder','siding','window','deck','basement','masonry','tile','carpentry','carpenter','plumbing','plumber','electrician','electrical','hvac','restoration','waterproofing','demolition','exterior','interior','framing','drywall','stucco','fencing'];
+const _nycBoros=['new york','manhattan','brooklyn','queens','bronx','staten island'];
+function isRenoviewLead(l){
+  const t=(l.type||'').toLowerCase().replace(/_/g,' ');
+  const a=(l.address||'').toLowerCase();
+  return _rvKeywords.some(k=>t.includes(k))&&_nycBoros.some(b=>a.includes(b));
+}
+
 async function sendBatchOutreach(){
+  const mode=(document.getElementById('batch-mode')?.value)||'all';
   const selected=leads.filter(l=>l.foundEmail&&!l.outreachEmail&&batchSel.has(l.id));
   if(!selected.length){log('o-feed','No leads selected — check the leads you want to send to','er');return;}
-  if(!confirm(`Send outreach to ${selected.length} selected lead(s)?`))return;
+  const label=mode==='renoview'?`Send RenoView outreach to ${selected.length} selected lead(s)?`:`Send outreach to ${selected.length} selected lead(s)?`;
+  if(!confirm(label))return;
   btn('o-batch-btn','Sending...',true);
   document.getElementById('batch-prog').style.display='block';
   document.getElementById('batch-msg').textContent='Starting batch outreach...';
   bar('batch-pb',5);
-  log('o-feed',`📨 Batch sending to ${selected.length} leads...`,'hi');
+  log('o-feed',`📨 Batch sending${mode==='renoview'?' RenoView':''} to ${selected.length} leads...`,'hi');
   try{
-    const r=await post('/api/outreach/batch',{ids:selected.map(l=>l.id),sessionId:sid});
+    const payload={ids:selected.map(l=>l.id),sessionId:sid};
+    if(mode==='renoview') payload.batchType='renoview';
+    const r=await post('/api/outreach/batch',payload);
     if(!r.ok){const d=await r.json().catch(()=>({}));log('o-feed','✗ '+(d.error||'Batch failed'),'er');btn('o-batch-btn','📨 Send Batch Outreach',false);document.getElementById('batch-prog').style.display='none';}
   }catch(e){log('o-feed','✗ Network error: '+e.message,'er');btn('o-batch-btn','📨 Send Batch Outreach',false);document.getElementById('batch-prog').style.display='none';}
 }
 let batchSel=new Set();
+function batchModeChg(){batchSel=new Set();batchSel._init=false;updateBatchInfo();}
 function updateBatchInfo(){
   const el=document.getElementById('batch-send-info');
   const listEl=document.getElementById('batch-list');
   if(!el)return;
-  const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);
+  const mode=(document.getElementById('batch-mode')?.value)||'all';
+  let eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);
+  if(mode==='renoview') eligible=eligible.filter(l=>isRenoviewLead(l));
   const withEmail=leads.filter(l=>l.foundEmail).length;
   const sent=leads.filter(l=>l.outreachEmail).length;
   // Build dupe map for batch list
@@ -2231,17 +2340,160 @@ function updateBatchInfo(){
   // remove any that are no longer eligible
   batchSel.forEach(id=>{if(!eligible.find(l=>l.id===id))batchSel.delete(id);});
   const dupeCount=Object.values(batchEmailCnt).filter(v=>v>1).length;
-  el.textContent=eligible.length?`${batchSel.size} of ${eligible.length} selected (${withEmail} with email, ${sent} already sent)${dupeCount?' — '+dupeCount+' duplicate email(s)':''}`:'No eligible leads — find emails first';
+  const rvCount=eligible.filter(l=>isRenoviewLead(l)).length;
+  let info=eligible.length?`${batchSel.size} of ${eligible.length} selected (${withEmail} with email, ${sent} already sent)`:'No eligible leads — find emails first';
+  if(dupeCount) info+=` — ${dupeCount} duplicate email(s)`;
+  if(mode==='all'&&rvCount) info+=` · ${rvCount} RenoView`;
+  el.textContent=info;
   if(!listEl)return;
   if(!eligible.length){listEl.innerHTML='';return;}
-  listEl.innerHTML=eligible.map(l=>{const isDupe=batchEmailCnt[l.foundEmail.toLowerCase()]>1;return `<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;font-size:10.5px;color:${isDupe?'var(--red)':'var(--t2)'};transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='none'">
+  listEl.innerHTML=eligible.map(l=>{const isDupe=batchEmailCnt[l.foundEmail.toLowerCase()]>1;const isRV=isRenoviewLead(l);return `<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;font-size:10.5px;color:${isDupe?'var(--red)':'var(--t2)'};transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='none'">
     <input type="checkbox" class="b-cb" value="${l.id}" ${batchSel.has(l.id)?'checked':''} onchange="batchToggle('${l.id}',this.checked)" style="width:auto;margin:0;accent-color:var(--cyan)">
-    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.name)}${isDupe?' <span style="font-size:7px;background:rgba(239,68,68,.15);color:var(--red);padding:1px 4px;border-radius:3px;font-weight:700">DUPE</span>':''}</span>
+    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.name)}${isDupe?' <span style="font-size:7px;background:rgba(239,68,68,.15);color:var(--red);padding:1px 4px;border-radius:3px;font-weight:700">DUPE</span>':''}${isRV?' <span style="font-size:7px;background:rgba(16,185,129,.15);color:#10b981;padding:1px 4px;border-radius:3px;font-weight:700">RENOVIEW</span>':''}</span>
     <span style="font-size:9px;color:var(--t4);font-family:var(--mono)">${x(l.foundEmail)}</span>
   </label>`;}).join('');
 }
-function batchToggle(id,checked){if(checked)batchSel.add(id);else batchSel.delete(id);const el=document.getElementById('batch-send-info');const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);el.textContent=`${batchSel.size} of ${eligible.length} selected`;}
-function batchSelAll(checked){const eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);if(checked)eligible.forEach(l=>batchSel.add(l.id));else batchSel.clear();updateBatchInfo();}
+function batchToggle(id,checked){if(checked)batchSel.add(id);else batchSel.delete(id);const mode=(document.getElementById('batch-mode')?.value)||'all';let eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);if(mode==='renoview')eligible=eligible.filter(l=>isRenoviewLead(l));const el=document.getElementById('batch-send-info');el.textContent=`${batchSel.size} of ${eligible.length} selected`;}
+function batchSelAll(checked){const mode=(document.getElementById('batch-mode')?.value)||'all';let eligible=leads.filter(l=>l.foundEmail&&!l.outreachEmail);if(mode==='renoview')eligible=eligible.filter(l=>isRenoviewLead(l));if(checked)eligible.forEach(l=>batchSel.add(l.id));else batchSel.clear();updateBatchInfo();}
+
+// ── SMS TEXT OUTREACH ─────────────────────────────────────────────────────
+let smsLogData=[];
+let smsBatchSel=new Set();
+
+function fillSmsSel(){
+  const sel=document.getElementById('sms-lead');
+  if(!sel)return;
+  const cur=sel.value;
+  const withPhone=leads.filter(l=>l.phone&&l.phone!=='N/A');
+  sel.innerHTML='<option value="">— Select a lead with phone number —</option>'+withPhone.map(l=>`<option value="${l.id}"${l.id===cur?' selected':''}>${x(l.name)} — ${x(l.phone)}</option>`).join('');
+  updateSmsBatchInfo();
+}
+
+function smsLeadChg(){
+  const id=document.getElementById('sms-lead').value;
+  const info=document.getElementById('sms-lead-info');
+  document.getElementById('sms-prev-box').style.display='none';
+  if(!id){info.style.display='none';return;}
+  const lead=leads.find(l=>l.id===id);
+  if(!lead){info.style.display='none';return;}
+  const alreadySent=smsLogData.find(r=>r.leadId===id);
+  info.style.display='block';
+  info.innerHTML=`<strong>${x(lead.name)}</strong><br>📞 ${x(lead.phone)}<br>📍 ${x(lead.address||'N/A')}<br>⭐ ${lead.rating||'N/A'} (${lead.reviews||0} reviews)`+(alreadySent?'<br><span style="color:var(--amber)">⚠ Already texted on '+new Date(alreadySent.sentAt).toLocaleDateString()+'</span>':'');
+}
+
+function smsCharCount(){
+  const body=document.getElementById('sms-body').value;
+  const el=document.getElementById('sms-char-count');
+  const total=body.length+23; // +23 for "\n\nReply STOP to opt out"
+  const segs=Math.ceil(total/160)||1;
+  el.textContent=`${body.length} chars + opt-out footer = ~${total} total (${segs} segment${segs>1?'s':''})`;
+  el.style.color=total<=160?'#10b981':total<=320?'var(--amber)':'var(--red)';
+}
+
+async function smsPreview(){
+  const id=document.getElementById('sms-lead').value;
+  if(!id){alert('Select a lead first');return;}
+  const messageType=document.getElementById('sms-type').value;
+  btn('sms-prev-btn','Generating...',true);
+  try{
+    const r=await post('/api/sms/preview',{id,messageType});
+    const d=await r.json();
+    if(!r.ok){log('sms-feed','✗ '+(d.error||'Preview failed'),'er');return;}
+    document.getElementById('sms-body').value=d.message;
+    document.getElementById('sms-prev-box').style.display='block';
+    smsCharCount();
+    log('sms-feed','SMS preview generated','gr');
+  }catch(e){log('sms-feed','✗ '+e.message,'er');}
+  finally{btn('sms-prev-btn','📱 Generate SMS Preview',false);}
+}
+
+async function smsSend(){
+  const id=document.getElementById('sms-lead').value;
+  const message=document.getElementById('sms-body').value.trim();
+  if(!id){alert('Select a lead');return;}
+  if(!message){alert('Generate or write a message first');return;}
+  const lead=leads.find(l=>l.id===id);
+  if(!confirm(`Send SMS to ${lead?.name||'this lead'} at ${lead?.phone}?`))return;
+  btn('sms-send-btn','Sending...',true);
+  log('sms-feed','📱 Sending SMS to '+lead.name+'...','');
+  try{
+    const r=await post('/api/sms/send',{id,message,sessionId:sid});
+    if(!r.ok){const d=await r.json().catch(()=>({}));log('sms-feed','✗ '+(d.error||'Send failed'),'er');btn('sms-send-btn','▶ Send SMS',false);}
+  }catch(e){log('sms-feed','✗ Network error: '+e.message,'er');btn('sms-send-btn','▶ Send SMS',false);}
+}
+
+let _smsBatchInit=false;
+function updateSmsBatchInfo(){
+  const el=document.getElementById('sms-batch-info');
+  const listEl=document.getElementById('sms-batch-list');
+  if(!el)return;
+  const sentIds=new Set(smsLogData.map(r=>r.leadId));
+  const eligible=leads.filter(l=>l.phone&&l.phone!=='N/A'&&!sentIds.has(l.id));
+  const withPhone=leads.filter(l=>l.phone&&l.phone!=='N/A').length;
+  if(!_smsBatchInit){eligible.forEach(l=>smsBatchSel.add(l.id));_smsBatchInit=true;}
+  smsBatchSel.forEach(id=>{if(!eligible.find(l=>l.id===id))smsBatchSel.delete(id);});
+  el.textContent=eligible.length?`${smsBatchSel.size} of ${eligible.length} selected (${withPhone} with phone, ${smsLogData.length} already texted)`:'No eligible leads — scout leads with phone numbers first';
+  if(!listEl)return;
+  if(!eligible.length){listEl.innerHTML='';return;}
+  listEl.innerHTML=eligible.map(l=>`<label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;font-size:10.5px;color:var(--t2);transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='none'">
+    <input type="checkbox" value="${l.id}" ${smsBatchSel.has(l.id)?'checked':''} onchange="smsBatchToggle('${l.id}',this.checked)" style="width:auto;margin:0;accent-color:#10b981">
+    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${x(l.name)}</span>
+    <span style="font-size:9px;color:var(--t4);font-family:var(--mono)">${x(l.phone)}</span>
+  </label>`).join('');
+}
+
+function smsBatchToggle(id,checked){if(checked)smsBatchSel.add(id);else smsBatchSel.delete(id);const el=document.getElementById('sms-batch-info');const sentIds=new Set(smsLogData.map(r=>r.leadId));const eligible=leads.filter(l=>l.phone&&l.phone!=='N/A'&&!sentIds.has(l.id));el.textContent=`${smsBatchSel.size} of ${eligible.length} selected`;}
+function smsBatchSelAll(checked){const sentIds=new Set(smsLogData.map(r=>r.leadId));const eligible=leads.filter(l=>l.phone&&l.phone!=='N/A'&&!sentIds.has(l.id));if(checked)eligible.forEach(l=>smsBatchSel.add(l.id));else smsBatchSel.clear();updateSmsBatchInfo();}
+
+async function smsBatchSend(){
+  const sentIds=new Set(smsLogData.map(r=>r.leadId));
+  const selected=leads.filter(l=>l.phone&&l.phone!=='N/A'&&!sentIds.has(l.id)&&smsBatchSel.has(l.id));
+  if(!selected.length){log('sms-feed','No leads selected — check the leads you want to text','er');return;}
+  const messageType=document.getElementById('sms-type').value;
+  if(!confirm(`Send SMS to ${selected.length} selected lead(s)? AI will generate a unique message for each.`))return;
+  btn('sms-batch-btn','Sending...',true);
+  document.getElementById('sms-batch-prog').style.display='block';
+  document.getElementById('sms-batch-msg').textContent='Starting batch SMS...';
+  bar('sms-batch-pb',5);
+  log('sms-feed',`📱 Batch sending SMS to ${selected.length} leads...`,'hi');
+  try{
+    const r=await post('/api/sms/batch',{ids:selected.map(l=>l.id),sessionId:sid,messageType});
+    if(!r.ok){const d=await r.json().catch(()=>({}));log('sms-feed','✗ '+(d.error||'Batch failed'),'er');btn('sms-batch-btn','📱 Send Batch SMS',false);document.getElementById('sms-batch-prog').style.display='none';}
+  }catch(e){log('sms-feed','✗ Network error: '+e.message,'er');btn('sms-batch-btn','📱 Send Batch SMS',false);document.getElementById('sms-batch-prog').style.display='none';}
+}
+
+async function drawSmsLog(){
+  try{
+    const r=await fetch('/api/sms/log');
+    const d=await r.json();
+    smsLogData=d.log||[];
+  }catch{smsLogData=[];}
+  const tbl=document.getElementById('sms-tbl');
+  const empty=document.getElementById('sms-e');
+  const body=document.getElementById('sms-tbl-body');
+  const badge=document.getElementById('sms-badge');
+  badge.textContent=smsLogData.length+' sent';
+  if(!smsLogData.length){tbl.style.display='none';empty.style.display='';return;}
+  tbl.style.display='';empty.style.display='none';
+  body.innerHTML=smsLogData.slice().reverse().map((r,i)=>`<tr>
+    <td>${smsLogData.length-i}</td>
+    <td>${x(r.leadName||'Unknown')}</td>
+    <td style="font-family:var(--mono);font-size:10px">${x(r.phone)}</td>
+    <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px" title="${x(r.message)}">${x(r.message)}</td>
+    <td><span class="badge ${r.status==='queued'||r.status==='sent'?'b-sent':'b-new'}">${x(r.status)}</span></td>
+    <td style="font-size:10px;color:var(--t3)">${r.sentAt?new Date(r.sentAt).toLocaleString():''}</td>
+  </tr>`).join('');
+}
+
+async function loadSmsStats(){
+  try{
+    const r=await fetch('/api/sms-stats');
+    const d=await r.json();
+    const el=document.getElementById('sms-stats-badge');
+    if(el) el.textContent=`Today: ${d.sent} sent · Resets in ${d.resetsIn}`;
+  }catch{}
+}
+
 function getLeadTracking(id){
   const recs=trackingMap.get(id)||[];
   const followUps=recs.filter(t=>t.type==='followup').length;

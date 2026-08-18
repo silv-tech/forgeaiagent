@@ -4,6 +4,16 @@ const { randomUUID } = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const AGENCY_TYPES = new Set(['marketing_agency','digital_agency','creative_agency','advertising_agency','social_media_agency','seo_agency','pr_agency','web_design_agency','video_production_agency','branding_agency','content_marketing_agency','email_marketing_agency','media_buying_agency']);
+// RenoView-eligible: home renovation contractors from NYC 5 boroughs
+const RENOVIEW_TYPE_KEYWORDS = ['contractor','renovation','remodel','remodeling','kitchen','bathroom','flooring','roofing','roofer','painting','painter','handyman','general_contractor','home_improvement','home_renovation','construction','builder','siding','window','deck','basement','masonry','tile','carpentry','carpenter','plumbing','plumber','electrician','electrical','hvac','restoration','waterproofing','demolition','exterior','interior','framing','drywall','stucco','fencing'];
+const NYC_BOROUGHS = ['new york','manhattan','brooklyn','queens','bronx','staten island','long island city','astoria','flushing','jamaica','woodside','jackson heights','corona','elmhurst','rego park','forest hills','bay ridge','williamsburg','bushwick','bed-stuy','flatbush','park slope','greenpoint','east new york','sunset park','bensonhurst','coney island','sheepshead bay','canarsie','harlem','washington heights','inwood','tribeca','soho','chelsea','midtown'];
+function isRenoviewLead(lead) {
+  const type = (lead.type || '').toLowerCase().replace(/_/g, ' ');
+  const addr = (lead.address || '').toLowerCase();
+  const isRenovationType = RENOVIEW_TYPE_KEYWORDS.some(k => type.includes(k.replace(/_/g, ' ')));
+  const isNYC = NYC_BOROUGHS.some(b => addr.includes(b));
+  return isRenovationType && isNYC;
+}
 // Persistent data directory, set DATA_DIR env var on Railway to your volume mount path (e.g. /data)
 const DATA_ROOT = process.env.DATA_DIR || __dirname;
 const leadsEnv = path.join(DATA_ROOT, 'leads', '.env');
@@ -69,6 +79,7 @@ function getSendStats() {
 }
 const { handleReply }           = require('./agents/closer');
 const { findEmail, hunterSearch, checkCredits } = require('./agents/emailfinder');
+const { generateSmsText, sendSms, getSmsStats: getSmsStatsAgent, loadSmsLog, normalizePhone, isValidPhone } = require('./agents/text-outreach');
 const { findSocialMedia }       = require('./agents/socialfinder');
 
 const app = express();
@@ -204,7 +215,7 @@ fs.mkdirSync(DATA,{recursive:true});
 
 // Migrate: if volume was previously mounted at /app/leads, files are now at DATA_ROOT root
 // Move them into the leads/ subdirectory
-['leads.json','outreach.json','replies.json','sequences.json','scheduled.json','tracking.json','unsubscribed.json','.env','.send-counter.json'].forEach(f => {
+['leads.json','outreach.json','replies.json','sequences.json','scheduled.json','tracking.json','unsubscribed.json','.env','.send-counter.json','sms-outreach.json','.sms-counter.json'].forEach(f => {
   const oldPath = path.join(DATA_ROOT, f);
   const newPath = path.join(DATA, f);
   if (fs.existsSync(oldPath) && !fs.existsSync(newPath)) {
@@ -878,17 +889,22 @@ app.post('/api/outreach/send', async (req,res) => {
 let batchOutreachRunning = false;
 app.post('/api/outreach/batch', async (req,res) => {
   if (batchOutreachRunning) return res.status(409).json({ error:'Batch outreach already in progress' });
-  const { ids, sessionId } = req.body;
+  const { ids, sessionId, batchType } = req.body;
   // Has-website leads skip the demo requirement (the pitch is a redesign,
   // no CTA). No-website leads still need a real .pages.dev demo built.
+  // RenoView leads also skip demo requirement (fixed HTML template).
   const targets = (ids && ids.length ? ids : leads.map(l=>l.id))
     .map(id => findLead(id))
     .filter(f => {
       if (!f || !f.lead.foundEmail) return false;
       const alreadySent = outreach.find(o => o.leadId === f.lead.id && o.sentTo === f.lead.foundEmail);
       if (alreadySent) return false;
+      // If batchType is 'renoview', only include RenoView-eligible leads
+      if (batchType === 'renoview' && !isRenoviewLead(f.lead)) return false;
+      const isRV = isRenoviewLead(f.lead);
       const hasWebsite = !!f.lead.website;
-      if (!hasWebsite && !hasValidDemoUrl(f.lead.previewUrl)) return false;
+      // RenoView and has-website leads don't need a demo URL
+      if (!isRV && !hasWebsite && !hasValidDemoUrl(f.lead.previewUrl)) return false;
       return true;
     });
   if (!targets.length) return res.status(400).json({ error:'No eligible leads (need email, built demo for no-website leads, not already sent)' });
@@ -933,7 +949,7 @@ app.post('/api/outreach/batch', async (req,res) => {
         clickUrl: `${getBase()}/c/${trackingId}`,
         unsubscribeUrl: `${getBase()}/unsubscribe?e=${Buffer.from(email).toString('base64url')}`
       };
-      const autoType = AGENCY_TYPES.has(lead.type) ? 'agency' : (lead.website ? 'has_website' : 'no_website');
+      const autoType = isRenoviewLead(lead) ? 'renoview' : AGENCY_TYPES.has(lead.type) ? 'agency' : (lead.website ? 'has_website' : 'no_website');
       const result = await sendOutreach(lead, previewUrl, email, () => {}, null, null, trackingOpts, autoType);
       // Only create tracking record AFTER successful send
       tracking.push({ trackingId, leadId:lead.id, type:'outreach', opens:[], clicks:[], targetUrl:previewUrl, abVariant:null, createdAt:new Date().toISOString() });
@@ -1661,6 +1677,118 @@ load();
 </body></html>`);
 });
 
+// ── SMS TEXT OUTREACH ─────────────────────────────────────────────────────
+let batchSmsRunning = false;
+
+app.post('/api/sms/preview', async (req, res) => {
+  const { id, messageType } = req.body;
+  const f = findLead(id);
+  if (!f) return res.status(404).json({ error: 'Lead not found' });
+  if (!f.lead.phone || f.lead.phone === 'N/A') return res.status(400).json({ error: 'Lead has no phone number' });
+  try {
+    const message = await generateSmsText(f.lead, messageType || 'general');
+    res.json({ ok: true, message });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/sms/send', async (req, res) => {
+  const { id, message, sessionId } = req.body;
+  const f = findLead(id);
+  if (!f) return res.status(404).json({ error: 'Lead not found' });
+  const { lead, index } = f;
+  if (!lead.phone || lead.phone === 'N/A') return res.status(400).json({ error: 'Lead has no phone number' });
+  if (!isValidPhone(lead.phone)) return res.status(400).json({ error: `Invalid phone number: ${lead.phone}` });
+  if (!message || !message.trim()) return res.status(400).json({ error: 'Message text required' });
+  const lockKey = `sms:${id}`;
+  if (sendingInProgress.has(lockKey))
+    return res.status(409).json({ error: 'SMS already being sent to this lead. Please wait.' });
+  sendingInProgress.add(lockKey);
+  res.json({ status: 'started' });
+  emit(sessionId, { type: 'sms', status: 'start', message: `📱 Sending SMS to ${lead.name}...` });
+  try {
+    const result = await sendSms(lead, message.trim(), p => emit(sessionId, { type: 'sms', ...p }));
+    leads[index].smsSentAt = result.sentAt;
+    leads[index].smsPhone = result.phone;
+    save(LF, leads);
+    emit(sessionId, { type: 'sms', status: 'sent', message: `✅ SMS sent to ${lead.name} (${result.phone})` });
+    emit(sessionId, { type: 'sms_done', leadId: id, result });
+  } catch (e) {
+    emit(sessionId, { type: 'sms', status: 'error', message: `❌ Failed: ${e.message}` });
+    emit(sessionId, { type: 'error', agent: 'sms', message: e.message });
+  } finally {
+    sendingInProgress.delete(lockKey);
+  }
+});
+
+app.post('/api/sms/batch', async (req, res) => {
+  if (batchSmsRunning) return res.status(409).json({ error: 'Batch SMS already in progress' });
+  const { ids, sessionId, messageType } = req.body;
+  const smsLog = loadSmsLog();
+  const alreadySent = new Set(smsLog.map(r => r.leadId));
+  const targets = (ids && ids.length ? ids : leads.map(l => l.id))
+    .map(id => findLead(id))
+    .filter(f => {
+      if (!f || !f.lead.phone || f.lead.phone === 'N/A') return false;
+      if (!isValidPhone(f.lead.phone)) return false;
+      if (alreadySent.has(f.lead.id)) return false;
+      return true;
+    });
+  if (!targets.length) return res.status(400).json({ error: 'No eligible leads (need valid phone, not already texted)' });
+  // Deduplicate by phone number
+  const seenPhones = new Set();
+  const deduped = targets.filter(({ lead }) => {
+    const ph = normalizePhone(lead.phone);
+    if (seenPhones.has(ph)) return false;
+    seenPhones.add(ph);
+    return true;
+  });
+  batchSmsRunning = true;
+  res.json({ status: 'started', count: deduped.length });
+  emit(sessionId, { type: 'sms_batch', status: 'start', message: `🚀 Batch sending SMS to ${deduped.length} leads...` });
+  let sent = 0, failed = 0;
+  for (let i = 0; i < deduped.length; i++) {
+    const { lead, index } = deduped[i];
+    emit(sessionId, { type: 'sms_batch', status: 'sending', message: `[${i + 1}/${deduped.length}] Generating SMS for ${lead.name}...`, progress: Math.round((i / deduped.length) * 100) });
+    try {
+      const message = await generateSmsText(lead, messageType || 'general');
+      const result = await sendSms(lead, message, () => {});
+      leads[index].smsSentAt = result.sentAt;
+      leads[index].smsPhone = result.phone;
+      saveDebounced(LF, leads);
+      sent++;
+      emit(sessionId, { type: 'sms_batch', status: 'sent', message: `✅ [${sent}/${deduped.length}] ${lead.name} → ${result.phone}`, progress: Math.round(((i + 1) / deduped.length) * 100) });
+    } catch (e) {
+      failed++;
+      emit(sessionId, { type: 'sms_batch', status: 'error', message: `❌ ${lead.name}: ${e.message}` });
+    }
+    // Random delay 2-5 seconds between sends
+    const delay = 2000 + Math.random() * 3000;
+    await new Promise(r => setTimeout(r, delay));
+  }
+  batchSmsRunning = false;
+  emit(sessionId, { type: 'sms_batch_done', sent, failed, total: deduped.length });
+  emit(sessionId, { type: 'sms_batch', status: 'complete', message: `🏁 Batch SMS done: ${sent} sent, ${failed} failed` });
+});
+
+app.get('/api/sms/log', (req, res) => {
+  res.json({ log: loadSmsLog() });
+});
+
+app.get('/api/sms-stats', (req, res) => {
+  res.json(getSmsStatsAgent());
+});
+
+app.post('/api/sms/incoming', (req, res) => {
+  // Twilio webhook for incoming SMS replies
+  const from = req.body.From || '';
+  const body = req.body.Body || '';
+  console.log(`[sms] Incoming from ${from}: ${body}`);
+  // Twilio handles STOP/HELP at carrier level automatically
+  // Just log for now, respond with empty TwiML
+  res.set('Content-Type', 'text/xml');
+  res.send('<Response></Response>');
+});
+
 // ── VOICE AI ─────────────────────────────────────────────────────────────
 // Active voice sessions keyed by Twilio streamSid
 const activeCalls = new Map();
@@ -1884,6 +2012,7 @@ const server = app.listen(PORT, () => {
   console.log(`  SMTP Fallback : ${process.env.SMTP_HOST&&process.env.SMTP_USER?'✓ Ready ('+process.env.SMTP_USER+'), last resort':'✗ Not configured'}`);
   console.log(`  Cloudflare    : ${process.env.CLOUDFLARE_ACCOUNT_ID&&process.env.CLOUDFLARE_API_TOKEN?'✓ Ready, sites deploy to pages.dev':'✗ Add in Settings (required for permanent URLs)'}`);
   console.log(`  Twilio Voice  : ${process.env.TWILIO_ACCOUNT_SID&&process.env.TWILIO_AUTH_TOKEN?'✓ Ready ('+process.env.TWILIO_PHONE_NUMBER+')':'✗ Add in Voice Settings'}`);
+  console.log(`  Twilio SMS    : ${process.env.TWILIO_ACCOUNT_SID&&process.env.TWILIO_AUTH_TOKEN?'✓ Ready ('+process.env.TWILIO_PHONE_NUMBER+')':'✗ Same as Voice config'}`);
   console.log(`  Deepgram STT  : ${process.env.DEEPGRAM_API_KEY?'✓ Ready':'✗ Add in Voice Settings'}\n`);
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM) {
     console.log(`  ⚠️  WARNING: Resend not configured, outreach emails will fail!`);
