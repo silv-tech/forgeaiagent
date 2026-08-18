@@ -992,9 +992,11 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
         <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#10b981,var(--cyan));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(16,185,129,.3)">1</div>
         <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Pick a Lead</div>
       </div>
-      <select id="sms-lead" onchange="smsLeadChg()" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box;margin-bottom:10px">
-        <option value="">— Select a lead with phone number —</option>
-      </select>
+      <div style="position:relative;margin-bottom:10px" id="sms-lead-wrap">
+        <input type="text" id="sms-lead-search" placeholder="Search leads by name or type..." autocomplete="off" oninput="onSearchSmsLeadDrop()" onfocus="openSmsLeadDrop()" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box" onfocusin="this.style.borderColor='#10b981'" onfocusout="setTimeout(()=>{closeSmsLeadDrop()},180)">
+        <div id="sms-lead-list" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:220px;overflow-y:auto;background:var(--s1);border:1px solid rgba(255,255,255,.12);border-top:none;border-radius:0 0 9px 9px;z-index:50"></div>
+        <input type="hidden" id="sms-lead" value="">
+      </div>
       <div id="sms-lead-info" style="display:none;font-size:10.5px;padding:10px 12px;border:1px solid var(--b1);border-radius:9px;background:var(--s2);margin-bottom:10px;line-height:1.8"></div>
       <div id="sms-phone-wrap" style="display:none;margin-bottom:10px">
         <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Send To Number</div>
@@ -2370,15 +2372,39 @@ let smsLogData=[];
 let smsBatchSel=new Set();
 
 function fillSmsSel(){
-  const sel=document.getElementById('sms-lead');
-  if(!sel)return;
-  const cur=sel.value;
-  const withPhone=leads.filter(l=>l.phone&&l.phone!=='N/A');
-  sel.innerHTML='<option value="">— Select a lead with phone number —</option>'+withPhone.map(l=>`<option value="${l.id}"${l.id===cur?' selected':''}>${x(l.name)} — ${x(l.phone)}</option>`).join('');
   // Defer heavy batch list rendering so tab switch feels instant
   setTimeout(()=>updateSmsBatchInfo(),50);
 }
 
+const SMS_DROP_HINT='<div style="padding:10px 12px;font-size:11px;color:var(--t4)">Type to search leads with phone numbers...</div>';
+function renderSmsLeadDrop(filter){
+  const list=document.getElementById('sms-lead-list');
+  const q=(filter||'').toLowerCase().trim();
+  if(!q){list.innerHTML=SMS_DROP_HINT;return;}
+  const filtered=leads.filter(l=>l.phone&&l.phone!=='N/A'&&((l.name||'').toLowerCase().includes(q)||(l.type||'').toLowerCase().replace(/_/g,' ').includes(q)||(l.address||'').toLowerCase().includes(q)||(l.phone||'').includes(q)));
+  if(!filtered.length){list.innerHTML='<div style="padding:10px 12px;font-size:11px;color:var(--t4)">No leads with phone numbers found</div>';return;}
+  const shown=filtered.length>50?filtered.slice(0,50):filtered;
+  const extra=filtered.length-shown.length;
+  list.innerHTML=shown.map(l=>{
+    const isRV=isRenoviewLead(l);
+    const tags='<span style="color:#10b981;font-size:9px;margin-left:4px">PHONE</span>'+(l.foundEmail?'<span style="color:var(--green);font-size:9px;margin-left:4px">EMAIL</span>':'')+(isRV?'<span style="color:#a78bfa;font-size:9px;margin-left:4px">RENOVIEW</span>':'');
+    return `<div onmousedown="pickSmsLead('${l.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;display:flex;align-items:center;justify-content:space-between" onmouseenter="this.style.background='rgba(255,255,255,.07)'" onmouseleave="this.style.background='none'"><div><div style="font-size:11.5px;color:var(--t1);font-weight:500">${x(l.name)}</div><div style="font-size:9.5px;color:var(--t4);margin-top:1px">${x(l.phone)} · ${x(l.address||'')}</div></div><div>${tags}</div></div>`;
+  }).join('')+(extra>0?`<div style="padding:8px 12px;font-size:10px;color:var(--t4);text-align:center">+${extra} more — refine search</div>`:'');
+}
+function openSmsLeadDrop(){
+  const list=document.getElementById('sms-lead-list');
+  list.style.display='block';
+  const q=document.getElementById('sms-lead-search').value;
+  if(q) renderSmsLeadDrop(q); else list.innerHTML=SMS_DROP_HINT;
+}
+function closeSmsLeadDrop(){document.getElementById('sms-lead-list').style.display='none';}
+function pickSmsLead(id){
+  document.getElementById('sms-lead').value=id;
+  const l=leads.find(x=>x.id===id);
+  document.getElementById('sms-lead-search').value=l?l.name:'';
+  closeSmsLeadDrop();
+  smsLeadChg();
+}
 function useSmsLeadPhone(){
   const id=document.getElementById('sms-lead').value;
   const lead=leads.find(l=>l.id===id);
@@ -2815,6 +2841,12 @@ const onSearchLeadDrop= debounce(()=>{
   const list=document.getElementById('o-lead-list');
   if(list) list.style.display='block';
   renderLeadDrop(q);
+}, 120);
+const onSearchSmsLeadDrop= debounce(()=>{
+  const q=document.getElementById('sms-lead-search').value;
+  const list=document.getElementById('sms-lead-list');
+  if(list) list.style.display='block';
+  renderSmsLeadDrop(q);
 }, 120);
 
 // ── VOICE AI ──────────────────────────────────────────────────────────────
