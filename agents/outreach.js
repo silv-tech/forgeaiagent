@@ -470,28 +470,35 @@ async function generateRenoviewSubject(lead) {
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 100,
     messages: [{ role: 'user', content:
-`Generate ONE cold email subject line for a contractor/builder who does ${type} work.
+`Generate ONE cold email subject line for a ${type} contractor/builder.
 
 Business: ${lead.name}
-Rating: ${hasRating ? lead.rating + '/5' : 'unknown'}
-Reviews: ${reviews}
+Area: ${lead.address?.split(',')[1]?.trim() || 'your area'}
 
-The email body pitches an AI-powered renovation visualization platform (RenoViews) that turns their website visitors into paying customers. Homeowners upload a photo, AI shows the dream result, they call the contractor.
+The email pitches an AI-powered tool that brings renovation leads directly to the contractor — homeowners see their dream result through AI, then call the contractor.
+
+STYLE — direct, action-oriented, about AI bringing clients TO them:
+- "Let the clients come to you through Ai"
+- "Attract more clients with the power of Ai"
+- "Stop chasing customers— let the leads come to you"
+- "Ai is changing how ${type} contractors get clients"
+- "What if your next client found YOU through Ai?"
+- "Let Ai do the selling for your ${type} business"
 
 RULES:
-- 4-9 words, lowercase except proper nouns
-- Must feel like a personal observation, not a sales pitch
-- Reference their business, their leads, their competition, or a pain point
+- 6-12 words, sentence case (capitalize first word)
+- Direct and empowering — about THEM getting more clients effortlessly through AI
+- Use "Ai" (not "AI") to feel more human and less corporate
+- Can mention their business type or area naturally
 - No clickbait, no "quick question", no exclamation marks
-- Do NOT mention RenoView or RenoViews in the subject
-- Vary the angle: competition, missed leads, website conversion, AI advantage, growth
-- Examples: "your website isn't converting visitors", "${lead.name} vs the competition", "what if every site visitor called you", "contractors in ${lead.address?.split(',')[1]?.trim() || 'your area'} are switching", "${reviews} reviews but how many website leads"
+- Do NOT mention RenoView or RenoViews
+- Vary the angle each time: letting leads come to them, Ai advantage, stop chasing, attract clients, stand out from competition
 
 Return ONLY valid JSON: {"subject":"..."}`
     }]
   }, 15000);
   const result = parseJSON(msg.content[0]?.text || '');
-  return result?.subject || "your website could be closing more jobs";
+  return result?.subject || "Let Ai bring the clients to you";
 }
 
 async function generateEmailCopy(lead, previewUrl, outreachType) {
