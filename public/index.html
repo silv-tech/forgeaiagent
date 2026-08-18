@@ -2489,9 +2489,8 @@ async function smsSend(){
   if(!message){alert('Generate or write a message first');return;}
   if(!phone){alert('Enter a phone number');return;}
   const lead=leads.find(l=>l.id===id);
-  if(!confirm(`Send SMS to ${lead?.name||'this lead'} at ${phone}?`))return;
   btn('sms-send-btn','Sending...',true);
-  log('sms-feed','📱 Sending SMS to '+phone+'...','');
+  log('sms-feed',`📱 Sending SMS to ${lead?.name||'lead'} at ${phone}...`,'');
   try{
     const r=await post('/api/sms/send',{id,message,phone,sessionId:sid});
     if(!r.ok){const d=await r.json().catch(()=>({}));log('sms-feed','✗ '+(d.error||'Send failed'),'er');btn('sms-send-btn','▶ Send SMS',false);}
@@ -2527,8 +2526,6 @@ async function smsBatchSend(){
   if(!selected.length){log('sms-feed','No leads selected — check the leads you want to text','er');return;}
   const messageType=document.getElementById('sms-type').value; // 'auto', 'general', or 'renoview'
   const rvCount=selected.filter(l=>isRenoviewLead(l)).length;
-  const label=messageType==='auto'?`Send SMS to ${selected.length} lead(s)? (${rvCount} RenoView, ${selected.length-rvCount} General — auto-detected)`:messageType==='renoview'?`Send RenoView SMS to ${selected.length} lead(s)?`:`Send General SMS to ${selected.length} lead(s)?`;
-  if(!confirm(label))return;
   btn('sms-batch-btn','Sending...',true);
   document.getElementById('sms-batch-prog').style.display='block';
   document.getElementById('sms-batch-msg').textContent='Starting batch SMS...';
