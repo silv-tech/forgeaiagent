@@ -1692,21 +1692,24 @@ app.post('/api/sms/preview', async (req, res) => {
 });
 
 app.post('/api/sms/send', async (req, res) => {
-  const { id, message, sessionId } = req.body;
+  const { id, message, phone, sessionId } = req.body;
   const f = findLead(id);
   if (!f) return res.status(404).json({ error: 'Lead not found' });
   const { lead, index } = f;
-  if (!lead.phone || lead.phone === 'N/A') return res.status(400).json({ error: 'Lead has no phone number' });
-  if (!isValidPhone(lead.phone)) return res.status(400).json({ error: `Invalid phone number: ${lead.phone}` });
+  // Use custom phone if provided, otherwise use lead's phone
+  const targetPhone = phone || lead.phone;
+  if (!targetPhone || targetPhone === 'N/A') return res.status(400).json({ error: 'No phone number provided' });
+  if (!isValidPhone(targetPhone)) return res.status(400).json({ error: `Invalid phone number: ${targetPhone}` });
   if (!message || !message.trim()) return res.status(400).json({ error: 'Message text required' });
   const lockKey = `sms:${id}`;
   if (sendingInProgress.has(lockKey))
     return res.status(409).json({ error: 'SMS already being sent to this lead. Please wait.' });
   sendingInProgress.add(lockKey);
   res.json({ status: 'started' });
-  emit(sessionId, { type: 'sms', status: 'start', message: `📱 Sending SMS to ${lead.name}...` });
+  const sendLead = { ...lead, phone: targetPhone };
+  emit(sessionId, { type: 'sms', status: 'start', message: `📱 Sending SMS to ${lead.name} (${targetPhone})...` });
   try {
-    const result = await sendSms(lead, message.trim(), p => emit(sessionId, { type: 'sms', ...p }));
+    const result = await sendSms(sendLead, message.trim(), p => emit(sessionId, { type: 'sms', ...p }));
     leads[index].smsSentAt = result.sentAt;
     leads[index].smsPhone = result.phone;
     save(LF, leads);

@@ -996,6 +996,11 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
         <option value="">— Select a lead with phone number —</option>
       </select>
       <div id="sms-lead-info" style="display:none;font-size:10.5px;padding:10px 12px;border:1px solid var(--b1);border-radius:9px;background:var(--s2);margin-bottom:10px;line-height:1.8"></div>
+      <div id="sms-phone-wrap" style="display:none;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Send To Number</div>
+        <input type="tel" id="sms-phone" placeholder="(555) 123-4567" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;transition:border .2s;box-sizing:border-box;font-family:var(--mono)" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='rgba(255,255,255,.08)'">
+        <div id="sms-phone-hint" style="display:none;font-size:10.5px;color:var(--t3);margin-top:4px;cursor:pointer" onclick="useSmsLeadPhone()"></div>
+      </div>
       <div id="sms-type-badge" style="display:none;font-size:11.5px;font-weight:700;padding:11px 14px;border-radius:9px;margin-bottom:4px;line-height:1.5"></div>
       <div style="margin-bottom:10px">
         <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Offer Type</div>
@@ -2374,17 +2379,29 @@ function fillSmsSel(){
   setTimeout(()=>updateSmsBatchInfo(),50);
 }
 
+function useSmsLeadPhone(){
+  const id=document.getElementById('sms-lead').value;
+  const lead=leads.find(l=>l.id===id);
+  if(lead?.phone) document.getElementById('sms-phone').value=lead.phone;
+}
 function smsLeadChg(){
   const id=document.getElementById('sms-lead').value;
   const info=document.getElementById('sms-lead-info');
   const badge=document.getElementById('sms-type-badge');
+  const phoneWrap=document.getElementById('sms-phone-wrap');
   document.getElementById('sms-prev-box').style.display='none';
-  if(!id){info.style.display='none';badge.style.display='none';return;}
+  if(!id){info.style.display='none';badge.style.display='none';phoneWrap.style.display='none';return;}
   const lead=leads.find(l=>l.id===id);
-  if(!lead){info.style.display='none';badge.style.display='none';return;}
+  if(!lead){info.style.display='none';badge.style.display='none';phoneWrap.style.display='none';return;}
   const alreadySent=smsLogData.find(r=>r.leadId===id);
   info.style.display='block';
   info.innerHTML=`<strong>${x(lead.name)}</strong><br>📞 ${x(lead.phone)}<br>📍 ${x(lead.address||'N/A')}<br>⭐ ${lead.rating||'N/A'} (${lead.reviews||0} reviews)`+(alreadySent?'<br><span style="color:var(--amber)">⚠ Already texted on '+new Date(alreadySent.sentAt).toLocaleDateString()+'</span>':'');
+  // Show phone field pre-filled with lead's number
+  phoneWrap.style.display='block';
+  document.getElementById('sms-phone').value=lead.phone||'';
+  const hint=document.getElementById('sms-phone-hint');
+  hint.style.display='block';
+  hint.textContent='💡 Edit to send to a different number (e.g. your own for testing)';
   // Show auto-detected type badge
   const isRV=isRenoviewLead(lead);
   const sel=document.getElementById('sms-type');
@@ -2441,14 +2458,16 @@ async function smsPreview(){
 async function smsSend(){
   const id=document.getElementById('sms-lead').value;
   const message=document.getElementById('sms-body').value.trim();
+  const phone=document.getElementById('sms-phone').value.trim();
   if(!id){alert('Select a lead');return;}
   if(!message){alert('Generate or write a message first');return;}
+  if(!phone){alert('Enter a phone number');return;}
   const lead=leads.find(l=>l.id===id);
-  if(!confirm(`Send SMS to ${lead?.name||'this lead'} at ${lead?.phone}?`))return;
+  if(!confirm(`Send SMS to ${lead?.name||'this lead'} at ${phone}?`))return;
   btn('sms-send-btn','Sending...',true);
-  log('sms-feed','📱 Sending SMS to '+lead.name+'...','');
+  log('sms-feed','📱 Sending SMS to '+phone+'...','');
   try{
-    const r=await post('/api/sms/send',{id,message,sessionId:sid});
+    const r=await post('/api/sms/send',{id,message,phone,sessionId:sid});
     if(!r.ok){const d=await r.json().catch(()=>({}));log('sms-feed','✗ '+(d.error||'Send failed'),'er');btn('sms-send-btn','▶ Send SMS',false);}
   }catch(e){log('sms-feed','✗ Network error: '+e.message,'er');btn('sms-send-btn','▶ Send SMS',false);}
 }
