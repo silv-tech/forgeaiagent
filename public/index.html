@@ -2366,7 +2366,8 @@ function fillSmsSel(){
   const cur=sel.value;
   const withPhone=leads.filter(l=>l.phone&&l.phone!=='N/A');
   sel.innerHTML='<option value="">— Select a lead with phone number —</option>'+withPhone.map(l=>`<option value="${l.id}"${l.id===cur?' selected':''}>${x(l.name)} — ${x(l.phone)}</option>`).join('');
-  updateSmsBatchInfo();
+  // Defer heavy batch list rendering so tab switch feels instant
+  setTimeout(()=>updateSmsBatchInfo(),50);
 }
 
 function smsLeadChg(){
