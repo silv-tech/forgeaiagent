@@ -1750,7 +1750,9 @@ app.post('/api/sms/batch', async (req, res) => {
     const { lead, index } = deduped[i];
     emit(sessionId, { type: 'sms_batch', status: 'sending', message: `[${i + 1}/${deduped.length}] Generating SMS for ${lead.name}...`, progress: Math.round((i / deduped.length) * 100) });
     try {
-      const message = await generateSmsText(lead, messageType || 'general');
+      // Auto-detect: use 'renoview' for NYC renovation contractors, 'general' for others
+      const resolvedType = messageType === 'auto' || !messageType ? (isRenoviewLead(lead) ? 'renoview' : 'general') : messageType;
+      const message = await generateSmsText(lead, resolvedType);
       const result = await sendSms(lead, message, () => {});
       leads[index].smsSentAt = result.sentAt;
       leads[index].smsPhone = result.phone;

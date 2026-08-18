@@ -69,32 +69,42 @@ async function generateSmsText(lead, messageType) {
   const hasRating = lead.rating && lead.rating !== 'N/A';
   const reviews = parseInt(lead.reviews) || 0;
 
+  const type = (lead.type || 'business').replace(/_/g, ' ');
+
   let prompt;
   if (messageType === 'renoview') {
-    prompt = `You write a single cold SMS message for ForgeAI pitching RenoView, an AI renovation visualization tool. Output ONLY the SMS text, nothing else.
+    prompt = `You write a single cold SMS for RenoViews, an AI renovation platform for contractors. Output ONLY the SMS text, nothing else.
 
 BUSINESS:
 - Name: ${lead.name}
-- Type: ${lead.type || 'contractor'}
-- Rating: ${hasRating ? lead.rating : 'unknown'}
-- Reviews: ${reviews}
+- Type: ${type}
+- Area: ${lead.address?.split(',')[1]?.trim() || 'your area'}
 
-INSTRUCTIONS:
-- Pitch: AI tool that lets homeowners upload a photo of their space and see the renovation result before hiring. Turns website visitors into leads.
-- Keep under 155 characters (leave room for opt-out footer)
-- Sound like a real person texting a business owner, not a marketing blast
-- No emojis, no ALL CAPS, no exclamation marks
-- Mention their business name naturally
-- End with a soft CTA like "want to see it?" or "interested?"
-- Do NOT include any opt-out text, that's added automatically
+THE RENOVIEWS PITCH (base the text on this):
+RenoViews builds AI-powered platforms for kitchen, bath & siding contractors. Homeowners upload a photo of their old space, AI instantly transforms it into their dream renovation, they see it, they want it, they call the contractor. Stop chasing clients — let Ai bring the leads to you. Includes branded website, CRM, AI follow-ups, lead notifications, and built-in financing. One-time $2,600 or $216/mo. Or just the AI toolbar for $1,500 on their existing site. Or join free and pay per lead.
+
+STYLE — direct, empowering, about Ai bringing clients to THEM:
+- "Hey this is Leif from RenoViews, we help ${type} contractors get more clients through Ai — homeowners upload a photo and see their dream reno instantly. Worth a quick look? renoviews.com"
+- "Hi, we built an Ai tool that turns your website visitors into ${type} leads — they upload a photo, see the result, and call you. Can I show you how it works?"
+- "Stop chasing leads — we help ${type} contractors like ${lead.name} let Ai do the selling. Homeowners see their dream reno before they even call. Interested?"
+
+RULES:
+- Keep under 155 characters (opt-out footer is added automatically)
+- Sound like a real person texting, casual and direct
+- Mention RenoViews or renoviews.com naturally
+- Use "Ai" (not "AI") to feel more human
+- Mention their business type or name naturally
+- End with a soft CTA — "interested?", "worth a look?", "can I show you?"
+- No emojis, no ALL CAPS
+- Do NOT include opt-out text
 
 Return ONLY valid JSON: {"message":"..."}`;
   } else {
-    prompt = `You write a single cold SMS message for ForgeAI, a digital growth agency. Output ONLY the SMS text, nothing else.
+    prompt = `You write a single cold SMS for ForgeAI, a digital growth agency. Output ONLY the SMS text, nothing else.
 
 BUSINESS:
 - Name: ${lead.name}
-- Type: ${lead.type || 'business'}
+- Type: ${type}
 - Address: ${lead.address || ''}
 - Rating: ${hasRating ? lead.rating : 'unknown'}
 - Reviews: ${reviews}

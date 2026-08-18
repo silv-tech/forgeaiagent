@@ -996,19 +996,23 @@ input[type=datetime-local]{width:100%;background:var(--s2);border:1px solid var(
         <option value="">— Select a lead with phone number —</option>
       </select>
       <div id="sms-lead-info" style="display:none;font-size:10.5px;padding:10px 12px;border:1px solid var(--b1);border-radius:9px;background:var(--s2);margin-bottom:10px;line-height:1.8"></div>
+      <div id="sms-type-badge" style="display:none;font-size:11.5px;font-weight:700;padding:11px 14px;border-radius:9px;margin-bottom:4px;line-height:1.5"></div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Offer Type</div>
+        <select id="sms-type" onchange="smsTypeChg()" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:var(--s2);color:var(--t1);outline:none">
+          <option value="auto">Auto-detect (default)</option>
+          <option value="general">General (Website/AI Pitch)</option>
+          <option value="renoview">RenoView (Renovation AI)</option>
+        </select>
+      </div>
     </div>
 
     <div class="ss">
-      <!-- Step 2: Message Type & Preview -->
+      <!-- Step 2: Preview & Send -->
       <div style="display:flex;align-items:center;gap:9px;margin-bottom:13px">
         <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#10b981,var(--cyan));color:#000;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 10px rgba(16,185,129,.3)">2</div>
-        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Message</div>
+        <div style="font-size:12px;font-weight:700;color:var(--t1);letter-spacing:.02em">Preview &amp; Send</div>
       </div>
-      <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Message Type</div>
-      <select id="sms-type" style="width:100%;padding:9px 12px;font-size:12px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:var(--s2);color:var(--t1);outline:none;margin-bottom:10px">
-        <option value="general">General (Website/AI Pitch)</option>
-        <option value="renoview">RenoView (Renovation AI)</option>
-      </select>
       <div id="sms-prev-box" style="display:none;margin-bottom:10px">
         <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px">SMS Preview — <span style="color:#10b981;font-weight:400;text-transform:none;letter-spacing:0">editable before sending</span></div>
         <textarea id="sms-body" oninput="smsCharCount()" style="width:100%;min-height:100px;resize:vertical;padding:10px 12px;font-size:12px;line-height:1.65;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:rgba(255,255,255,.04);color:var(--t1);outline:none;box-sizing:border-box;font-family:var(--font)" placeholder="SMS message will appear here..."></textarea>
@@ -2373,13 +2377,31 @@ function fillSmsSel(){
 function smsLeadChg(){
   const id=document.getElementById('sms-lead').value;
   const info=document.getElementById('sms-lead-info');
+  const badge=document.getElementById('sms-type-badge');
   document.getElementById('sms-prev-box').style.display='none';
-  if(!id){info.style.display='none';return;}
+  if(!id){info.style.display='none';badge.style.display='none';return;}
   const lead=leads.find(l=>l.id===id);
-  if(!lead){info.style.display='none';return;}
+  if(!lead){info.style.display='none';badge.style.display='none';return;}
   const alreadySent=smsLogData.find(r=>r.leadId===id);
   info.style.display='block';
   info.innerHTML=`<strong>${x(lead.name)}</strong><br>📞 ${x(lead.phone)}<br>📍 ${x(lead.address||'N/A')}<br>⭐ ${lead.rating||'N/A'} (${lead.reviews||0} reviews)`+(alreadySent?'<br><span style="color:var(--amber)">⚠ Already texted on '+new Date(alreadySent.sentAt).toLocaleDateString()+'</span>':'');
+  // Show auto-detected type badge
+  const isRV=isRenoviewLead(lead);
+  const sel=document.getElementById('sms-type');
+  if(sel.value==='auto'){
+    badge.style.display='block';
+    if(isRV){
+      badge.style.background='rgba(124,58,237,.1)';badge.style.border='1px solid rgba(124,58,237,.3)';badge.style.color='#a78bfa';
+      badge.innerHTML='🏠 <strong>RenoView</strong> — NYC renovation contractor detected. Will send RenoViews pitch.';
+    } else {
+      badge.style.background='rgba(0,229,255,.06)';badge.style.border='1px solid rgba(0,229,255,.15)';badge.style.color='var(--cyan)';
+      badge.innerHTML='🌐 <strong>General</strong> — Will send website/AI growth pitch.';
+    }
+  } else { badge.style.display='none'; }
+}
+function smsTypeChg(){
+  document.getElementById('sms-prev-box').style.display='none';
+  smsLeadChg(); // refresh badge
 }
 
 function smsCharCount(){
@@ -2391,10 +2413,18 @@ function smsCharCount(){
   el.style.color=total<=160?'#10b981':total<=320?'var(--amber)':'var(--red)';
 }
 
+function getSmsType(){
+  const sel=document.getElementById('sms-type').value;
+  if(sel!=='auto') return sel;
+  const id=document.getElementById('sms-lead').value;
+  if(!id) return 'general';
+  const lead=leads.find(l=>l.id===id);
+  return lead&&isRenoviewLead(lead)?'renoview':'general';
+}
 async function smsPreview(){
   const id=document.getElementById('sms-lead').value;
   if(!id){alert('Select a lead first');return;}
-  const messageType=document.getElementById('sms-type').value;
+  const messageType=getSmsType();
   btn('sms-prev-btn','Generating...',true);
   try{
     const r=await post('/api/sms/preview',{id,messageType});
@@ -2450,8 +2480,10 @@ async function smsBatchSend(){
   const sentIds=new Set(smsLogData.map(r=>r.leadId));
   const selected=leads.filter(l=>l.phone&&l.phone!=='N/A'&&!sentIds.has(l.id)&&smsBatchSel.has(l.id));
   if(!selected.length){log('sms-feed','No leads selected — check the leads you want to text','er');return;}
-  const messageType=document.getElementById('sms-type').value;
-  if(!confirm(`Send SMS to ${selected.length} selected lead(s)? AI will generate a unique message for each.`))return;
+  const messageType=document.getElementById('sms-type').value; // 'auto', 'general', or 'renoview'
+  const rvCount=selected.filter(l=>isRenoviewLead(l)).length;
+  const label=messageType==='auto'?`Send SMS to ${selected.length} lead(s)? (${rvCount} RenoView, ${selected.length-rvCount} General — auto-detected)`:messageType==='renoview'?`Send RenoView SMS to ${selected.length} lead(s)?`:`Send General SMS to ${selected.length} lead(s)?`;
+  if(!confirm(label))return;
   btn('sms-batch-btn','Sending...',true);
   document.getElementById('sms-batch-prog').style.display='block';
   document.getElementById('sms-batch-msg').textContent='Starting batch SMS...';
